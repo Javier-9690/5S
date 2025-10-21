@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Captura semanal</h1>
+  <p class="muted">Selecciona una semana. Se mostrarán sus 7 días y podrás ingresar los valores por día.</p>
+
+  <form method="get" action="{{ url_for('form_semana') }}">
+    <div class="grid">
+      <div>
+        <label>Semana</label>
+        <select name="semana" required>
+          <option value="" disabled {{ 'selected' if not semana_sel }}>-- elegir --</option>
+          {% for num, rango in week_map.items()|sort %}
+            <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>
+              {{ num }} ({{ rango[0] }} → {{ rango[1] }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="btn primary" type="submit">Cargar días</button>
+        <a class="btn" href="{{ url_for('listar') }}">Ver registros</a>
+      </div>
+    </div>
+  </form>
+
+  {% if semana_sel and dias %}
+    <hr style="margin:16px 0;">
+    <div class="muted">Semana {{ semana_sel }} • Desde <strong>{{ dias[0] }}</strong> hasta <strong>{{ dias[-1] }}</strong></div>
+
+    <form method="post" action="{{ url_for('guardar') }}">
+      <input type="hidden" name="semana" value="{{ semana_sel }}">
+
+      <div style="overflow:auto; margin-top:12px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Día</th>
+              <th>Eventos de seguridad<br/><span class="muted">Cantidad</span></th>
+              <th>Doble asignación<br/><span class="muted">Cantidad</span></th>
+              <th>Encuesta de satisfacción<br/><span class="muted">Cantidad</span></th>
+              <th>Tiempo de atención<br/><span class="muted">mm:ss</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in dias %}
+              <tr>
+                <td style="white-space:nowrap">{{ d }}</td>
+                <td><input type="number" min="0" name="eventos_{{ loop.index0 }}" placeholder="0"></td>
+                <td><input type="number" min="0" name="doble_{{ loop.index0 }}" placeholder="0"></td>
+                <td><input type="number" min="0" name="encuesta_{{ loop.index0 }}" placeholder="0"></td>
+                <td><input type="text" name="tiempo_{{ loop.index0 }}" placeholder="mm:ss" pattern="\\d{1,2}:\\d{2}" title="Formato mm:ss"></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn primary" type="submit">Guardar</button>
+        <a class="btn" href="{{ url_for('listar') }}">Ver registros</a>
+      </div>
+    </form>
+  {% endif %}
+{% endblock %}
