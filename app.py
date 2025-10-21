@@ -92,11 +92,6 @@ def seconds_to_mmss(x: int) -> str:
     return f"{m:02d}:{s:02d}"
 
 # --- Memoria (no persistente) ----------------------------------------------
-# cada captura:
-# {
-#  semana, rango, fechas[7], censo[7], eventos_seguridad[7],
-#  duplicidad[7], encuesta[7], tiempo[7], creado
-# }
 CAPTURAS = []
 
 # --- Rutas ------------------------------------------------------------------
@@ -127,15 +122,13 @@ def guardar():
     dias = week_dates(semana)
     n = 7
 
-    # inputs por día
     def gi(name): return [request.form.get(f"{name}_{i}", "").strip() for i in range(n)]
-    censo     = gi("censo")
-    eventos   = gi("eventos")      # Eventos de seguridad
-    duplicidad= gi("duplicidad")   # antes "doble"
-    encuesta  = gi("encuesta")
-    tiempo    = gi("tiempo")       # mm:ss
+    censo      = gi("censo")
+    eventos    = gi("eventos")      # Eventos de seguridad
+    duplicidad = gi("duplicidad")   # antes "doble"
+    encuesta   = gi("encuesta")
+    tiempo     = gi("tiempo")       # mm:ss
 
-    # validación
     def is_int_or_empty(s): return s == "" or s.isdigit()
     errs = []
     for i in range(n):
@@ -158,7 +151,7 @@ def guardar():
         "eventos_seguridad": [to_int(x) for x in eventos],
         "duplicidad": [to_int(x) for x in duplicidad],
         "encuesta": [to_int(x) for x in encuesta],
-        "tiempo": tiempo,  # string mm:ss
+        "tiempo": tiempo,
         "creado": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
     CAPTURAS.append(captura)
@@ -176,7 +169,6 @@ def borrar(idx):
 
 @app.get("/registros")
 def listar():
-    # preparamos también promedios por registro para la vista
     registros = []
     for c in CAPTURAS:
         t_secs = [mmss_to_seconds(x) for x in c["tiempo"]]
@@ -219,7 +211,7 @@ def download_csv():
         download_name="capturas.csv"
     )
 
-# ---------------- Dashboard -------------------------------------------------
+# ---------------- Dashboard (AHORA POR DÍA) ---------------------------------
 @app.get("/dashboard")
 def dashboard():
     if not CAPTURAS:
@@ -230,16 +222,45 @@ def dashboard():
                                series={},
                                table=[])
 
-    def mmss_to_s_list(lst): return [mmss_to_seconds(x) for x in lst]
+    # Agregación diaria global (sumas por día; tiempo = promedio por día)
+    per_day = {}  # { 'YYYY-MM-DD': {censo, eventos, duplicidad, encuesta, tiempos_segundos[]} }
+    for c in CAPTURAS:
+        for i, fecha in enumerate(c["fechas"]):
+            d = per_day.setdefault(fecha, {"censo":0, "eventos":0, "duplicidad":0, "encuesta":0, "tiempos": []})
+            d["censo"]      += c["censo"][i]
+            d["eventos"]    += c["eventos_seguridad"][i]
+            d["duplicidad"] += c["duplicidad"][i]
+            d["encuesta"]   += c["encuesta"][i]
+            d["tiempos"].append(mmss_to_seconds(c["tiempo"][i]) if c["tiempo"][i] else 0)
 
+    # ordenar por fecha
+    ordered_dates = sorted(per_day.keys())
+    s_censo, s_eventos, s_duplicidad, s_encuesta, s_tavg = [], [], [], [], []
+    for d in ordered_dates:
+        s_censo.append(per_day[d]["censo"])
+        s_eventos.append(per_day[d]["eventos"])
+        s_duplicidad.append(per_day[d]["duplicidad"])
+        s_encuesta.append(per_day[d]["encuesta"])
+        avg_s = int(mean(per_day[d]["tiempos"])) if per_day[d]["tiempos"] else 0
+        s_tavg.append(avg_s)
+
+    # tarjetas (totales y promedio global de tiempo)
+    cards = {
+        "censo_total": sum(s_censo),
+        "eventos_total": sum(s_eventos),
+        "duplicidad_total": sum(s_duplicidad),
+        "encuesta_total": sum(s_encuesta),
+        "tiempo_prom_global": seconds_to_mmss(int(mean([x for x in s_tavg if x>0])) if any(s_tavg) else 0),
+    }
+
+    # tabla por semana (dejamos igual que antes, sin ratios eventos/encuesta x100)
+    # agrupamos por semana solo para la tabla resumen
+    def mmss_to_s_list(lst): return [mmss_to_seconds(x) for x in lst]
     by_week = {}
     for c in CAPTURAS:
         w = c["semana"]
         if w not in by_week:
-            by_week[w] = {
-                "rango": c["rango"],
-                "censo": [], "eventos": [], "duplicidad": [], "encuesta": [], "tiempo_s": []
-            }
+            by_week[w] = {"rango": c["rango"], "censo": [], "eventos": [], "duplicidad": [], "encuesta": [], "tiempo_s": []}
         by_week[w]["censo"]      += c["censo"]
         by_week[w]["eventos"]    += c["eventos_seguridad"]
         by_week[w]["duplicidad"] += c["duplicidad"]
@@ -247,57 +268,34 @@ def dashboard():
         by_week[w]["tiempo_s"]   += mmss_to_s_list(c["tiempo"])
 
     table = []
-    labels = []
-    censo_totals, ev_totals, dup_totals, enc_totals, tavg_totals = [], [], [], [], []
     for w in sorted(by_week.keys()):
         b = by_week[w]
-        censo_sum   = sum(b["censo"])
-        eventos_sum = sum(b["eventos"])
-        dup_sum     = sum(b["duplicidad"])
-        enc_sum     = sum(b["encuesta"])
-        tavg_sec    = int(mean(b["tiempo_s"])) if b["tiempo_s"] else 0
-
-        labels.append(str(w))
-        censo_totals.append(censo_sum)
-        ev_totals.append(eventos_sum)
-        dup_totals.append(dup_sum)
-        enc_totals.append(enc_sum)
-        tavg_totals.append(tavg_sec)
-
-        # SOLO dejamos Duplicidad/100 censo
-        dup_ratio = round((dup_sum / censo_sum * 100), 2) if censo_sum else 0.0
-
+        censo_sum = sum(b["censo"])
+        dup_sum   = sum(b["duplicidad"])
         table.append({
             "semana": w,
             "rango": b["rango"],
             "censo": censo_sum,
-            "eventos": eventos_sum,
+            "eventos": sum(b["eventos"]),
             "duplicidad": dup_sum,
-            "encuesta": enc_sum,
-            "t_prom": seconds_to_mmss(tavg_sec),
-            "dup_x100": dup_ratio,
+            "encuesta": sum(b["encuesta"]),
+            "t_prom": seconds_to_mmss(int(mean(b["tiempo_s"])) if b["tiempo_s"] else 0),
+            "dup_x100": round((dup_sum / censo_sum * 100), 2) if censo_sum else 0.0
         })
 
-    cards = {
-        "censo_total": sum(censo_totals),
-        "eventos_total": sum(ev_totals),
-        "duplicidad_total": sum(dup_totals),
-        "encuesta_total": sum(enc_totals),
-        "tiempo_prom_global": seconds_to_mmss(int(mean([x for x in tavg_totals if x>0])) if any(tavg_totals) else 0),
-    }
     series = {
-        "labels": labels,
-        "censo": censo_totals,
-        "eventos": ev_totals,
-        "duplicidad": dup_totals,
-        "encuesta": enc_totals,
-        "tavg_sec": tavg_totals,
+        "labels_days": ordered_dates,
+        "censo": s_censo,
+        "eventos": s_eventos,
+        "duplicidad": s_duplicidad,
+        "encuesta": s_encuesta,
+        "tavg_sec": s_tavg,
     }
 
     return render_template("dashboard.html",
                            have_data=True,
                            cards=cards,
-                           labels=labels,
+                           labels=ordered_dates,
                            series=series,
                            table=table)
 
