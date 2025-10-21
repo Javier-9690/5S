@@ -1,67 +1,18 @@
 import os
+import csv
+import io
 import re
-from datetime import datetime, date, timedelta
 from statistics import mean
-
+from datetime import datetime, date, timedelta
 from flask import (
     Flask, render_template, request, redirect,
     url_for, flash, send_file, jsonify
 )
 
-from sqlalchemy import (
-    create_engine, Column, Integer, String, Date, DateTime, ForeignKey, func
-)
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship, scoped_session
-
-# -----------------------------------------------------------------------------
-# Flask
-# -----------------------------------------------------------------------------
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
 
-# -----------------------------------------------------------------------------
-# Base de datos: PostgreSQL (DATABASE_URL) o SQLite local
-# -----------------------------------------------------------------------------
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///data.db")
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-engine = create_engine(DATABASE_URL, echo=False, future=True)
-SessionLocal = scoped_session(sessionmaker(bind=engine, autoflush=False, autocommit=False))
-Base = declarative_base()
-
-# -----------------------------------------------------------------------------
-# Modelos
-# -----------------------------------------------------------------------------
-class Capture(Base):
-    __tablename__ = "captures"
-    id = Column(Integer, primary_key=True)
-    semana = Column(Integer, nullable=False, index=True)
-    rango_ini = Column(String(10), nullable=False)  # YYYY-MM-DD
-    rango_fin = Column(String(10), nullable=False)
-    creado = Column(DateTime, default=datetime.utcnow)
-
-    entries = relationship("DayEntry", back_populates="capture", cascade="all, delete-orphan")
-
-class DayEntry(Base):
-    __tablename__ = "day_entries"
-    id = Column(Integer, primary_key=True)
-    capture_id = Column(Integer, ForeignKey("captures.id", ondelete="CASCADE"), index=True)
-    fecha = Column(Date, nullable=False)
-
-    censo = Column(Integer, default=0)
-    eventos_seguridad = Column(Integer, default=0)
-    duplicidad = Column(Integer, default=0)
-    encuesta = Column(Integer, default=0)
-    tiempo_seg = Column(Integer, default=0)  # mm:ss -> segundos
-
-    capture = relationship("Capture", back_populates="entries")
-
-Base.metadata.create_all(engine)
-
-# -----------------------------------------------------------------------------
-# Semanas fijas
-# -----------------------------------------------------------------------------
+# --- Semanas ---------------------------------------------------------------
 WEEK_MAP = {
     42: ("2025-10-13", "2025-10-19"),
     43: ("2025-10-20", "2025-10-26"),
@@ -127,20 +78,23 @@ def week_dates(week_number: int):
     d0 = date.fromisoformat(start_str)
     return [d0 + timedelta(days=i) for i in range(7)]
 
-# Tiempo mm:ss
+# mm:ss ESTRICTO
 TIME_RE = re.compile(r"^\d{2}:\d{2}$")
+
 def mmss_to_seconds(s: str) -> int:
-    if not s: return 0
-    m, sec = s.split(":")
-    return int(m)*60 + int(sec)
+    if not s:
+        return 0
+    m, ss = s.split(":")
+    return int(m) * 60 + int(ss)
 
 def seconds_to_mmss(x: int) -> str:
     m, s = divmod(max(0, int(x)), 60)
     return f"{m:02d}:{s:02d}"
 
-# -----------------------------------------------------------------------------
-# Rutas
-# -----------------------------------------------------------------------------
+# --- Memoria (no persistente) ----------------------------------------------
+CAPTURAS = []
+
+# --- Rutas ------------------------------------------------------------------
 @app.get("/health")
 def health():
     return jsonify(status="ok"), 200
@@ -167,12 +121,13 @@ def guardar():
 
     dias = week_dates(semana)
     n = 7
+
     def gi(name): return [request.form.get(f"{name}_{i}", "").strip() for i in range(n)]
     censo      = gi("censo")
-    eventos    = gi("eventos")
-    duplicidad = gi("duplicidad")
+    eventos    = gi("eventos")      # Eventos de seguridad
+    duplicidad = gi("duplicidad")   # antes "doble"
     encuesta   = gi("encuesta")
-    tiempo     = gi("tiempo")
+    tiempo     = gi("tiempo")       # mm:ss
 
     def is_int_or_empty(s): return s == "" or s.isdigit()
     errs = []
@@ -181,170 +136,171 @@ def guardar():
         if not is_int_or_empty(eventos[i]):    errs.append(f"Eventos de seguridad día {i+1} debe ser número.")
         if not is_int_or_empty(duplicidad[i]): errs.append(f"Duplicidad día {i+1} debe ser número.")
         if not is_int_or_empty(encuesta[i]):   errs.append(f"Encuesta día {i+1} debe ser número.")
-        if tiempo[i] and not TIME_RE.match(tiempo[i]): errs.append(f"Tiempo día {i+1} debe ser mm:ss.")
+        if tiempo[i] and not TIME_RE.match(tiempo[i]):
+            errs.append(f"Tiempo día {i+1} debe ser mm:ss (ej: 03:54).")
     if errs:
-        flash("\n".join(errs)); return redirect(url_for("form_semana", semana=semana))
+        flash("\n".join(errs))
+        return redirect(url_for("form_semana", semana=semana))
 
     to_int = lambda s: int(s) if s else 0
-    start, end = WEEK_MAP[semana]
-    db = SessionLocal()
-    try:
-        cap = Capture(semana=semana, rango_ini=start, rango_fin=end)
-        db.add(cap); db.flush()
-
-        for i, d in enumerate(dias):
-            e = DayEntry(
-                capture_id=cap.id,
-                fecha=d,
-                censo=to_int(censo[i]),
-                eventos_seguridad=to_int(eventos[i]),
-                duplicidad=to_int(duplicidad[i]),
-                encuesta=to_int(encuesta[i]),
-                tiempo_seg=mmss_to_seconds(tiempo[i]) if tiempo[i] else 0,
-            )
-            db.add(e)
-
-        db.commit()
-        flash("Datos guardados.")
-    except Exception as ex:
-        db.rollback()
-        flash(f"Error guardando: {ex}")
-    finally:
-        db.close()
-
+    captura = {
+        "semana": semana,
+        "rango": WEEK_MAP[semana],
+        "fechas": [d.isoformat() for d in dias],
+        "censo": [to_int(x) for x in censo],
+        "eventos_seguridad": [to_int(x) for x in eventos],
+        "duplicidad": [to_int(x) for x in duplicidad],
+        "encuesta": [to_int(x) for x in encuesta],
+        "tiempo": tiempo,
+        "creado": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+    }
+    CAPTURAS.append(captura)
+    flash("Datos guardados.")
     return redirect(url_for("listar"))
 
-@app.post("/borrar/<int:capture_id>")
-def borrar(capture_id):
-    db = SessionLocal()
-    try:
-        cap = db.get(Capture, capture_id)
-        if not cap:
-            flash("Registro no encontrado.")
-        else:
-            db.delete(cap); db.commit()
-            flash("Registro eliminado.")
-    except Exception as ex:
-        db.rollback(); flash(f"Error eliminando: {ex}")
-    finally:
-        db.close()
+@app.post("/borrar/<int:idx>")
+def borrar(idx):
+    if 0 <= idx < len(CAPTURAS):
+        CAPTURAS.pop(idx)
+        flash("Registro eliminado.")
+    else:
+        flash("Índice inválido.")
     return redirect(url_for("listar"))
 
 @app.get("/registros")
 def listar():
-    db = SessionLocal()
     registros = []
-    try:
-        caps = db.query(Capture).order_by(Capture.creado.desc()).all()
-        for cap in caps:
-            entradas = db.query(DayEntry).filter(DayEntry.capture_id==cap.id).order_by(DayEntry.fecha).all()
-            tsecs = [e.tiempo_seg for e in entradas]
-            def avg(lst): return round(mean(lst), 2) if lst else 0
-            reg = {
-                "id": cap.id,
-                "semana": cap.semana,
-                "rango": (cap.rango_ini, cap.rango_fin),
-                "creado": cap.creado.strftime("%Y-%m-%d %H:%M:%S"),
-                "fechas": [e.fecha.isoformat() for e in entradas],
-                "censo": [e.censo for e in entradas],
-                "eventos_seguridad": [e.eventos_seguridad for e in entradas],
-                "duplicidad": [e.duplicidad for e in entradas],
-                "encuesta": [e.encuesta for e in entradas],
-                "tiempo": [seconds_to_mmss(e.tiempo_seg) for e in entradas],
-                "prom_censo": avg([e.censo for e in entradas]),
-                "prom_eventos": avg([e.eventos_seguridad for e in entradas]),
-                "prom_duplicidad": avg([e.duplicidad for e in entradas]),
-                "prom_encuesta": avg([e.encuesta for e in entradas]),
-                "prom_tiempo": seconds_to_mmss(int(avg(tsecs))) if tsecs else "00:00",
-            }
-            registros.append(reg)
-    finally:
-        db.close()
+    for c in CAPTURAS:
+        t_secs = [mmss_to_seconds(x) for x in c["tiempo"]]
+        reg = c.copy()
+        reg["prom_censo"] = round(mean(c["censo"]), 2) if c["censo"] else 0
+        reg["prom_eventos"] = round(mean(c["eventos_seguridad"]), 2) if c["eventos_seguridad"] else 0
+        reg["prom_duplicidad"] = round(mean(c["duplicidad"]), 2) if c["duplicidad"] else 0
+        reg["prom_encuesta"] = round(mean(c["encuesta"]), 2) if c["encuesta"] else 0
+        reg["prom_tiempo"] = seconds_to_mmss(int(mean(t_secs))) if t_secs else "00:00"
+        registros.append(reg)
     return render_template("list.html", capturas=registros)
 
-# ---------------- Dashboard: por día (global) y resumen por semana ----------
+@app.get("/download.csv")
+def download_csv():
+    if not CAPTURAS:
+        flash("No hay datos para descargar.")
+        return redirect(url_for("listar"))
+
+    rows = []
+    for c in CAPTURAS:
+        for i, fecha in enumerate(c["fechas"]):
+            rows.append({
+                "semana": c["semana"],
+                "fecha": fecha,
+                "censo": c["censo"][i],
+                "eventos_de_seguridad": c["eventos_seguridad"][i],
+                "duplicidad": c["duplicidad"][i],
+                "encuesta_satisfaccion": c["encuesta"][i],
+                "tiempo_atencion_mmss": c["tiempo"][i],
+            })
+    buf = io.StringIO()
+    fieldnames = ["semana","fecha","censo","eventos_de_seguridad","duplicidad","encuesta_satisfaccion","tiempo_atencion_mmss"]
+    writer = csv.DictWriter(buf, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+    return send_file(
+        io.BytesIO(buf.getvalue().encode("utf-8-sig")),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="capturas.csv"
+    )
+
+# ---------------- Dashboard (AHORA POR DÍA) ---------------------------------
 @app.get("/dashboard")
 def dashboard():
-    db = SessionLocal()
-    try:
-        if db.query(Capture).count() == 0:
-            return render_template("dashboard.html",
-                                   have_data=False, cards={}, labels=[],
-                                   series={}, table=[])
-
-        # Agregación diaria global
-        q = (
-            db.query(
-                DayEntry.fecha.label("fecha"),
-                func.sum(DayEntry.censo).label("censo"),
-                func.sum(DayEntry.eventos_seguridad).label("eventos"),
-                func.sum(DayEntry.duplicidad).label("duplicidad"),
-                func.sum(DayEntry.encuesta).label("encuesta"),
-                func.avg(DayEntry.tiempo_seg).label("tavg")
-            ).group_by(DayEntry.fecha).order_by(DayEntry.fecha)
-        ).all()
-
-        ordered_dates = [r.fecha.isoformat() for r in q]
-        s_censo = [int(r.censo or 0) for r in q]
-        s_eventos = [int(r.eventos or 0) for r in q]
-        s_dup = [int(r.duplicidad or 0) for r in q]
-        s_enc = [int(r.encuesta or 0) for r in q]
-        s_tavg = [int(r.tavg or 0) for r in q]
-
-        cards = {
-            "censo_total": sum(s_censo),
-            "eventos_total": sum(s_eventos),
-            "duplicidad_total": sum(s_dup),
-            "encuesta_total": sum(s_enc),
-            "tiempo_prom_global": seconds_to_mmss(int(mean([x for x in s_tavg if x>0])) if any(s_tavg) else 0),
-        }
-
-        # Resumen por semana
-        qb = (
-            db.query(
-                Capture.semana, Capture.rango_ini, Capture.rango_fin,
-                func.sum(DayEntry.censo).label("censo"),
-                func.sum(DayEntry.eventos_seguridad).label("eventos"),
-                func.sum(DayEntry.duplicidad).label("duplicidad"),
-                func.sum(DayEntry.encuesta).label("encuesta"),
-                func.avg(DayEntry.tiempo_seg).label("tavg")
-            )
-            .join(DayEntry, DayEntry.capture_id==Capture.id)
-            .group_by(Capture.semana, Capture.rango_ini, Capture.rango_fin)
-            .order_by(Capture.semana)
-        ).all()
-
-        table = []
-        for r in qb:
-            censo_sum = int(r.censo or 0)
-            dup_sum = int(r.duplicidad or 0)
-            table.append({
-                "semana": int(r.semana),
-                "rango": (r.rango_ini, r.rango_fin),
-                "censo": censo_sum,
-                "eventos": int(r.eventos or 0),
-                "duplicidad": dup_sum,
-                "encuesta": int(r.encuesta or 0),
-                "t_prom": seconds_to_mmss(int(r.tavg or 0)),
-                "dup_x100": round((dup_sum / censo_sum * 100), 2) if censo_sum else 0.0,
-            })
-
-        series = {
-            "labels_days": ordered_dates,
-            "censo": s_censo,
-            "eventos": s_eventos,
-            "duplicidad": s_dup,
-            "encuesta": s_enc,
-            "tavg_sec": s_tavg,
-        }
-
+    if not CAPTURAS:
         return render_template("dashboard.html",
-                               have_data=True, cards=cards,
-                               labels=ordered_dates, series=series, table=table)
-    finally:
-        db.close()
+                               have_data=False,
+                               cards={},
+                               labels=[],
+                               series={},
+                               table=[])
 
-# -----------------------------------------------------------------------------
+    # Agregación diaria global (sumas por día; tiempo = promedio por día)
+    per_day = {}  # { 'YYYY-MM-DD': {censo, eventos, duplicidad, encuesta, tiempos_segundos[]} }
+    for c in CAPTURAS:
+        for i, fecha in enumerate(c["fechas"]):
+            d = per_day.setdefault(fecha, {"censo":0, "eventos":0, "duplicidad":0, "encuesta":0, "tiempos": []})
+            d["censo"]      += c["censo"][i]
+            d["eventos"]    += c["eventos_seguridad"][i]
+            d["duplicidad"] += c["duplicidad"][i]
+            d["encuesta"]   += c["encuesta"][i]
+            d["tiempos"].append(mmss_to_seconds(c["tiempo"][i]) if c["tiempo"][i] else 0)
+
+    # ordenar por fecha
+    ordered_dates = sorted(per_day.keys())
+    s_censo, s_eventos, s_duplicidad, s_encuesta, s_tavg = [], [], [], [], []
+    for d in ordered_dates:
+        s_censo.append(per_day[d]["censo"])
+        s_eventos.append(per_day[d]["eventos"])
+        s_duplicidad.append(per_day[d]["duplicidad"])
+        s_encuesta.append(per_day[d]["encuesta"])
+        avg_s = int(mean(per_day[d]["tiempos"])) if per_day[d]["tiempos"] else 0
+        s_tavg.append(avg_s)
+
+    # tarjetas (totales y promedio global de tiempo)
+    cards = {
+        "censo_total": sum(s_censo),
+        "eventos_total": sum(s_eventos),
+        "duplicidad_total": sum(s_duplicidad),
+        "encuesta_total": sum(s_encuesta),
+        "tiempo_prom_global": seconds_to_mmss(int(mean([x for x in s_tavg if x>0])) if any(s_tavg) else 0),
+    }
+
+    # tabla por semana (dejamos igual que antes, sin ratios eventos/encuesta x100)
+    # agrupamos por semana solo para la tabla resumen
+    def mmss_to_s_list(lst): return [mmss_to_seconds(x) for x in lst]
+    by_week = {}
+    for c in CAPTURAS:
+        w = c["semana"]
+        if w not in by_week:
+            by_week[w] = {"rango": c["rango"], "censo": [], "eventos": [], "duplicidad": [], "encuesta": [], "tiempo_s": []}
+        by_week[w]["censo"]      += c["censo"]
+        by_week[w]["eventos"]    += c["eventos_seguridad"]
+        by_week[w]["duplicidad"] += c["duplicidad"]
+        by_week[w]["encuesta"]   += c["encuesta"]
+        by_week[w]["tiempo_s"]   += mmss_to_s_list(c["tiempo"])
+
+    table = []
+    for w in sorted(by_week.keys()):
+        b = by_week[w]
+        censo_sum = sum(b["censo"])
+        dup_sum   = sum(b["duplicidad"])
+        table.append({
+            "semana": w,
+            "rango": b["rango"],
+            "censo": censo_sum,
+            "eventos": sum(b["eventos"]),
+            "duplicidad": dup_sum,
+            "encuesta": sum(b["encuesta"]),
+            "t_prom": seconds_to_mmss(int(mean(b["tiempo_s"])) if b["tiempo_s"] else 0),
+            "dup_x100": round((dup_sum / censo_sum * 100), 2) if censo_sum else 0.0
+        })
+
+    series = {
+        "labels_days": ordered_dates,
+        "censo": s_censo,
+        "eventos": s_eventos,
+        "duplicidad": s_duplicidad,
+        "encuesta": s_encuesta,
+        "tavg_sec": s_tavg,
+    }
+
+    return render_template("dashboard.html",
+                           have_data=True,
+                           cards=cards,
+                           labels=ordered_dates,
+                           series=series,
+                           table=table)
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+
 
