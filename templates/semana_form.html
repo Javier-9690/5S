@@ -39,7 +39,7 @@
               <th>Día</th>
               <th>Censo<br/><span class="muted">Cantidad</span></th>
               <th>Eventos de seguridad<br/><span class="muted">Cantidad</span></th>
-              <th>Doble asignación<br/><span class="muted">Cantidad</span></th>
+              <th>Duplicidad<br/><span class="muted">Cantidad</span></th>
               <th>Encuesta de satisfacción<br/><span class="muted">Cantidad</span></th>
               <th>Tiempo de atención<br/><span class="muted">mm:ss</span></th>
             </tr>
@@ -50,7 +50,7 @@
                 <td style="white-space:nowrap">{{ d }}</td>
                 <td><input type="number" min="0" name="censo_{{ loop.index0 }}" placeholder="0"></td>
                 <td><input type="number" min="0" name="eventos_{{ loop.index0 }}" placeholder="0"></td>
-                <td><input type="number" min="0" name="doble_{{ loop.index0 }}" placeholder="0"></td>
+                <td><input type="number" min="0" name="duplicidad_{{ loop.index0 }}" placeholder="0"></td>
                 <td><input type="number" min="0" name="encuesta_{{ loop.index0 }}" placeholder="0"></td>
                 <td>
                   <input
@@ -83,18 +83,15 @@
         if (!v) return "";
         const parts = v.trim().split(":").map(p => p.trim());
         if (parts.length === 1) {
-          // "7" -> "07:00"
           const m = parts[0].replace(/\D/g, "");
           if (m === "") return "";
           return String(m).padStart(2, "0") + ":00";
         } else if (parts.length === 2) {
-          // "3:5" -> "03:05"
           const m = parts[0].replace(/\D/g, "");
           const s = parts[1].replace(/\D/g, "");
           if (m === "" && s === "") return "";
           return String(m || "0").padStart(2, "0") + ":" + String(s || "0").padStart(2, "0");
         } else {
-          // "hh:mm:ss" -> usa las dos últimas partes (mm:ss)
           const m = parts[parts.length - 2].replace(/\D/g, "");
           const s = parts[parts.length - 1].replace(/\D/g, "");
           return String(m || "0").padStart(2, "0") + ":" + String(s || "0").padStart(2, "0");
@@ -112,7 +109,6 @@
         }
       }
 
-      // Normaliza al salir del input y valida
       document.querySelectorAll('input.tiempo-mmss').forEach(inp => {
         inp.addEventListener('blur', () => {
           inp.value = normalizeToMMSS(inp.value);
@@ -121,7 +117,6 @@
         inp.addEventListener('input', () => validateMMSS(inp));
       });
 
-      // Normaliza y valida antes de enviar
       const form = document.querySelector('form[action="{{ url_for("guardar") }}"]');
       if (form) {
         form.addEventListener('submit', (e) => {
@@ -129,7 +124,6 @@
             inp.value = normalizeToMMSS(inp.value);
             validateMMSS(inp);
           });
-          // si alguno no es válido, evita enviar y muestra el tooltip del primero
           const firstInvalid = Array.from(document.querySelectorAll('input.tiempo-mmss')).find(i => !i.checkValidity());
           if (firstInvalid) {
             e.preventDefault();
@@ -140,3 +134,4 @@
     </script>
   {% endif %}
 {% endblock %}
+
