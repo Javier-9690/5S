@@ -3,12 +3,13 @@
   <h1>Ingresar nuevo registro</h1>
   <p class="muted">Selecciona una semana. Se mostrarán sus 7 días y podrás ingresar los valores por día.</p>
 
+  <!-- usa .grid.controls para alinear el select con los botones -->
   <form method="get" action="{{ url_for('form_semana') }}">
-    <div class="grid">
+    <div class="grid controls">
       <div>
         <label>Semana</label>
         <select name="semana" required>
-          <option value="" disabled {{ 'selected' if not semana_sel }}>-- elegir --</option>
+          <option value="" disabled {{ 'selected' if not semana_sel }}>-- Elegir --</option>
           {% for num, rango in week_map.items()|sort %}
             <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>
               {{ num }} ({{ rango[0] }} → {{ rango[1] }})
