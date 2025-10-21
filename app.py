@@ -248,7 +248,6 @@ def borrar(capture_id):
 def listar():
     pares = []  # [(capture_id, reg), ...]
     try:
-    # Leer SIEMPRE desde la BD
         db = SessionLocal()
         caps = db.query(Capture).order_by(Capture.id.desc()).all()
         for cap in caps:
@@ -412,7 +411,4 @@ def dashboard():
 # ---------------- Main ----------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
-
-
 
