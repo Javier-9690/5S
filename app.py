@@ -69,10 +69,8 @@ def upload():
     try:
         if filename.endswith(".xlsx"):
             df = pd.read_excel(f, engine="openpyxl")
-        elif filename.endswith(".xlsb"):
-            df = pd.read_excel(f, engine="pyxlsb")
         else:
-            flash("Formato no soportado. Usa .xlsx o .xlsb.")
+            flash("Formato no soportado. Usa .xlsx"
             return redirect(url_for("index"))
     except Exception as e:
         flash(f"Error leyendo el Excel: {e}")
