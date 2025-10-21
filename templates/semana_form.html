@@ -52,7 +52,15 @@
                 <td><input type="number" min="0" name="eventos_{{ loop.index0 }}" placeholder="0"></td>
                 <td><input type="number" min="0" name="doble_{{ loop.index0 }}" placeholder="0"></td>
                 <td><input type="number" min="0" name="encuesta_{{ loop.index0 }}" placeholder="0"></td>
-                <td><input type="text" name="tiempo_{{ loop.index0 }}" placeholder="mm:ss" pattern="\\d{1,2}:\\d{2}" title="Formato mm:ss"></td>
+                <td>
+                  <input
+                    type="text"
+                    name="tiempo_{{ loop.index0 }}"
+                    placeholder="mm:ss"
+                    pattern="\\d{2}:\\d{2}"
+                    title="Formato mm:ss, ej: 03:54"
+                  >
+                </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -67,4 +75,5 @@
     </form>
   {% endif %}
 {% endblock %}
+
 
