@@ -2,7 +2,7 @@
 {% block content %}
   <h1>Registros guardados</h1>
   <div class="toolbar">
-    <a class="btn primary" href="{{ url_for('form_semana') }}">Nueva captura</a>
+    <a class="btn" href="{{ url_for('form_semana') }}">Ingresar nuevo registro</a>
     <a class="btn" href="{{ url_for('download_csv') }}">Descargar CSV</a>
     <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
   </div>
@@ -59,4 +59,5 @@
     {% endfor %}
   {% endif %}
 {% endblock %}
+
 
