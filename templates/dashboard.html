@@ -18,14 +18,7 @@
       <div class="card"><strong>Tiempo prom. global</strong><div>{{ cards.tiempo_prom_global }}</div></div>
     </div>
 
-    <style>
-      .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; text-align:center; }
-      .chart-box{width:100%; height:380px; margin:10px 0 24px;}
-      .panel{background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px;}
-      .chart-title{font-weight:800; font-size:18px; margin:14px 0 4px;}
-    </style>
-
-    <div class="panel">
+    <div class="panel" style="margin-top:12px;">
       <div class="chart-title">Censo por día</div>
       <div class="chart-box"><canvas id="chartCenso"></canvas></div>
 
@@ -68,7 +61,7 @@
                 <td>{{ r['duplicidad'] }}</td>
                 <td>{{ r['encuesta'] }}</td>
                 <td>{{ r['t_prom'] }}</td>
-                <td>{{ '%.2f%%'|format(r['dup_x100']) }}</td>  <!-- porcentaje -->
+                <td>{{ '%.2f%%'|format(r['dup_x100']) }}</td>
               </tr>
             {% endfor %}
           </tbody>
