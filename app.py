@@ -78,7 +78,7 @@ def week_dates(week_number: int):
     d0 = date.fromisoformat(start_str)
     return [d0 + timedelta(days=i) for i in range(7)]
 
-# mm:ss ESTRICTO (dos dígitos y dos dígitos)
+# mm:ss ESTRICTO
 TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 
 def mmss_to_seconds(s: str) -> int:
@@ -92,7 +92,7 @@ def seconds_to_mmss(x: int) -> str:
     return f"{m:02d}:{s:02d}"
 
 # --- Memoria ----------------------------------------------------------------
-CAPTURAS = []  # cada item: dict con semana, fechas[], eventos[], doble[], encuesta[], tiempo[], censo[]
+CAPTURAS = []  # lista de dicts
 
 # --- Rutas ------------------------------------------------------------------
 @app.get("/health")
@@ -130,7 +130,7 @@ def guardar():
     tiempo   = gi("tiempo")   # mm:ss
     censo    = gi("censo")
 
-    # validación básica
+    # validación
     def is_int_or_empty(s): return s == "" or s.isdigit()
     errs = []
     for i in range(n):
@@ -205,7 +205,6 @@ def dashboard():
                                series={},
                                table=[])
 
-    # agrupar por semana
     def mmss_to_s_list(lst): return [mmss_to_seconds(x) for x in lst]
     by_week = {}
     for c in CAPTURAS:
@@ -221,7 +220,6 @@ def dashboard():
         by_week[w]["encuesta"]+= c["encuesta"]
         by_week[w]["tiempo_s"]+= mmss_to_s_list(c["tiempo"])
 
-    # métricas por semana
     table = []
     labels = []
     censo_totals, ev_totals, do_totals, enc_totals, tavg_totals = [], [], [], [], []
@@ -278,5 +276,6 @@ def dashboard():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
 
 
