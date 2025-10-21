@@ -7,12 +7,14 @@
     <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
   </div>
 
-  {% if not capturas %}
+  {% if not capturas_enumeradas %}
     <p class="muted" style="margin-top:12px;">No hay capturas aún.</p>
   {% else %}
-    {% for c in capturas %}
+    {% for idx, c in capturas_enumeradas %}
       <div style="margin-top:16px;">
-        <h3 style="margin:0 0 6px;">Semana {{ c['semana'] }} ({{ c['rango'][0] }} → {{ c['rango'][1] }})</h3>
+        <h3 style="margin:0 0 6px;">
+          Semana {{ c['semana'] }} ({{ c['rango'][0] }} → {{ c['rango'][1] }})
+        </h3>
         <div class="muted">Creado: {{ c['creado'] }}</div>
 
         <div class="grid" style="grid-template-columns: repeat(5, minmax(160px,1fr)); margin:12px 0;">
@@ -22,7 +24,6 @@
           <div class="card"><strong>Prom. Encuesta</strong><div>{{ c['prom_encuesta'] }}</div></div>
           <div class="card"><strong>Tiempo prom.</strong><div>{{ c['prom_tiempo'] }}</div></div>
         </div>
-        <style>.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;text-align:center;}</style>
 
         <div style="overflow:auto; margin-top:8px;">
           <table>
@@ -51,8 +52,8 @@
           </table>
         </div>
 
-        <!-- 👉 aquí el fix: usar idx=loop.index0 -->
-        <form action="{{ url_for('borrar', idx=loop.index0) }}" method="post"
+        <!-- Usamos idx que viene de enumerate() -->
+        <form action="{{ url_for('borrar', idx=idx) }}" method="post"
               onsubmit="return confirm('¿Eliminar el registro de la semana {{ c['semana'] }}?');"
               style="margin-top:8px;">
           <button class="btn" type="submit">Eliminar registro</button>
