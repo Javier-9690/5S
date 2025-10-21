@@ -56,8 +56,10 @@
                   <input
                     type="text"
                     name="tiempo_{{ loop.index0 }}"
+                    class="tiempo-mmss"
                     placeholder="mm:ss"
-                    pattern="\\d{2}:\\d{2}"
+                    maxlength="5"
+                    pattern="^\d{2}:\d{2}$"
                     title="Formato mm:ss, ej: 03:54"
                   >
                 </td>
@@ -73,7 +75,25 @@
         <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
       </div>
     </form>
-  {% endif %}
-{% endblock %}
+
+    <!-- Autoformateo mm:ss -->
+    <script>
+      function normalizeToMMSS(v) {
+        if (!v) return "";
+        const parts = v.trim().split(":").map(p => p.trim());
+        if (parts.length === 1) {
+          // "7" -> "07:00"
+          const m = parts[0].replace(/\D/g, "");
+          if (m === "") return "";
+          return String(m).padStart(2, "0") + ":00";
+        } else if (parts.length === 2) {
+          // "3:5" -> "03:05"
+          const m = parts[0].replace(/\D/g, "");
+          const s = parts[1].replace(/\D/g, "");
+          if (m === "" && s === "") return "";
+          return String(m || "0").padStart(2, "0") + ":" + String(s || "0").padStart(2, "0");
+        } else {
+          // "hh:mm:ss" -> usa las dos últimas partes (mm:ss)
+          const
 
 
