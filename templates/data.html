@@ -1,1 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Datos cargados</h1>
+  <p class="muted">Total de registros: {{ total }}</p>
+
+  <div class="toolbar">
+    <a class="btn" href="{{ url_for('index') }}">Cargar otro archivo</a>
+    <a class="btn primary" href="{{ url_for('download_csv') }}">Descargar CSV</a>
+  </div>
+
+  <div style="overflow:auto; margin-top:12px;">
+    <table>
+      <thead>
+        <tr>
+          {% for c in columns %}<th>{{ c }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
 
