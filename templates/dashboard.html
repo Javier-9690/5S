@@ -20,17 +20,25 @@
 
     <style>
       .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; text-align:center; }
-      /* contenedor alto y ancho completo para cada gráfico */
-      .chart-box{width:100%; height:380px; margin:18px 0 6px;}
+      .chart-box{width:100%; height:380px; margin:10px 0 24px;}
       .panel{background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px;}
+      .chart-title{font-weight:800; font-size:18px; margin:14px 0 4px;}
     </style>
 
-    <!-- Gráficos por día: UNO POR FILA, GRANDE -->
     <div class="panel">
+      <div class="chart-title">Censo por día</div>
       <div class="chart-box"><canvas id="chartCenso"></canvas></div>
+
+      <div class="chart-title">Eventos de seguridad por día</div>
       <div class="chart-box"><canvas id="chartEventos"></canvas></div>
+
+      <div class="chart-title">Duplicidad por día</div>
       <div class="chart-box"><canvas id="chartDuplicidad"></canvas></div>
+
+      <div class="chart-title">Encuesta por día</div>
       <div class="chart-box"><canvas id="chartEncuesta"></canvas></div>
+
+      <div class="chart-title">Tiempo promedio por día (min)</div>
       <div class="chart-box"><canvas id="chartTiempo"></canvas></div>
     </div>
 
@@ -60,7 +68,7 @@
                 <td>{{ r['duplicidad'] }}</td>
                 <td>{{ r['encuesta'] }}</td>
                 <td>{{ r['t_prom'] }}</td>
-                <td>{{ r['dup_x100'] }}</td>
+                <td>{{ '%.2f%%'|format(r['dup_x100']) }}</td>  <!-- porcentaje -->
               </tr>
             {% endfor %}
           </tbody>
@@ -68,10 +76,8 @@
       </div>
     </div>
 
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      // Datos por día desde el backend
       const labels = {{ series.labels_days|tojson }};
       const censo = {{ series.censo|tojson }};
       const eventos = {{ series.eventos|tojson }};
@@ -80,19 +86,15 @@
       const tavgSec = {{ series.tavg_sec|tojson }};
       const tavgMin = tavgSec.map(s => (s / 60).toFixed(2));
 
-      // Config general: ocupa el padre (.chart-box) de 380px de alto y 100% ancho
       function lineConfig(lbl, data){
         return {
           type: 'line',
           data: { labels, datasets: [{ label: lbl, data, tension: 0.25, pointRadius: 2 }] },
           options: {
             responsive: true,
-            maintainAspectRatio: false,  // usa el alto del contenedor .chart-box
+            maintainAspectRatio: false,
             plugins: { legend: { position: 'bottom' } },
-            scales: {
-              x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true }},
-              y: { beginAtZero: true }
-            }
+            scales: { x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true }}, y: { beginAtZero: true } }
           }
         };
       }
@@ -105,3 +107,4 @@
     </script>
   {% endif %}
 {% endblock %}
+
