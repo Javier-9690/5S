@@ -19,7 +19,8 @@
       <div>
         <label>&nbsp;</label>
         <button class="btn primary" type="submit">Cargar días</button>
-        <a class="btn" href="{{ url_for('listar') }}">Ver registros</a>
+        <a class="btn" href="{{ url_for('listar') }}">Registros</a>
+        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
       </div>
     </div>
   </form>
@@ -36,6 +37,7 @@
           <thead>
             <tr>
               <th>Día</th>
+              <th>Censo<br/><span class="muted">Cantidad</span></th>
               <th>Eventos de seguridad<br/><span class="muted">Cantidad</span></th>
               <th>Doble asignación<br/><span class="muted">Cantidad</span></th>
               <th>Encuesta de satisfacción<br/><span class="muted">Cantidad</span></th>
@@ -46,6 +48,7 @@
             {% for d in dias %}
               <tr>
                 <td style="white-space:nowrap">{{ d }}</td>
+                <td><input type="number" min="0" name="censo_{{ loop.index0 }}" placeholder="0"></td>
                 <td><input type="number" min="0" name="eventos_{{ loop.index0 }}" placeholder="0"></td>
                 <td><input type="number" min="0" name="doble_{{ loop.index0 }}" placeholder="0"></td>
                 <td><input type="number" min="0" name="encuesta_{{ loop.index0 }}" placeholder="0"></td>
@@ -58,8 +61,10 @@
 
       <div class="toolbar">
         <button class="btn primary" type="submit">Guardar</button>
-        <a class="btn" href="{{ url_for('listar') }}">Ver registros</a>
+        <a class="btn" href="{{ url_for('listar') }}">Registros</a>
+        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
       </div>
     </form>
   {% endif %}
 {% endblock %}
+
