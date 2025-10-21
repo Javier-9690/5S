@@ -2,6 +2,7 @@ import os
 import csv
 import io
 import re
+from statistics import mean
 from datetime import datetime, date, timedelta
 from flask import (
     Flask, render_template, request, redirect,
@@ -11,7 +12,7 @@ from flask import (
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
 
-# --- Mapa de semanas: {numero: (inicio, fin)} en ISO (YYYY-MM-DD) ---------------
+# --- Semanas ---------------------------------------------------------------
 WEEK_MAP = {
     42: ("2025-10-13", "2025-10-19"),
     43: ("2025-10-20", "2025-10-26"),
@@ -71,18 +72,28 @@ WEEK_MAP = {
 }
 
 def week_dates(week_number: int):
-    """Devuelve lista de 7 fechas (date) desde el inicio de la semana."""
     if week_number not in WEEK_MAP:
         return []
-    start_str, end_str = WEEK_MAP[week_number]
+    start_str, _ = WEEK_MAP[week_number]
     d0 = date.fromisoformat(start_str)
     return [d0 + timedelta(days=i) for i in range(7)]
 
 TIME_RE = re.compile(r"^\d{1,2}:\d{2}$")  # mm:ss
 
-# almacenamiento en memoria
-CAPTURAS = []  # cada item: dict con 'semana', 'fechas', 'eventos', 'doble', 'encuesta', 'tiempo'
+def mmss_to_seconds(s: str) -> int:
+    if not s:
+        return 0
+    m, ss = s.split(":")
+    return int(m) * 60 + int(ss)
 
+def seconds_to_mmss(x: int) -> str:
+    m, s = divmod(max(0, int(x)), 60)
+    return f"{m:02d}:{s:02d}"
+
+# --- Memoria ----------------------------------------------------------------
+CAPTURAS = []  # cada item: dict con semana, fechas[], eventos[], doble[], encuesta[], tiempo[], censo[]
+
+# --- Rutas ------------------------------------------------------------------
 @app.get("/health")
 def health():
     return jsonify(status="ok"), 200
@@ -93,15 +104,12 @@ def root():
 
 @app.get("/captura")
 def form_semana():
-    # semana preseleccionada (opcional ?semana=43)
     semana_sel = request.args.get("semana", type=int)
     dias = week_dates(semana_sel) if semana_sel else []
-    return render_template(
-        "semana_form.html",
-        week_map=WEEK_MAP,
-        semana_sel=semana_sel,
-        dias=dias
-    )
+    return render_template("semana_form.html",
+                           week_map=WEEK_MAP,
+                           semana_sel=semana_sel,
+                           dias=dias)
 
 @app.post("/guardar")
 def guardar():
@@ -113,40 +121,38 @@ def guardar():
     dias = week_dates(semana)
     n = 7
 
-    # toma arrays del form
-    eventos = [request.form.get(f"eventos_{i}", "").strip() for i in range(n)]
-    doble   = [request.form.get(f"doble_{i}", "").strip() for i in range(n)]
-    encuesta= [request.form.get(f"encuesta_{i}", "").strip() for i in range(n)]
-    tiempo  = [request.form.get(f"tiempo_{i}", "").strip() for i in range(n)]
+    # inputs por día
+    def gi(name): return [request.form.get(f"{name}_{i}", "").strip() for i in range(n)]
+    eventos  = gi("eventos")
+    doble    = gi("doble")
+    encuesta = gi("encuesta")
+    tiempo   = gi("tiempo")   # mm:ss
+    censo    = gi("censo")
 
-    # validaciones básicas
-    def is_int_or_empty(s): 
-        return s == "" or s.isdigit()
+    # validación básica
+    def is_int_or_empty(s): return s == "" or s.isdigit()
     errs = []
     for i in range(n):
-        if not is_int_or_empty(eventos[i]): errs.append(f"Eventos día {i+1} debe ser número.")
-        if not is_int_or_empty(doble[i]):   errs.append(f"Doble asignación día {i+1} debe ser número.")
-        if not is_int_or_empty(encuesta[i]):errs.append(f"Encuesta día {i+1} debe ser número.")
+        if not is_int_or_empty(eventos[i]):  errs.append(f"Eventos día {i+1} debe ser número.")
+        if not is_int_or_empty(doble[i]):    errs.append(f"Doble día {i+1} debe ser número.")
+        if not is_int_or_empty(encuesta[i]): errs.append(f"Encuesta día {i+1} debe ser número.")
+        if not is_int_or_empty(censo[i]):    errs.append(f"Censo día {i+1} debe ser número.")
         if tiempo[i] and not TIME_RE.match(tiempo[i]): 
             errs.append(f"Tiempo día {i+1} debe ser mm:ss (ej: 05:30).")
     if errs:
         flash("\n".join(errs))
         return redirect(url_for("form_semana", semana=semana))
 
-    # normaliza a int / mm:ss
-    def to_int(s): return int(s) if s else 0
-    eventos_i  = [to_int(x) for x in eventos]
-    doble_i    = [to_int(x) for x in doble]
-    encuesta_i = [to_int(x) for x in encuesta]
-
+    to_int = lambda s: int(s) if s else 0
     captura = {
         "semana": semana,
         "rango": WEEK_MAP[semana],
         "fechas": [d.isoformat() for d in dias],
-        "eventos": eventos_i,
-        "doble": doble_i,
-        "encuesta": encuesta_i,
-        "tiempo": tiempo,  # mantener texto mm:ss
+        "eventos":  [to_int(x) for x in eventos],
+        "doble":    [to_int(x) for x in doble],
+        "encuesta": [to_int(x) for x in encuesta],
+        "tiempo":   tiempo,
+        "censo":    [to_int(x) for x in censo],
         "creado": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
     CAPTURAS.append(captura)
@@ -163,20 +169,20 @@ def download_csv():
         flash("No hay datos para descargar.")
         return redirect(url_for("listar"))
 
-    # aplanar para CSV: una fila por día
     rows = []
     for c in CAPTURAS:
         for i, fecha in enumerate(c["fechas"]):
             rows.append({
                 "semana": c["semana"],
                 "fecha": fecha,
+                "censo": c["censo"][i],
                 "eventos_seguridad": c["eventos"][i],
                 "doble_asignacion": c["doble"][i],
                 "encuesta_satisfaccion": c["encuesta"][i],
                 "tiempo_atencion_mmss": c["tiempo"][i],
             })
     buf = io.StringIO()
-    fieldnames = ["semana","fecha","eventos_seguridad","doble_asignacion","encuesta_satisfaccion","tiempo_atencion_mmss"]
+    fieldnames = ["semana","fecha","censo","eventos_seguridad","doble_asignacion","encuesta_satisfaccion","tiempo_atencion_mmss"]
     writer = csv.DictWriter(buf, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(rows)
@@ -186,6 +192,88 @@ def download_csv():
         as_attachment=True,
         download_name="capturas.csv"
     )
+
+# ---------------- Dashboard -------------------------------------------------
+@app.get("/dashboard")
+def dashboard():
+    if not CAPTURAS:
+        return render_template("dashboard.html",
+                               have_data=False,
+                               cards={},
+                               labels=[],
+                               series={},
+                               table=[])
+
+    # agrupar por semana
+    by_week = {}
+    for c in CAPTURAS:
+        w = c["semana"]
+        if w not in by_week:
+            by_week[w] = {
+                "rango": c["rango"],
+                "censo": [], "eventos": [], "doble": [], "encuesta": [], "tiempo_s": []
+            }
+        by_week[w]["censo"]   += c["censo"]
+        by_week[w]["eventos"] += c["eventos"]
+        by_week[w]["doble"]   += c["doble"]
+        by_week[w]["encuesta"]+= c["encuesta"]
+        by_week[w]["tiempo_s"]+= [mmss_to_seconds(x) for x in c["tiempo"]]
+
+    # construir métricas por semana
+    table = []
+    labels = []
+    censo_totals, ev_totals, do_totals, enc_totals, tavg_totals = [], [], [], [], []
+    for w in sorted(by_week.keys()):
+        b = by_week[w]
+        censo_sum   = sum(b["censo"])
+        eventos_sum = sum(b["eventos"])
+        doble_sum   = sum(b["doble"])
+        enc_sum     = sum(b["encuesta"])
+        tavg_sec    = int(mean(b["tiempo_s"])) if b["tiempo_s"] else 0
+        labels.append(str(w))
+        censo_totals.append(censo_sum)
+        ev_totals.append(eventos_sum)
+        do_totals.append(doble_sum)
+        enc_totals.append(enc_sum)
+        tavg_totals.append(tavg_sec)
+        # ratios por 100 censo (ev, doble, encuesta)
+        ratio_ev = round((eventos_sum / censo_sum * 100), 2) if censo_sum else 0.0
+        ratio_do = round((doble_sum   / censo_sum * 100), 2) if censo_sum else 0.0
+        ratio_en = round((enc_sum     / censo_sum * 100), 2) if censo_sum else 0.0
+        table.append({
+            "semana": w,
+            "rango": b["rango"],
+            "censo": censo_sum,
+            "eventos": eventos_sum,
+            "doble": doble_sum,
+            "encuesta": enc_sum,
+            "t_prom": seconds_to_mmss(tavg_sec),
+            "ev_x100": ratio_ev,
+            "doble_x100": ratio_do,
+            "enc_x100": ratio_en
+        })
+
+    cards = {
+        "censo_total": sum(censo_totals),
+        "eventos_total": sum(ev_totals),
+        "doble_total": sum(do_totals),
+        "encuesta_total": sum(enc_totals),
+        "tiempo_prom_global": seconds_to_mmss(int(mean([x for x in tavg_totals if x>0])) if any(tavg_totals) else 0),
+    }
+    series = {
+        "censo": censo_totals,
+        "eventos": ev_totals,
+        "doble": do_totals,
+        "encuesta": enc_totals,
+        "tavg_sec": tavg_totals,
+    }
+
+    return render_template("dashboard.html",
+                           have_data=True,
+                           cards=cards,
+                           labels=labels,
+                           series=series,
+                           table=table)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
