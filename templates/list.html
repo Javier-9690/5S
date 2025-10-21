@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-  <!-- v2: usa capturas_enumeradas e idx -->
   <h1>Registros guardados</h1>
   <div class="toolbar">
     <a class="btn" href="{{ url_for('form_semana') }}">Ingresar nuevo registro</a>
@@ -8,10 +7,10 @@
     <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
   </div>
 
-  {% if not capturas_enumeradas %}
+  {% if not capturas_id_reg %}
     <p class="muted" style="margin-top:12px;">No hay capturas aún.</p>
   {% else %}
-    {% for idx, c in capturas_enumeradas %}
+    {% for capture_id, c in capturas_id_reg %}
       <div style="margin-top:16px;">
         <h3 style="margin:0 0 6px;">
           Semana {{ c['semana'] }} ({{ c['rango'][0] }} → {{ c['rango'][1] }})
@@ -54,8 +53,7 @@
           </table>
         </div>
 
-        <!-- ✅ usar idx que llega desde enumerate(), y endpoint 'borrar' -->
-        <form action="{{ url_for('borrar', idx=idx) }}" method="post"
+        <form action="{{ url_for('borrar', capture_id=capture_id) }}" method="post"
               onsubmit="return confirm('¿Eliminar el registro de la semana {{ c['semana'] }}?');"
               style="margin-top:8px;">
           <button class="btn" type="submit">Eliminar registro</button>
