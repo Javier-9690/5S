@@ -22,11 +22,12 @@
       .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; text-align:center; }
       canvas { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:8px; }
       .notice { padding:10px; background:#eef2ff; border:1px solid #c7d2fe; color:#1e3a8a; border-radius:10px; }
+      .hidden { display:none; }
     </style>
 
     <!-- Gráficos por día -->
     <div id="charts" style="display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px;">
-      <div class="notice" id="no-data-msg" style="display:none;">No hay datos suficientes para graficar.</div>
+      <div class="notice hidden" id="no-data-msg">No hay datos suficientes para graficar.</div>
       <canvas id="chartCenso" height="120"></canvas>
       <canvas id="chartEventos" height="120"></canvas>
       <canvas id="chartDuplicidad" height="120"></canvas>
@@ -66,45 +67,86 @@
       </table>
     </div>
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Carga resiliente de Chart.js: primer CDN + fallback -->
+    <script>
+      (function loadChartJS(){
+        function add(src, onload){
+          var s = document.createElement('script');
+          s.src = src;
+          s.defer = true;
+          s.onload = onload;
+          s.onerror = function(){
+            console.warn('Fallo cargando:', src);
+          };
+          document.head.appendChild(s);
+        }
+        // Primero jsDelivr; si no, unpkg
+        add('https://cdn.jsdelivr.net/npm/chart.js', function(){
+          window.__chartJsLoaded = true;
+        });
+        add('https://unpkg.com/chart.js@4.4.6/dist/chart.umd.js', function(){
+          window.__chartJsLoaded = true;
+        });
+      })();
+    </script>
+
     <script>
       (function(){
-        // 1) Datos desde el backend con defensas
+        // Datos desde backend (protegidos)
         const series = {{ series|tojson }};
-        const labels = Array.isArray(series?.labels_days) ? series.labels_days : [];
-        const censo = Array.isArray(series?.censo) ? series.censo : [];
-        const eventos = Array.isArray(series?.eventos) ? series.eventos : [];
-        const duplicidad = Array.isArray(series?.duplicidad) ? series.duplicidad : [];
-        const encuesta = Array.isArray(series?.encuesta) ? series.encuesta : [];
-        const tavgSec = Array.isArray(series?.tavg_sec) ? series.tavg_sec : [];
+        const labelsIn = Array.isArray(series?.labels_days) ? series.labels_days : [];
+        const toNums = arr => (Array.isArray(arr) ? arr : []).map(v => {
+          const n = Number(v);
+          return Number.isFinite(n) ? n : 0;
+        });
 
-        // 2) Chequeos previos: si algo falla, no rompemos toda la página
+        const dataSets = {
+          censo:       toNums(series?.censo),
+          eventos:     toNums(series?.eventos),
+          duplicidad:  toNums(series?.duplicidad),
+          encuesta:    toNums(series?.encuesta),
+          tavgSec:     toNums(series?.tavg_sec)
+        };
+
+        // Normaliza labels: solo strings
+        const labels = labelsIn.map(x => (x==null ? '' : String(x)));
+
+        // Debug útil en consola
+        console.log('[Dashboard] labels:', labels.length, labels.slice(0,5));
+        console.log('[Dashboard] censo:', dataSets.censo.length);
+        console.log('[Dashboard] eventos:', dataSets.eventos.length);
+        console.log('[Dashboard] duplicidad:', dataSets.duplicidad.length);
+        console.log('[Dashboard] encuesta:', dataSets.encuesta.length);
+        console.log('[Dashboard] tavgSec:', dataSets.tavgSec.length);
+
+        // Mostrar/ocultar aviso
         const noDataMsg = document.getElementById('no-data-msg');
-        function hasGoodData(arr){ return Array.isArray(arr) && arr.length > 0 && arr.every(v => typeof v === 'number'); }
-        const okLabels = Array.isArray(labels) && labels.length > 0;
-
-        // 3) Si Chart no está (CDN caído), avisamos y salimos
-        if (typeof window.Chart === 'undefined') {
-          console.warn('Chart.js no cargó (CDN). Revisa conectividad o política de contenido CSP.');
-          if (noDataMsg) {
-            noDataMsg.style.display = 'block';
-            noDataMsg.textContent = 'No se pudo cargar Chart.js desde CDN. Los gráficos no se mostrarán.';
-          }
-          return;
+        function showNoData(msg){
+          if (!noDataMsg) return;
+          noDataMsg.textContent = msg || 'No hay datos suficientes para graficar. Agrega registros en "Ingresar nuevo registro".';
+          noDataMsg.classList.remove('hidden');
         }
 
-        // 4) Función segura para crear líneas
-        function makeLine(canvasId, label, data, transformFn) {
-          try {
-            const el = document.getElementById(canvasId);
-            if (!el) return;
-            if (!okLabels || !hasGoodData(data)) {
-              console.info(`Sin datos para ${label}`);
-              el.style.display = 'none';
-              return;
-            }
-            const seriesData = transformFn ? data.map(transformFn) : data;
+        // Espera a que Chart.js esté disponible (por si el primer CDN falla y entra el fallback)
+        function whenChartReady(cb, tries=40){
+          if (typeof window.Chart !== 'undefined') return cb();
+          if (tries <= 0) { showNoData('No se pudo cargar Chart.js desde CDN.'); return; }
+          setTimeout(() => whenChartReady(cb, tries-1), 150);
+        }
+
+        function makeLine(canvasId, label, arr, transform){
+          const el = document.getElementById(canvasId);
+          if (!el) return false;
+          // Validación mínima: misma longitud y algo de dato >0 (o al menos algún número)
+          const data = (transform ? arr.map(transform) : arr);
+          const okLabels = labels.length > 0;
+          const okData = Array.isArray(data) && data.length === labels.length && data.some(v => Number.isFinite(Number(v)));
+          if (!okLabels || !okData) {
+            console.info(`Sin datos para ${label} (labels:${labels.length}, data:${data.length})`);
+            el.classList.add('hidden');
+            return false;
+          }
+          try{
             const ctx = el.getContext('2d');
             new Chart(ctx, {
               type: 'line',
@@ -112,7 +154,7 @@
                 labels,
                 datasets: [{
                   label,
-                  data: seriesData,
+                  data,
                   tension: .25,
                   pointRadius: 2
                 }]
@@ -127,30 +169,34 @@
                 }
               }
             });
-          } catch (e) {
-            console.error(`Error creando gráfico ${label}:`, e);
-            const el = document.getElementById(canvasId);
-            if (el) el.style.display = 'none';
+            return true;
+          } catch(e){
+            console.error('Error creando gráfico', label, e);
+            el.classList.add('hidden');
+            return false;
           }
         }
 
-        // 5) Mostrar aviso si no hay nada graficable
-        const graficables =
-          (okLabels && (hasGoodData(censo) || hasGoodData(eventos) || hasGoodData(duplicidad) || hasGoodData(encuesta) || hasGoodData(tavgSec)));
-        if (!graficables && noDataMsg) {
-          noDataMsg.style.display = 'block';
-          noDataMsg.textContent = 'No hay datos suficientes para graficar. Agrega registros en "Ingresar nuevo registro".';
-        }
+        whenChartReady(function(){
+          let drawn = 0;
+          drawn += makeLine('chartCenso', 'Censo por día', dataSets.censo);
+          drawn += makeLine('chartEventos', 'Eventos de seguridad por día', dataSets.eventos);
+          drawn += makeLine('chartDuplicidad', 'Duplicidad por día', dataSets.duplicidad);
+          drawn += makeLine('chartEncuesta', 'Encuesta por día', dataSets.encuesta);
+          drawn += makeLine('chartTiempo', 'Tiempo promedio por día (min)', dataSets.tavgSec, s => Number((s/60).toFixed(2)));
 
-        // 6) Gráficos (tiempo en minutos con 2 decimales)
-        makeLine('chartCenso', 'Censo por día', censo);
-        makeLine('chartEventos', 'Eventos de seguridad por día', eventos);
-        makeLine('chartDuplicidad', 'Duplicidad por día', duplicidad);
-        makeLine('chartEncuesta', 'Encuesta por día', encuesta);
-        makeLine('chartTiempo', 'Tiempo promedio por día (min)', tavgSec, s => Number((s/60).toFixed(2)));
+          if (!drawn) {
+            showNoData();
+          }
+        });
       })();
     </script>
   {% endif %}
-{% endblock %}
 
+  <noscript>
+    <div class="notice" style="margin-top:12px;">
+      Activa JavaScript para ver los gráficos del dashboard.
+    </div>
+  </noscript>
+{% endblock %}
 
