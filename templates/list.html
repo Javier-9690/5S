@@ -3,7 +3,7 @@
   <h1>Registros guardados</h1>
   <div class="toolbar">
     <a class="btn primary" href="{{ url_for('form_semana') }}">Nueva captura</a>
-    <a class="btn" href="{{ url_for('download.csv') if false else url_for('download_csv') }}">Descargar CSV</a>
+    <a class="btn" href="{{ url_for('download_csv') }}">Descargar CSV</a>
     <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
   </div>
 
@@ -14,14 +14,25 @@
       <div style="margin-top:16px;">
         <h3 style="margin:0 0 6px;">Semana {{ c['semana'] }} ({{ c['rango'][0] }} → {{ c['rango'][1] }})</h3>
         <div class="muted">Creado: {{ c['creado'] }}</div>
+
+        <!-- Promedios -->
+        <div class="grid" style="grid-template-columns: repeat(5, minmax(160px,1fr)); margin:12px 0;">
+          <div class="card"><strong>Prom. Censo</strong><div>{{ c['prom_censo'] }}</div></div>
+          <div class="card"><strong>Prom. Eventos de seguridad</strong><div>{{ c['prom_eventos'] }}</div></div>
+          <div class="card"><strong>Prom. Duplicidad</strong><div>{{ c['prom_duplicidad'] }}</div></div>
+          <div class="card"><strong>Prom. Encuesta</strong><div>{{ c['prom_encuesta'] }}</div></div>
+          <div class="card"><strong>Tiempo prom.</strong><div>{{ c['prom_tiempo'] }}</div></div>
+        </div>
+        <style>.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;text-align:center;}</style>
+
         <div style="overflow:auto; margin-top:8px;">
           <table>
             <thead>
               <tr>
                 <th>Fecha</th>
                 <th>Censo</th>
-                <th>Eventos</th>
-                <th>Doble</th>
+                <th>Eventos de seguridad</th>
+                <th>Duplicidad</th>
                 <th>Encuesta</th>
                 <th>Tiempo (mm:ss)</th>
               </tr>
@@ -31,8 +42,8 @@
                 <tr>
                   <td>{{ c['fechas'][i] }}</td>
                   <td>{{ c['censo'][i] }}</td>
-                  <td>{{ c['eventos'][i] }}</td>
-                  <td>{{ c['doble'][i] }}</td>
+                  <td>{{ c['eventos_seguridad'][i] }}</td>
+                  <td>{{ c['duplicidad'][i] }}</td>
                   <td>{{ c['encuesta'][i] }}</td>
                   <td>{{ c['tiempo'][i] }}</td>
                 </tr>
@@ -40,6 +51,10 @@
             </tbody>
           </table>
         </div>
+
+        <form action="{{ url_for('borrar', idx=loop.index0) }}" method="post" onsubmit="return confirm('¿Eliminar el registro de la semana {{ c['semana'] }}?');" style="margin-top:8px;">
+          <button class="btn" type="submit">Eliminar registro</button>
+        </form>
       </div>
     {% endfor %}
   {% endif %}
