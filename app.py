@@ -78,7 +78,8 @@ def week_dates(week_number: int):
     d0 = date.fromisoformat(start_str)
     return [d0 + timedelta(days=i) for i in range(7)]
 
-TIME_RE = re.compile(r"^\d{1,2}:\d{2}$")  # mm:ss
+# mm:ss ESTRICTO (dos dígitos y dos dígitos)
+TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 
 def mmss_to_seconds(s: str) -> int:
     if not s:
@@ -137,8 +138,8 @@ def guardar():
         if not is_int_or_empty(doble[i]):    errs.append(f"Doble día {i+1} debe ser número.")
         if not is_int_or_empty(encuesta[i]): errs.append(f"Encuesta día {i+1} debe ser número.")
         if not is_int_or_empty(censo[i]):    errs.append(f"Censo día {i+1} debe ser número.")
-        if tiempo[i] and not TIME_RE.match(tiempo[i]): 
-            errs.append(f"Tiempo día {i+1} debe ser mm:ss (ej: 05:30).")
+        if tiempo[i] and not TIME_RE.match(tiempo[i]):
+            errs.append(f"Tiempo día {i+1} debe ser mm:ss (ej: 03:54).")
     if errs:
         flash("\n".join(errs))
         return redirect(url_for("form_semana", semana=semana))
@@ -151,7 +152,7 @@ def guardar():
         "eventos":  [to_int(x) for x in eventos],
         "doble":    [to_int(x) for x in doble],
         "encuesta": [to_int(x) for x in encuesta],
-        "tiempo":   tiempo,
+        "tiempo":   tiempo,  # string mm:ss
         "censo":    [to_int(x) for x in censo],
         "creado": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
@@ -205,6 +206,7 @@ def dashboard():
                                table=[])
 
     # agrupar por semana
+    def mmss_to_s_list(lst): return [mmss_to_seconds(x) for x in lst]
     by_week = {}
     for c in CAPTURAS:
         w = c["semana"]
@@ -217,9 +219,9 @@ def dashboard():
         by_week[w]["eventos"] += c["eventos"]
         by_week[w]["doble"]   += c["doble"]
         by_week[w]["encuesta"]+= c["encuesta"]
-        by_week[w]["tiempo_s"]+= [mmss_to_seconds(x) for x in c["tiempo"]]
+        by_week[w]["tiempo_s"]+= mmss_to_s_list(c["tiempo"])
 
-    # construir métricas por semana
+    # métricas por semana
     table = []
     labels = []
     censo_totals, ev_totals, do_totals, enc_totals, tavg_totals = [], [], [], [], []
@@ -236,7 +238,6 @@ def dashboard():
         do_totals.append(doble_sum)
         enc_totals.append(enc_sum)
         tavg_totals.append(tavg_sec)
-        # ratios por 100 censo (ev, doble, encuesta)
         ratio_ev = round((eventos_sum / censo_sum * 100), 2) if censo_sum else 0.0
         ratio_do = round((doble_sum   / censo_sum * 100), 2) if censo_sum else 0.0
         ratio_en = round((enc_sum     / censo_sum * 100), 2) if censo_sum else 0.0
