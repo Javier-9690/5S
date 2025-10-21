@@ -9,11 +9,12 @@
   {% if not have_data %}
     <p class="muted" style="margin-top:12px;">Aún no hay datos.</p>
   {% else %}
+    <!-- Tarjetas -->
     <div class="grid" style="grid-template-columns: repeat(5, minmax(160px,1fr)); margin-top:12px;">
       <div class="card"><strong>Censo total</strong><div>{{ cards.censo_total }}</div></div>
-      <div class="card"><strong>Eventos total</strong><div>{{ cards.eventos_total }}</div></div>
-      <div class="card"><strong>Doble total</strong><div>{{ cards.doble_total }}</div></div>
-      <div class="card"><strong>Encuestas total</strong><div>{{ cards.encuesta_total }}</div></div>
+      <div class="card"><strong>Eventos de seguridad</strong><div>{{ cards.eventos_total }}</div></div>
+      <div class="card"><strong>Duplicidad</strong><div>{{ cards.duplicidad_total }}</div></div>
+      <div class="card"><strong>Encuestas</strong><div>{{ cards.encuesta_total }}</div></div>
       <div class="card"><strong>Tiempo prom. global</strong><div>{{ cards.tiempo_prom_global }}</div></div>
     </div>
 
@@ -22,9 +23,13 @@
       canvas { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:8px; }
     </style>
 
+    <!-- Resumen gráfico por tópico -->
     <div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px;">
-      <canvas id="chartCounts" height="120"></canvas>
-      <canvas id="chartTime" height="120"></canvas>
+      <canvas id="chartCenso" height="110"></canvas>
+      <canvas id="chartEventos" height="110"></canvas>
+      <canvas id="chartDuplicidad" height="110"></canvas>
+      <canvas id="chartEncuesta" height="110"></canvas>
+      <canvas id="chartTiempo" height="110"></canvas>
     </div>
 
     <h2 style="margin-top:16px;">Resumen por semana</h2>
@@ -35,81 +40,55 @@
             <th>Semana</th>
             <th>Rango</th>
             <th>Censo</th>
-            <th>Eventos</th>
-            <th>Doble</th>
+            <th>Eventos de seguridad</th>
+            <th>Duplicidad</th>
             <th>Encuesta</th>
             <th>Tiempo prom.</th>
-            <th>Eventos/100 censo</th>
-            <th>Doble/100 censo</th>
-            <th>Encuesta/100 censo</th>
+            <th>Duplicidad/100 censo</th>
           </tr>
         </thead>
         <tbody>
           {% for r in table %}
             <tr>
-              <td>{{ r.semana if r.semana is defined else r['semana'] }}</td>
+              <td>{{ r['semana'] }}</td>
               <td>{{ r['rango'][0] }} → {{ r['rango'][1] }}</td>
               <td>{{ r['censo'] }}</td>
               <td>{{ r['eventos'] }}</td>
-              <td>{{ r['doble'] }}</td>
+              <td>{{ r['duplicidad'] }}</td>
               <td>{{ r['encuesta'] }}</td>
               <td>{{ r['t_prom'] }}</td>
-              <td>{{ r['ev_x100'] }}</td>
-              <td>{{ r['doble_x100'] }}</td>
-              <td>{{ r['enc_x100'] }}</td>
+              <td>{{ r['dup_x100'] }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
 
-    <!-- Chart.js desde CDN -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
       const labels = {{ labels|tojson }};
-      const censo   = {{ series.censo|tojson }};
-      const eventos = {{ series.eventos|tojson }};
-      const doble   = {{ series.doble|tojson }};
-      const encuesta= {{ series.encuesta|tojson }};
-      const tavgSec = {{ series.tavg_sec|tojson }};
+      const serie = {{ series|tojson }};
 
-      // Gráfico de cantidades (barras apiladas o múltiples)
-      const ctx1 = document.getElementById('chartCounts').getContext('2d');
-      new Chart(ctx1, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { label: 'Censo',    data: censo },
-            { label: 'Eventos',  data: eventos },
-            { label: 'Doble',    data: doble },
-            { label: 'Encuesta', data: encuesta },
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom' } },
-          scales: { x: { stacked:false }, y: { beginAtZero: true } }
-        }
-      });
+      function makeLine(canvasId, label, data, toFixed=0) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        const values = Array.isArray(data) ? data : [];
+        new Chart(ctx, {
+          type: 'line',
+          data: { labels, datasets: [{ label, data: values.map(v => toFixed ? +(+v).toFixed(toFixed) : v) }] },
+          options: { responsive:true, plugins:{ legend:{ position:'bottom'} }, scales:{ y:{ beginAtZero:true } } }
+        });
+      }
 
-      // Gráfico de tiempo promedio (mm:ss) -> mostramos en minutos
-      const tavgMin = tavgSec.map(s => (s/60).toFixed(2));
-      const ctx2 = document.getElementById('chartTime').getContext('2d');
-      new Chart(ctx2, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            { label: 'Tiempo promedio (min)', data: tavgMin }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'bottom' } },
-          scales: { y: { beginAtZero: true } }
-        }
-      });
+      makeLine('chartCenso', 'Censo', serie.censo);
+      makeLine('chartEventos', 'Eventos de seguridad', serie.eventos);
+      makeLine('chartDuplicidad', 'Duplicidad', serie.duplicidad);
+      makeLine('chartEncuesta', 'Encuesta', serie.encuesta);
+
+      // tiempo promedio en minutos con 2 decimales
+      const tavgMin = (serie.tavg_sec || []).map(s => (s/60).toFixed(2));
+      makeLine('chartTiempo', 'Tiempo promedio (min)', tavgMin, 2);
     </script>
   {% endif %}
 {% endblock %}
+
