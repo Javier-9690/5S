@@ -1,2 +1,5 @@
 flask==3.0.3
 gunicorn==22.0.0
+pandas==2.2.2
+openpyxl==3.1.2     # para .xlsx
+pyxlsb==1.0.10      # para .xlsb (opcional)
