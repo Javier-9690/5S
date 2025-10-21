@@ -12,6 +12,7 @@
     *{box-sizing:border-box}
     body{font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--text);}
 
+    /* Header: izquierda (Escondida), centro (Título), derecha (Aramark) */
     header{
       display:grid; grid-template-columns: 1fr auto 1fr; align-items:center;
       gap:12px; padding:10px 18px; background:var(--card);
@@ -21,9 +22,11 @@
     .center {justify-self:center;}
     .right {justify-self:end;}
 
-    .logo-escondida{height:36px; object-fit:contain;}
-    .logo-aramark{height:58px; object-fit:contain;}
+    /* logos */
+    .logo-escondida{height:36px; object-fit:contain;} /* más pequeño que antes */
+    .logo-aramark{height:58px; object-fit:contain;}   /* se mantiene a la derecha */
 
+    /* título grande, centrado y en negrita */
     .title{font-weight:800; font-size:28px; letter-spacing:0.2px; text-align:center; margin:0; color:#0f172a;}
 
     main{
@@ -44,7 +47,7 @@
     input[type="number"], input[type="text"], select{width:100%; padding:8px; border:1px solid var(--border); border-radius:8px; outline:none;}
     input:focus, select:focus{border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.15)}
     .grid{display:grid; grid-template-columns: repeat(2, minmax(220px,1fr)); gap:12px;}
-    .grid.controls{align-items:end;}
+    .grid.controls{align-items:end;} /* <== para alinear select con botones */
 
     footer{text-align:center; color:#9ca3af; padding:16px; font-size:12px;}
   </style>
