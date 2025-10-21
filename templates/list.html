@@ -3,6 +3,7 @@
   <h1>Registros guardados</h1>
   <div class="toolbar">
     <a class="btn" href="{{ url_for('form_semana') }}">Ingresar nuevo registro</a>
+    <a class="btn" href="{{ url_for('download_csv') }}">Descargar CSV</a>
     <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
   </div>
 
@@ -11,9 +12,7 @@
   {% else %}
     {% for c in capturas %}
       <div style="margin-top:16px;">
-        <h3 style="margin:0 0 6px;">
-          Semana {{ c['semana'] }} ({{ c['rango'][0] }} → {{ c['rango'][1] }})
-        </h3>
+        <h3 style="margin:0 0 6px;">Semana {{ c['semana'] }} ({{ c['rango'][0] }} → {{ c['rango'][1] }})</h3>
         <div class="muted">Creado: {{ c['creado'] }}</div>
 
         <div class="grid" style="grid-template-columns: repeat(5, minmax(160px,1fr)); margin:12px 0;">
@@ -52,7 +51,7 @@
           </table>
         </div>
 
-        <!-- IMPORTANTE: usar idx=loop.index0, porque la ruta espera 'idx' -->
+        <!-- 👉 aquí el fix: usar idx=loop.index0 -->
         <form action="{{ url_for('borrar', idx=loop.index0) }}" method="post"
               onsubmit="return confirm('¿Eliminar el registro de la semana {{ c['semana'] }}?');"
               style="margin-top:8px;">
@@ -62,7 +61,6 @@
     {% endfor %}
   {% endif %}
 {% endblock %}
-
 
 
 
