@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-  <h1>Captura semanal</h1>
+  <h1>Ingresar nuevo registro</h1>
   <p class="muted">Selecciona una semana. Se mostrarán sus 7 días y podrás ingresar los valores por día.</p>
 
   <form method="get" action="{{ url_for('form_semana') }}">
@@ -18,7 +18,7 @@
       </div>
       <div>
         <label>&nbsp;</label>
-        <button class="btn primary" type="submit">Cargar días</button>
+        <button class="btn" type="submit">Cargar días</button>
         <a class="btn" href="{{ url_for('listar') }}">Registros</a>
         <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
       </div>
@@ -71,7 +71,7 @@
       </div>
 
       <div class="toolbar">
-        <button class="btn primary" type="submit">Guardar</button>
+        <button class="btn" type="submit">Guardar</button>
         <a class="btn" href="{{ url_for('listar') }}">Registros</a>
         <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
       </div>
@@ -97,41 +97,26 @@
           return String(m || "0").padStart(2, "0") + ":" + String(s || "0").padStart(2, "0");
         }
       }
-
       const regexp = /^[0-9]{2}:[0-9]{2}$/;
-
       function validateMMSS(inp) {
         const val = inp.value.trim();
-        if (val === "" || regexp.test(val)) {
-          inp.setCustomValidity("");
-        } else {
-          inp.setCustomValidity("Formato mm:ss, ej: 03:54");
-        }
+        if (val === "" || regexp.test(val)) inp.setCustomValidity("");
+        else inp.setCustomValidity("Formato mm:ss, ej: 03:54");
       }
-
       document.querySelectorAll('input.tiempo-mmss').forEach(inp => {
-        inp.addEventListener('blur', () => {
-          inp.value = normalizeToMMSS(inp.value);
-          validateMMSS(inp);
-        });
+        inp.addEventListener('blur', () => { inp.value = normalizeToMMSS(inp.value); validateMMSS(inp); });
         inp.addEventListener('input', () => validateMMSS(inp));
       });
-
       const form = document.querySelector('form[action="{{ url_for("guardar") }}"]');
       if (form) {
         form.addEventListener('submit', (e) => {
           document.querySelectorAll('input.tiempo-mmss').forEach(inp => {
-            inp.value = normalizeToMMSS(inp.value);
-            validateMMSS(inp);
+            inp.value = normalizeToMMSS(inp.value); validateMMSS(inp);
           });
           const firstInvalid = Array.from(document.querySelectorAll('input.tiempo-mmss')).find(i => !i.checkValidity());
-          if (firstInvalid) {
-            e.preventDefault();
-            firstInvalid.reportValidity();
-          }
+          if (firstInvalid) { e.preventDefault(); firstInvalid.reportValidity(); }
         });
       }
     </script>
   {% endif %}
 {% endblock %}
-
