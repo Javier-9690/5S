@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Dashboard</h1>
+  <div class="toolbar">
+    <a class="btn" href="{{ url_for('form_semana') }}">Capturar</a>
+    <a class="btn" href="{{ url_for('listar') }}">Registros</a>
+  </div>
+
+  {% if not have_data %}
+    <p class="muted" style="margin-top:12px;">Aún no hay datos.</p>
+  {% else %}
+    <div class="grid" style="grid-template-columns: repeat(5, minmax(160px,1fr)); margin-top:12px;">
+      <div class="card"><strong>Censo total</strong><div>{{ cards.censo_total }}</div></div>
+      <div class="card"><strong>Eventos total</strong><div>{{ cards.eventos_total }}</div></div>
+      <div class="card"><strong>Doble total</strong><div>{{ cards.doble_total }}</div></div>
+      <div class="card"><strong>Encuestas total</strong><div>{{ cards.encuesta_total }}</div></div>
+      <div class="card"><strong>Tiempo prom. global</strong><div>{{ cards.tiempo_prom_global }}</div></div>
+    </div>
+
+    <style>
+      .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; text-align:center; }
+      canvas { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:8px; }
+    </style>
+
+    <div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px;">
+      <canvas id="chartCounts" height="120"></canvas>
+      <canvas id="chartTime" height="120"></canvas>
+    </div>
+
+    <h2 style="margin-top:16px;">Resumen por semana</h2>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Rango</th>
+            <th>Censo</th>
+            <th>Eventos</th>
+            <th>Doble</th>
+            <th>Encuesta</th>
+            <th>Tiempo prom.</th>
+            <th>Eventos/100 censo</th>
+            <th>Doble/100 censo</th>
+            <th>Encuesta/100 censo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in table %}
+            <tr>
+              <td>{{ r.semana if r.semana is defined else r['semana'] }}</td>
+              <td>{{ r['rango'][0] }} → {{ r['rango'][1] }}</td>
+              <td>{{ r['censo'] }}</td>
+              <td>{{ r['eventos'] }}</td>
+              <td>{{ r['doble'] }}</td>
+              <td>{{ r['encuesta'] }}</td>
+              <td>{{ r['t_prom'] }}</td>
+              <td>{{ r['ev_x100'] }}</td>
+              <td>{{ r['doble_x100'] }}</td>
+              <td>{{ r['enc_x100'] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Chart.js desde CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const labels = {{ labels|tojson }};
+      const censo   = {{ series.censo|tojson }};
+      const eventos = {{ series.eventos|tojson }};
+      const doble   = {{ series.doble|tojson }};
+      const encuesta= {{ series.encuesta|tojson }};
+      const tavgSec = {{ series.tavg_sec|tojson }};
+
+      // Gráfico de cantidades (barras apiladas o múltiples)
+      const ctx1 = document.getElementById('chartCounts').getContext('2d');
+      new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Censo',    data: censo },
+            { label: 'Eventos',  data: eventos },
+            { label: 'Doble',    data: doble },
+            { label: 'Encuesta', data: encuesta },
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { x: { stacked:false }, y: { beginAtZero: true } }
+        }
+      });
+
+      // Gráfico de tiempo promedio (mm:ss) -> mostramos en minutos
+      const tavgMin = tavgSec.map(s => (s/60).toFixed(2));
+      const ctx2 = document.getElementById('chartTime').getContext('2d');
+      new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Tiempo promedio (min)', data: tavgMin }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    </script>
+  {% endif %}
+{% endblock %}
