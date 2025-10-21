@@ -11,9 +11,7 @@ from flask import (
 )
 
 # -------------------- BD: SQLAlchemy --------------------
-from sqlalchemy import (
-    create_engine, Column, Integer, String, Date, DateTime, ForeignKey
-)
+from sqlalchemy import create_engine, Column, Integer, Date, DateTime, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -22,7 +20,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
 
 # ---------- Conexión a BD ----------
 def _normalize_db_url(url: str) -> str:
-    # Asegura el driver psycopg2 y SSL
+    # Fuerza driver psycopg2 y SSL si no viene
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+psycopg2://", 1)
     elif url.startswith("postgresql://"):
@@ -64,7 +62,7 @@ class CaptureDay(Base):
 
     capture = relationship("Capture", back_populates="days")
 
-# Crea tablas si no existen (simple)
+# Crea tablas si no existen
 Base.metadata.create_all(ENGINE)
 
 # -------------------- Semanas / utilitarios --------------------
@@ -250,6 +248,7 @@ def borrar(capture_id):
 def listar():
     pares = []  # [(capture_id, reg), ...]
     try:
+    # Leer SIEMPRE desde la BD
         db = SessionLocal()
         caps = db.query(Capture).order_by(Capture.id.desc()).all()
         for cap in caps:
@@ -288,6 +287,7 @@ def listar():
 
 @app.get("/download.csv")
 def download_csv():
+    """Exporta SIEMPRE desde la BD (captures + capture_days)."""
     try:
         db = SessionLocal()
         caps = db.query(Capture).order_by(Capture.semana).all()
@@ -309,7 +309,11 @@ def download_csv():
                 })
 
         buf = io.StringIO()
-        fieldnames = ["semana","fecha","censo","eventos_de_seguridad","duplicidad","encuesta_satisfaccion","tiempo_atencion_mmss"]
+        fieldnames = [
+            "semana", "fecha", "censo",
+            "eventos_de_seguridad", "duplicidad",
+            "encuesta_satisfaccion", "tiempo_atencion_mmss"
+        ]
         writer = csv.DictWriter(buf, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
