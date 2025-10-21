@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+  <h1>Registros</h1>
+  <p class="muted">Total: {{ total }}</p>
+
+  <div class="toolbar">
+    <a class="btn primary" href="{{ url_for('nuevo') }}">Nuevo registro</a>
+    <a class="btn" href="{{ url_for('download_csv') }}">Descargar CSV</a>
+  </div>
+
+  <div style="overflow:auto; margin-top:12px;">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          {% for c in campos %}<th>{{ c }}</th>{% endfor %}
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in registros %}
+          <tr>
+            <td>{{ loop.index0 }}</td>
+            {% for c in campos %}
+              <td>{{ r.get(c, "") }}</td>
+            {% endfor %}
+            <td>
+              <form action="{{ url_for('borrar', idx=loop.index0) }}" method="post" onsubmit="return confirm('¿Borrar este registro?');">
+                <button class="btn" type="submit">Borrar</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        {% if registros|length == 0 %}
+          <tr><td colspan="{{ campos|length + 2 }}" class="muted">Sin datos aún. Usa “Nuevo registro”.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
