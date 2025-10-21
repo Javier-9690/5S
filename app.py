@@ -158,8 +158,18 @@ def guardar():
     flash("Datos guardados.")
     return redirect(url_for("listar"))
 
+# --- Borrar con compatibilidad (idx o capture_id) ---------------------------
 @app.post("/borrar/<int:idx>")
-def borrar(idx):
+@app.post("/borrar/<int:capture_id>")
+def borrar(idx=None, capture_id=None):
+    # Compatibilidad por si alguna plantilla antigua manda capture_id
+    if idx is None and capture_id is not None:
+        idx = capture_id
+
+    if idx is None:
+        flash("Índice inválido.")
+        return redirect(url_for("listar"))
+
     if 0 <= idx < len(CAPTURAS):
         CAPTURAS.pop(idx)
         flash("Registro eliminado.")
@@ -179,7 +189,10 @@ def listar():
         reg["prom_encuesta"] = round(mean(c["encuesta"]), 2) if c["encuesta"] else 0
         reg["prom_tiempo"] = seconds_to_mmss(int(mean(t_secs))) if t_secs else "00:00"
         registros.append(reg)
-    return render_template("list.html", capturas=registros)
+
+    # Pasamos (idx, registro) para usar idx real en la plantilla
+    capturas_enumeradas = list(enumerate(registros))
+    return render_template("list.html", capturas_enumeradas=capturas_enumeradas)
 
 @app.get("/download.csv")
 def download_csv():
@@ -211,7 +224,7 @@ def download_csv():
         download_name="capturas.csv"
     )
 
-# ---------------- Dashboard (AHORA POR DÍA) ---------------------------------
+# ---------------- Dashboard (por día) ---------------------------------------
 @app.get("/dashboard")
 def dashboard():
     if not CAPTURAS:
@@ -253,10 +266,9 @@ def dashboard():
         "tiempo_prom_global": seconds_to_mmss(int(mean([x for x in s_tavg if x>0])) if any(s_tavg) else 0),
     }
 
-    # tabla por semana (dejamos igual que antes, sin ratios eventos/encuesta x100)
-    # agrupamos por semana solo para la tabla resumen
-    def mmss_to_s_list(lst): return [mmss_to_seconds(x) for x in lst]
+    # tabla por semana (sin ratios de eventos/encuesta x100; solo duplicidad/100 censo)
     by_week = {}
+    def mmss_to_s_list(lst): return [mmss_to_seconds(x) for x in lst]
     for c in CAPTURAS:
         w = c["semana"]
         if w not in by_week:
