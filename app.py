@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.get("/")
 def index():
-    return "Flask Minimal Demo: OK"
+    return "Flask Minimal Demo: OK"    
 
 @app.get("/health")
 def health():
@@ -15,7 +15,7 @@ def health():
 @app.get("/api/time")
 def time_now():
     now_utc = datetime.now(timezone.utc).isoformat()
-    return jsonify(utc=now_utc)
+    return jsonify(utc=now_utc)    
 
 @app.post("/api/echo")
 def echo():
