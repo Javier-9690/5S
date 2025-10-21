@@ -59,7 +59,8 @@
                     class="tiempo-mmss"
                     placeholder="mm:ss"
                     maxlength="5"
-                    pattern="^\d{2}:\d{2}$"
+                    inputmode="numeric"
+                    pattern="[0-9]{2}:[0-9]{2}"
                     title="Formato mm:ss, ej: 03:54"
                   >
                 </td>
@@ -76,7 +77,7 @@
       </div>
     </form>
 
-    <!-- Autoformateo mm:ss -->
+    <!-- Autoformateo + validación amistosa mm:ss -->
     <script>
       function normalizeToMMSS(v) {
         if (!v) return "";
@@ -94,6 +95,48 @@
           return String(m || "0").padStart(2, "0") + ":" + String(s || "0").padStart(2, "0");
         } else {
           // "hh:mm:ss" -> usa las dos últimas partes (mm:ss)
-          const
+          const m = parts[parts.length - 2].replace(/\D/g, "");
+          const s = parts[parts.length - 1].replace(/\D/g, "");
+          return String(m || "0").padStart(2, "0") + ":" + String(s || "0").padStart(2, "0");
+        }
+      }
 
+      const regexp = /^[0-9]{2}:[0-9]{2}$/;
 
+      function validateMMSS(inp) {
+        const val = inp.value.trim();
+        if (val === "" || regexp.test(val)) {
+          inp.setCustomValidity("");
+        } else {
+          inp.setCustomValidity("Formato mm:ss, ej: 03:54");
+        }
+      }
+
+      // Normaliza al salir del input y valida
+      document.querySelectorAll('input.tiempo-mmss').forEach(inp => {
+        inp.addEventListener('blur', () => {
+          inp.value = normalizeToMMSS(inp.value);
+          validateMMSS(inp);
+        });
+        inp.addEventListener('input', () => validateMMSS(inp));
+      });
+
+      // Normaliza y valida antes de enviar
+      const form = document.querySelector('form[action="{{ url_for("guardar") }}"]');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          document.querySelectorAll('input.tiempo-mmss').forEach(inp => {
+            inp.value = normalizeToMMSS(inp.value);
+            validateMMSS(inp);
+          });
+          // si alguno no es válido, evita enviar y muestra el tooltip del primero
+          const firstInvalid = Array.from(document.querySelectorAll('input.tiempo-mmss')).find(i => !i.checkValidity());
+          if (firstInvalid) {
+            e.preventDefault();
+            firstInvalid.reportValidity();
+          }
+        });
+      }
+    </script>
+  {% endif %}
+{% endblock %}
