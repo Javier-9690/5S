@@ -21,13 +21,12 @@
     <style>
       .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; text-align:center; }
       canvas { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:8px; }
-      @media (max-width: 720px){
-        .card div{font-size:14px}
-      }
+      .notice { padding:10px; background:#eef2ff; border:1px solid #c7d2fe; color:#1e3a8a; border-radius:10px; }
     </style>
 
     <!-- Gráficos por día -->
-    <div style="display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px;">
+    <div id="charts" style="display:grid; grid-template-columns: 1fr; gap:16px; margin-top:16px;">
+      <div class="notice" id="no-data-msg" style="display:none;">No hay datos suficientes para graficar.</div>
       <canvas id="chartCenso" height="120"></canvas>
       <canvas id="chartEventos" height="120"></canvas>
       <canvas id="chartDuplicidad" height="120"></canvas>
@@ -70,33 +69,88 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      const labels = {{ series.labels_days|tojson }};
-      const censo = {{ series.censo|tojson }};
-      const eventos = {{ series.eventos|tojson }};
-      const duplicidad = {{ series.duplicidad|tojson }};
-      const encuesta = {{ series.encuesta|tojson }};
-      const tavgSec = {{ series.tavg_sec|tojson }};
-      const tavgMin = tavgSec.map(s => (s/60).toFixed(2));
+      (function(){
+        // 1) Datos desde el backend con defensas
+        const series = {{ series|tojson }};
+        const labels = Array.isArray(series?.labels_days) ? series.labels_days : [];
+        const censo = Array.isArray(series?.censo) ? series.censo : [];
+        const eventos = Array.isArray(series?.eventos) ? series.eventos : [];
+        const duplicidad = Array.isArray(series?.duplicidad) ? series.duplicidad : [];
+        const encuesta = Array.isArray(series?.encuesta) ? series.encuesta : [];
+        const tavgSec = Array.isArray(series?.tavg_sec) ? series.tavg_sec : [];
 
-      function lineConfig(lbl, data){
-        return {
-          type: 'line',
-          data: { labels, datasets: [{ label: lbl, data, tension:.25, pointRadius:2 }] },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } },
-            scales: { x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true }}, y: { beginAtZero: true } }
+        // 2) Chequeos previos: si algo falla, no rompemos toda la página
+        const noDataMsg = document.getElementById('no-data-msg');
+        function hasGoodData(arr){ return Array.isArray(arr) && arr.length > 0 && arr.every(v => typeof v === 'number'); }
+        const okLabels = Array.isArray(labels) && labels.length > 0;
+
+        // 3) Si Chart no está (CDN caído), avisamos y salimos
+        if (typeof window.Chart === 'undefined') {
+          console.warn('Chart.js no cargó (CDN). Revisa conectividad o política de contenido CSP.');
+          if (noDataMsg) {
+            noDataMsg.style.display = 'block';
+            noDataMsg.textContent = 'No se pudo cargar Chart.js desde CDN. Los gráficos no se mostrarán.';
           }
-        };
-      }
+          return;
+        }
 
-      new Chart(document.getElementById('chartCenso'), lineConfig('Censo por día', censo));
-      new Chart(document.getElementById('chartEventos'), lineConfig('Eventos de seguridad por día', eventos));
-      new Chart(document.getElementById('chartDuplicidad'), lineConfig('Duplicidad por día', duplicidad));
-      new Chart(document.getElementById('chartEncuesta'), lineConfig('Encuesta por día', encuesta));
-      new Chart(document.getElementById('chartTiempo'), lineConfig('Tiempo promedio por día (min)', tavgMin));
+        // 4) Función segura para crear líneas
+        function makeLine(canvasId, label, data, transformFn) {
+          try {
+            const el = document.getElementById(canvasId);
+            if (!el) return;
+            if (!okLabels || !hasGoodData(data)) {
+              console.info(`Sin datos para ${label}`);
+              el.style.display = 'none';
+              return;
+            }
+            const seriesData = transformFn ? data.map(transformFn) : data;
+            const ctx = el.getContext('2d');
+            new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels,
+                datasets: [{
+                  label,
+                  data: seriesData,
+                  tension: .25,
+                  pointRadius: 2
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: {
+                  x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true }},
+                  y: { beginAtZero: true }
+                }
+              }
+            });
+          } catch (e) {
+            console.error(`Error creando gráfico ${label}:`, e);
+            const el = document.getElementById(canvasId);
+            if (el) el.style.display = 'none';
+          }
+        }
+
+        // 5) Mostrar aviso si no hay nada graficable
+        const graficables =
+          (okLabels && (hasGoodData(censo) || hasGoodData(eventos) || hasGoodData(duplicidad) || hasGoodData(encuesta) || hasGoodData(tavgSec)));
+        if (!graficables && noDataMsg) {
+          noDataMsg.style.display = 'block';
+          noDataMsg.textContent = 'No hay datos suficientes para graficar. Agrega registros en "Ingresar nuevo registro".';
+        }
+
+        // 6) Gráficos (tiempo en minutos con 2 decimales)
+        makeLine('chartCenso', 'Censo por día', censo);
+        makeLine('chartEventos', 'Eventos de seguridad por día', eventos);
+        makeLine('chartDuplicidad', 'Duplicidad por día', duplicidad);
+        makeLine('chartEncuesta', 'Encuesta por día', encuesta);
+        makeLine('chartTiempo', 'Tiempo promedio por día (min)', tavgSec, s => Number((s/60).toFixed(2)));
+      })();
     </script>
   {% endif %}
 {% endblock %}
+
 
