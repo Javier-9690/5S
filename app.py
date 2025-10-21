@@ -91,8 +91,13 @@ def seconds_to_mmss(x: int) -> str:
     m, s = divmod(max(0, int(x)), 60)
     return f"{m:02d}:{s:02d}"
 
-# --- Memoria ----------------------------------------------------------------
-CAPTURAS = []  # lista de dicts
+# --- Memoria (no persistente) ----------------------------------------------
+# cada captura:
+# {
+#  semana, rango, fechas[7], censo[7], eventos_seguridad[7],
+#  duplicidad[7], encuesta[7], tiempo[7], creado
+# }
+CAPTURAS = []
 
 # --- Rutas ------------------------------------------------------------------
 @app.get("/health")
@@ -124,20 +129,20 @@ def guardar():
 
     # inputs por día
     def gi(name): return [request.form.get(f"{name}_{i}", "").strip() for i in range(n)]
-    eventos  = gi("eventos")
-    doble    = gi("doble")
-    encuesta = gi("encuesta")
-    tiempo   = gi("tiempo")   # mm:ss
-    censo    = gi("censo")
+    censo     = gi("censo")
+    eventos   = gi("eventos")      # Eventos de seguridad
+    duplicidad= gi("duplicidad")   # antes "doble"
+    encuesta  = gi("encuesta")
+    tiempo    = gi("tiempo")       # mm:ss
 
     # validación
     def is_int_or_empty(s): return s == "" or s.isdigit()
     errs = []
     for i in range(n):
-        if not is_int_or_empty(eventos[i]):  errs.append(f"Eventos día {i+1} debe ser número.")
-        if not is_int_or_empty(doble[i]):    errs.append(f"Doble día {i+1} debe ser número.")
-        if not is_int_or_empty(encuesta[i]): errs.append(f"Encuesta día {i+1} debe ser número.")
-        if not is_int_or_empty(censo[i]):    errs.append(f"Censo día {i+1} debe ser número.")
+        if not is_int_or_empty(censo[i]):      errs.append(f"Censo día {i+1} debe ser número.")
+        if not is_int_or_empty(eventos[i]):    errs.append(f"Eventos de seguridad día {i+1} debe ser número.")
+        if not is_int_or_empty(duplicidad[i]): errs.append(f"Duplicidad día {i+1} debe ser número.")
+        if not is_int_or_empty(encuesta[i]):   errs.append(f"Encuesta día {i+1} debe ser número.")
         if tiempo[i] and not TIME_RE.match(tiempo[i]):
             errs.append(f"Tiempo día {i+1} debe ser mm:ss (ej: 03:54).")
     if errs:
@@ -149,20 +154,40 @@ def guardar():
         "semana": semana,
         "rango": WEEK_MAP[semana],
         "fechas": [d.isoformat() for d in dias],
-        "eventos":  [to_int(x) for x in eventos],
-        "doble":    [to_int(x) for x in doble],
+        "censo": [to_int(x) for x in censo],
+        "eventos_seguridad": [to_int(x) for x in eventos],
+        "duplicidad": [to_int(x) for x in duplicidad],
         "encuesta": [to_int(x) for x in encuesta],
-        "tiempo":   tiempo,  # string mm:ss
-        "censo":    [to_int(x) for x in censo],
+        "tiempo": tiempo,  # string mm:ss
         "creado": datetime.utcnow().isoformat(timespec="seconds") + "Z",
     }
     CAPTURAS.append(captura)
     flash("Datos guardados.")
     return redirect(url_for("listar"))
 
+@app.post("/borrar/<int:idx>")
+def borrar(idx):
+    if 0 <= idx < len(CAPTURAS):
+        CAPTURAS.pop(idx)
+        flash("Registro eliminado.")
+    else:
+        flash("Índice inválido.")
+    return redirect(url_for("listar"))
+
 @app.get("/registros")
 def listar():
-    return render_template("list.html", capturas=CAPTURAS)
+    # preparamos también promedios por registro para la vista
+    registros = []
+    for c in CAPTURAS:
+        t_secs = [mmss_to_seconds(x) for x in c["tiempo"]]
+        reg = c.copy()
+        reg["prom_censo"] = round(mean(c["censo"]), 2) if c["censo"] else 0
+        reg["prom_eventos"] = round(mean(c["eventos_seguridad"]), 2) if c["eventos_seguridad"] else 0
+        reg["prom_duplicidad"] = round(mean(c["duplicidad"]), 2) if c["duplicidad"] else 0
+        reg["prom_encuesta"] = round(mean(c["encuesta"]), 2) if c["encuesta"] else 0
+        reg["prom_tiempo"] = seconds_to_mmss(int(mean(t_secs))) if t_secs else "00:00"
+        registros.append(reg)
+    return render_template("list.html", capturas=registros)
 
 @app.get("/download.csv")
 def download_csv():
@@ -177,13 +202,13 @@ def download_csv():
                 "semana": c["semana"],
                 "fecha": fecha,
                 "censo": c["censo"][i],
-                "eventos_seguridad": c["eventos"][i],
-                "doble_asignacion": c["doble"][i],
+                "eventos_de_seguridad": c["eventos_seguridad"][i],
+                "duplicidad": c["duplicidad"][i],
                 "encuesta_satisfaccion": c["encuesta"][i],
                 "tiempo_atencion_mmss": c["tiempo"][i],
             })
     buf = io.StringIO()
-    fieldnames = ["semana","fecha","censo","eventos_seguridad","doble_asignacion","encuesta_satisfaccion","tiempo_atencion_mmss"]
+    fieldnames = ["semana","fecha","censo","eventos_de_seguridad","duplicidad","encuesta_satisfaccion","tiempo_atencion_mmss"]
     writer = csv.DictWriter(buf, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerows(rows)
@@ -206,63 +231,65 @@ def dashboard():
                                table=[])
 
     def mmss_to_s_list(lst): return [mmss_to_seconds(x) for x in lst]
+
     by_week = {}
     for c in CAPTURAS:
         w = c["semana"]
         if w not in by_week:
             by_week[w] = {
                 "rango": c["rango"],
-                "censo": [], "eventos": [], "doble": [], "encuesta": [], "tiempo_s": []
+                "censo": [], "eventos": [], "duplicidad": [], "encuesta": [], "tiempo_s": []
             }
-        by_week[w]["censo"]   += c["censo"]
-        by_week[w]["eventos"] += c["eventos"]
-        by_week[w]["doble"]   += c["doble"]
-        by_week[w]["encuesta"]+= c["encuesta"]
-        by_week[w]["tiempo_s"]+= mmss_to_s_list(c["tiempo"])
+        by_week[w]["censo"]      += c["censo"]
+        by_week[w]["eventos"]    += c["eventos_seguridad"]
+        by_week[w]["duplicidad"] += c["duplicidad"]
+        by_week[w]["encuesta"]   += c["encuesta"]
+        by_week[w]["tiempo_s"]   += mmss_to_s_list(c["tiempo"])
 
     table = []
     labels = []
-    censo_totals, ev_totals, do_totals, enc_totals, tavg_totals = [], [], [], [], []
+    censo_totals, ev_totals, dup_totals, enc_totals, tavg_totals = [], [], [], [], []
     for w in sorted(by_week.keys()):
         b = by_week[w]
         censo_sum   = sum(b["censo"])
         eventos_sum = sum(b["eventos"])
-        doble_sum   = sum(b["doble"])
+        dup_sum     = sum(b["duplicidad"])
         enc_sum     = sum(b["encuesta"])
         tavg_sec    = int(mean(b["tiempo_s"])) if b["tiempo_s"] else 0
+
         labels.append(str(w))
         censo_totals.append(censo_sum)
         ev_totals.append(eventos_sum)
-        do_totals.append(doble_sum)
+        dup_totals.append(dup_sum)
         enc_totals.append(enc_sum)
         tavg_totals.append(tavg_sec)
-        ratio_ev = round((eventos_sum / censo_sum * 100), 2) if censo_sum else 0.0
-        ratio_do = round((doble_sum   / censo_sum * 100), 2) if censo_sum else 0.0
-        ratio_en = round((enc_sum     / censo_sum * 100), 2) if censo_sum else 0.0
+
+        # SOLO dejamos Duplicidad/100 censo
+        dup_ratio = round((dup_sum / censo_sum * 100), 2) if censo_sum else 0.0
+
         table.append({
             "semana": w,
             "rango": b["rango"],
             "censo": censo_sum,
             "eventos": eventos_sum,
-            "doble": doble_sum,
+            "duplicidad": dup_sum,
             "encuesta": enc_sum,
             "t_prom": seconds_to_mmss(tavg_sec),
-            "ev_x100": ratio_ev,
-            "doble_x100": ratio_do,
-            "enc_x100": ratio_en
+            "dup_x100": dup_ratio,
         })
 
     cards = {
         "censo_total": sum(censo_totals),
         "eventos_total": sum(ev_totals),
-        "doble_total": sum(do_totals),
+        "duplicidad_total": sum(dup_totals),
         "encuesta_total": sum(enc_totals),
         "tiempo_prom_global": seconds_to_mmss(int(mean([x for x in tavg_totals if x>0])) if any(tavg_totals) else 0),
     }
     series = {
+        "labels": labels,
         "censo": censo_totals,
         "eventos": ev_totals,
-        "doble": do_totals,
+        "duplicidad": dup_totals,
         "encuesta": enc_totals,
         "tavg_sec": tavg_totals,
     }
@@ -276,6 +303,5 @@ def dashboard():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
 
 
