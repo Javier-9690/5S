@@ -12,17 +12,7 @@
     *{box-sizing:border-box}
     body{font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--text);}
 
-    /* Layout con sidebar fijo */
-    .layout{display:grid; grid-template-columns: 260px 1fr; min-height:100vh;}
-    aside{
-      background:var(--card); border-right:1px solid var(--border); padding:16px;
-      position:sticky; top:0; align-self:start; height:100vh; overflow:auto;
-    }
-    main{
-      max-width:1200px; margin:0 auto; padding:22px;
-    }
-
-    /* Header */
+    /* Header: izquierda (Escondida), centro (Título), derecha (Aramark) */
     header{
       display:grid; grid-template-columns: 1fr auto 1fr; align-items:center;
       gap:12px; padding:10px 18px; background:var(--card);
@@ -31,47 +21,43 @@
     .left {justify-self:start;}
     .center {justify-self:center;}
     .right {justify-self:end;}
-
     .logo-escondida{height:36px; object-fit:contain;}
     .logo-aramark{height:58px; object-fit:contain;}
     .title{font-weight:800; font-size:28px; letter-spacing:0.2px; text-align:center; margin:0; color:#0f172a;}
 
-    /* nav lateral */
-    .nav a{
-      display:block; padding:10px 12px; border-radius:10px; color:#111827; text-decoration:none;
-      margin-bottom:6px; border:1px solid transparent;
+    .page{
+      display:grid; grid-template-columns: 260px 1fr; gap:16px;
+      max-width:1400px; margin:20px auto; padding:0 12px;
     }
-    .nav a:hover{ background:#eff6ff; border-color:#dbeafe; }
-    .nav hr{border:none; border-top:1px solid var(--border); margin:10px 0;}
+    aside.sidebar{
+      align-self:start; position:sticky; top:72px;
+      background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px;
+      height:fit-content;
+    }
+    .side-title{font-weight:700; margin:0 0 8px;}
+    .side-links a{display:block; padding:8px 10px; border-radius:8px; text-decoration:none; color:#111827; border:1px solid var(--border); margin-bottom:8px;}
+    .side-links a.active{background:var(--primary); color:#fff; border-color:var(--primary);}
+    main.content{
+      background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px;
+      box-shadow:0 2px 10px rgba(0,0,0,.06);
+    }
 
-    /* utilidades */
+    h1{margin:0 0 12px; font-size:22px;}
     .muted{color:var(--muted); font-size:14px;}
     .flash{background:#fff3cd; border:1px solid #ffe08a; color:#7a5d00; padding:10px 12px; border-radius:10px; margin:12px 0; white-space:pre-line;}
+    .toolbar{display:flex; gap:10px; margin:12px 0 0; flex-wrap:wrap;}
     .btn{display:inline-block; padding:9px 14px; border-radius:10px; border:1px solid var(--primary); background:var(--primary); color:var(--primary-contrast); text-decoration:none; font-weight:600; font-size:14px;}
     .btn:focus,.btn:hover{filter:brightness(0.95)}
-    .btn-outline{background:#fff; color:var(--primary);}
-
-    /* Botón de subir archivo estilo azul */
-    .file-wrap{display:inline-block; position:relative;}
-    .file-wrap input[type="file"]{position:absolute; inset:0; opacity:0; cursor:pointer;}
-    .btn-file{display:inline-block; padding:9px 14px; border-radius:10px; border:1px solid var(--primary); background:var(--primary); color:#fff; font-weight:600; font-size:14px; cursor:pointer;}
 
     table{width:100%; border-collapse:collapse;}
     th,td{border:1px solid var(--border); padding:8px; text-align:left; font-size:14px; vertical-align:top;}
     th{background:#f3f4f6;}
-    input[type="number"], input[type="text"], input[type="date"], input[type="time"], input[type="datetime-local"], select, textarea{
-      width:100%; padding:8px; border:1px solid var(--border); border-radius:8px; outline:none;
-    }
+    input[type="number"], input[type="text"], input[type="date"], input[type="datetime-local"], select, textarea{width:100%; padding:8px; border:1px solid var(--border); border-radius:8px; outline:none;}
     input:focus, select:focus, textarea:focus{border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.15)}
-    textarea{min-height:84px; resize:vertical;}
-    .grid{display:grid; gap:12px;}
-    .grid.cols-2{grid-template-columns:repeat(2,minmax(160px,1fr));}
-    .grid.cols-3{grid-template-columns:repeat(3,minmax(160px,1fr));}
 
-    footer{text-align:center; color:#9ca3af; padding:16px; font-size:12px;}
-    .section{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px;}
-    .section h2{margin:0 0 8px;}
-    .toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;}
+    .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px; text-align:center; }
+
+    footer{text-align:center; color:#9ca3af; padding:16px; font-size:12px; margin-top:16px;}
   </style>
 </head>
 <body>
@@ -87,24 +73,22 @@
     </div>
   </header>
 
-  <div class="layout">
-    <aside>
-      <nav class="nav">
-        <strong>General</strong>
-        <a href="{{ url_for('panel') }}">Panel de ingreso</a>
-        <a href="{{ url_for('registros') }}">Registros</a>      <!-- corregido -->
+  <div class="page">
+    <aside class="sidebar">
+      <div class="side-title">Panel</div>
+      <div class="side-links">
+        <a href="{{ url_for('panel', tab='censo') }}" class="{{ 'active' if current_tab=='censo' }}">Censo</a>
+        <a href="{{ url_for('panel', tab='eventos') }}" class="{{ 'active' if current_tab=='eventos' }}">Eventos de seguridad</a>
+        <a href="{{ url_for('panel', tab='duplicidades') }}" class="{{ 'active' if current_tab=='duplicidades' }}">Duplicidades</a>
+        <a href="{{ url_for('panel', tab='encuesta') }}" class="{{ 'active' if current_tab=='encuesta' }}">Encuesta de satisfacción</a>
+        <a href="{{ url_for('panel', tab='atencion') }}" class="{{ 'active' if current_tab=='atencion' }}">Atención al público</a>
+        <hr>
+        <a href="{{ url_for('registros') }}">Registros</a>
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
-        <hr/>
-        <strong>Módulos</strong>
-        <a href="{{ url_for('panel', tab='censo') }}">Censo</a>
-        <a href="{{ url_for('panel', tab='eventos') }}">Eventos de seguridad</a>
-        <a href="{{ url_for('panel', tab='duplicidades') }}">Duplicidades</a>
-        <a href="{{ url_for('panel', tab='encuesta') }}">Encuesta de satisfacción</a>
-        <a href="{{ url_for('panel', tab='atencion') }}">Atención al público</a>
-      </nav>
+      </div>
     </aside>
 
-    <main>
+    <main class="content">
       {% with messages = get_flashed_messages() %}
         {% if messages %}
           {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
@@ -117,5 +101,4 @@
   <footer>Diseñado por Javier Rivera</footer>
 </body>
 </html>
-
 
