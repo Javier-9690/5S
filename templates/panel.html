@@ -1,10 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>Panel de ingreso</h1>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('registros') }}">Registros</a>
-    <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
-  </div>
+
 
   {# ------------- CENSO ------------- #}
   {% if tab=='censo' %}
