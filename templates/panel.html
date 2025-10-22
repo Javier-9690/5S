@@ -1,316 +1,176 @@
 {% extends "base.html" %}
 {% block content %}
-  <h1>Panel de ingreso</h1>
-  <p class="muted">Usa los formularios para agregar datos, o importa desde Excel usando las plantillas.</p>
 
-  <!-- ====================== CENSO ====================== -->
-  <a id="censo"></a>
-  <h2>Censo</h2>
+<h1>Panel de ingreso</h1>
 
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('template_xlsx', entity='censo') }}">Descargar plantilla Excel</a>
+{% set t = current_tab or tab or request.args.get('tab') or 'censo' %}
 
-    <form method="post" action="{{ url_for('import_xlsx', entity='censo') }}" enctype="multipart/form-data" class="input-file">
-      <input id="file-censo" class="js-file" type="file" name="file" accept=".xlsx" required>
-      <label for="file-censo" class="btn">Elegir archivo</label>
-      <span class="file-name" data-for="file-censo">Ningún archivo</span>
-      <button class="btn" type="submit">Importar Excel</button>
-    </form>
-  </div>
+<div class="toolbar">
+  <a class="btn {{ 'btn-outline' if t!='censo' }}" href="{{ url_for('panel', tab='censo') }}">Censo</a>
+  <a class="btn {{ 'btn-outline' if t!='eventos' }}" href="{{ url_for('panel', tab='eventos') }}">Eventos de seguridad</a>
+  <a class="btn {{ 'btn-outline' if t!='duplicidades' }}" href="{{ url_for('panel', tab='duplicidades') }}">Duplicidades</a>
+  <a class="btn {{ 'btn-outline' if t!='encuesta' }}" href="{{ url_for('panel', tab='encuesta') }}">Encuesta de satisfacción</a>
+  <a class="btn {{ 'btn-outline' if t!='atencion' }}" href="{{ url_for('panel', tab='atencion') }}">Atención al público</a>
+</div>
 
-  <form method="post" action="{{ url_for('censo_add') }}">
-    <div class="grid">
+<hr style="margin:14px 0;">
+
+{% if t == 'censo' %}
+<div class="section">
+  <h2>Censo — Ingreso diario</h2>
+  <form method="post" action="{{ url_for('save_censo') }}">
+    <div class="grid cols-3">
       <div>
         <label>Fecha</label>
         <input type="date" name="fecha" required>
       </div>
       <div>
         <label>Censo día</label>
-        <input type="number" min="0" name="censo_dia" required>
+        <input type="number" min="0" name="dia" required>
       </div>
       <div>
         <label>Censo noche</label>
-        <input type="number" min="0" name="censo_noche" required>
-      </div>
-      <div>
-        <label>Total</label>
-        <input type="number" min="0" name="censo_total" required>
+        <input type="number" min="0" name="noche" required>
       </div>
     </div>
     <div class="toolbar">
       <button class="btn" type="submit">Guardar</button>
-      <a class="btn" href="{{ url_for('listar', modulo='censo') }}">Ver registros</a>
-      <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="btn" href="{{ url_for('registros', modulo='censo') }}">Ver registros</a>
+      <a class="btn" href="{{ url_for('download_template', modulo='censo') }}">Descargar plantilla</a>
+      <form class="file-wrap" method="post" action="{{ url_for('import_template', modulo='censo') }}" enctype="multipart/form-data" style="display:inline;">
+        <label class="btn-file">Elegir archivo<input type="file" name="file" accept=".xlsx,.csv" required></label>
+        <button class="btn" type="submit">Importar</button>
+      </form>
     </div>
   </form>
-
-  <hr/>
-
-  <!-- ================== EVENTOS DE SEGURIDAD ================== -->
-  <a id="eventos"></a>
+</div>
+{% elif t == 'eventos' %}
+<div class="section">
   <h2>Eventos de seguridad</h2>
-
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('template_xlsx', entity='eventos') }}">Descargar plantilla Excel</a>
-
-    <form method="post" action="{{ url_for('import_xlsx', entity='eventos') }}" enctype="multipart/form-data" class="input-file">
-      <input id="file-eventos" class="js-file" type="file" name="file" accept=".xlsx" required>
-      <label for="file-eventos" class="btn">Elegir archivo</label>
-      <span class="file-name" data-for="file-eventos">Ningún archivo</span>
-      <button class="btn" type="submit">Importar Excel</button>
-    </form>
-  </div>
-
-  <form method="post" action="{{ url_for('eventos_add') }}">
-    <div class="grid">
-      <div>
-        <label>Fecha</label>
-        <input type="date" name="fecha" required>
-      </div>
-      <div>
-        <label>Horario</label>
-        <input type="text" name="horario" placeholder="Ej: 07:30" required>
-      </div>
-      <div>
-        <label>¿Qué ocurrió?</label>
-        <textarea name="que_ocurrio" required></textarea>
-      </div>
-      <div>
-        <label>Nombre del afectado</label>
-        <input type="text" name="afectado" required>
-      </div>
-      <div style="grid-column:1/-1">
+  <form method="post" action="{{ url_for('save_evento') }}">
+    <div class="grid cols-2">
+      <div><label>Fecha</label><input type="date" name="fecha" required></div>
+      <div><label>Horario</label><input type="time" name="hora" required></div>
+      <div><label>Qué ocurrió</label><input type="text" name="que" required></div>
+      <div><label>Nombre del afectado</label><input type="text" name="afectado"></div>
+      <div class="grid" style="grid-column:1/-1">
         <label>Acción</label>
-        <textarea name="accion" required></textarea>
+        <textarea name="accion"></textarea>
       </div>
     </div>
     <div class="toolbar">
       <button class="btn" type="submit">Guardar</button>
-      <a class="btn" href="{{ url_for('listar', modulo='eventos') }}">Ver registros</a>
-      <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="btn" href="{{ url_for('registros', modulo='eventos') }}">Ver registros</a>
+      <a class="btn" href="{{ url_for('download_template', modulo='eventos') }}">Descargar plantilla</a>
+      <form class="file-wrap" method="post" action="{{ url_for('import_template', modulo='eventos') }}" enctype="multipart/form-data" style="display:inline;">
+        <label class="btn-file">Elegir archivo<input type="file" name="file" accept=".xlsx,.csv" required></label>
+        <button class="btn" type="submit">Importar</button>
+      </form>
     </div>
   </form>
-
-  <hr/>
-
-  <!-- ====================== DUPLICIDADES ====================== -->
-  <a id="duplicidades"></a>
+</div>
+{% elif t == 'duplicidades' %}
+<div class="section">
   <h2>Duplicidades</h2>
+  <form method="post" action="{{ url_for('save_duplicidad') }}">
+    <div class="grid cols-3">
+      <div><label>Semana</label><input type="number" min="1" name="semana" required></div>
+      <div><label>Fecha</label><input type="date" name="fecha" required></div>
+      <div><label>ID</label><input type="text" name="id_reg" required></div>
 
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('template_xlsx', entity='duplicidades') }}">Descargar plantilla Excel</a>
+      <div><label>Empresa contratista</label><input type="text" name="empresa"></div>
+      <div><label>Descripción Problema</label><input type="text" name="descripcion"></div>
+      <div><label>Tipo de riesgo (Psicosocial)</label><input type="text" name="riesgo"></div>
 
-    <form method="post" action="{{ url_for('import_xlsx', entity='duplicidades') }}" enctype="multipart/form-data" class="input-file">
-      <input id="file-duplicidades" class="js-file" type="file" name="file" accept=".xlsx" required>
-      <label for="file-duplicidades" class="btn">Elegir archivo</label>
-      <span class="file-name" data-for="file-duplicidades">Ningún archivo</span>
-      <button class="btn" type="submit">Importar Excel</button>
-    </form>
-  </div>
+      <div><label>Pabellón</label><input type="text" name="pabellon"></div>
+      <div><label>Habitación</label><input type="text" name="habitacion"></div>
+      <div><label>Ingresar contacto</label><input type="text" name="contacto"></div>
 
-  <form method="post" action="{{ url_for('duplicidades_add') }}">
-    <div class="grid" style="grid-template-columns: repeat(3, minmax(220px,1fr));">
-      <div>
-        <label>Semana</label>
-        <input type="number" min="1" name="semana" required>
-      </div>
-      <div>
-        <label>Fecha</label>
-        <input type="date" name="fecha" required>
-      </div>
-      <div>
-        <label>ID</label>
-        <input type="text" name="id_externo" required>
-      </div>
-
-      <div>
-        <label>Empresa contratista</label>
-        <input type="text" name="empresa" required>
-      </div>
-      <div style="grid-column:span 2;">
-        <label>Descripción problema</label>
-        <textarea name="descripcion" required></textarea>
-      </div>
-
-      <div>
-        <label>Tipo de riesgo (Psicosocial)</label>
-        <input type="text" name="riesgo" required>
-      </div>
-      <div>
-        <label>Pabellón</label>
-        <input type="text" name="pabellon" required>
-      </div>
-      <div>
-        <label>Habitación</label>
-        <input type="text" name="habitacion" required>
-      </div>
-
-      <div>
-        <label>Ingresar contacto</label>
-        <input type="text" name="contacto" required>
-      </div>
-      <div>
-        <label>Nombre usuario</label>
-        <input type="text" name="usuario" required>
-      </div>
-      <div>
-        <label>Responsable (Toma requerimiento)</label>
-        <input type="text" name="responsable" required>
-      </div>
-
-      <div>
-        <label>Estatus</label>
-        <select name="estatus" required>
+      <div><label>Nombre usuario</label><input type="text" name="usuario"></div>
+      <div><label>Responsable (Toma Requerimiento)</label><input type="text" name="responsable"></div>
+      <div><label>Estatus</label>
+        <select name="estatus">
           <option value="Abierto">Abierto</option>
           <option value="Cerrado">Cerrado</option>
         </select>
       </div>
-      <div>
-        <label>Notificación usuario</label>
-        <input type="text" name="notificacion" required>
-      </div>
-      <div>
-        <label>Plan de acción</label>
-        <input type="text" name="plan_accion" required>
-      </div>
 
-      <div>
-        <label>Fecha de cierre</label>
-        <input type="date" name="fecha_cierre">
-      </div>
+      <div><label>Notificación Usuario</label><input type="text" name="notificacion"></div>
+      <div><label>Plan de Acción</label><input type="text" name="plan"></div>
+      <div><label>Fecha de Cierre</label><input type="date" name="cierre"></div>
     </div>
     <div class="toolbar">
       <button class="btn" type="submit">Guardar</button>
-      <a class="btn" href="{{ url_for('listar', modulo='duplicidades') }}">Ver registros</a>
-      <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="btn" href="{{ url_for('registros', modulo='duplicidades') }}">Ver registros</a>
+      <a class="btn" href="{{ url_for('download_template', modulo='duplicidades') }}">Descargar plantilla</a>
+      <form class="file-wrap" method="post" action="{{ url_for('import_template', modulo='duplicidades') }}" enctype="multipart/form-data" style="display:inline;">
+        <label class="btn-file">Elegir archivo<input type="file" name="file" accept=".xlsx,.csv" required></label>
+        <button class="btn" type="submit">Importar</button>
+      </form>
     </div>
   </form>
-
-  <hr/>
-
-  <!-- ================== ENCUESTA DE SATISFACCIÓN ================== -->
-  <a id="encuestas"></a>
+</div>
+{% elif t == 'encuesta' %}
+<div class="section">
   <h2>Encuesta de satisfacción</h2>
+  <form method="post" action="{{ url_for('save_encuesta') }}">
+    <div class="grid cols-3">
+      <div style="grid-column:1/-1"><label>Fecha y hora</label><input type="datetime-local" name="fecha_hora" required></div>
 
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('template_xlsx', entity='encuestas') }}">Descargar plantilla Excel</a>
+      <div><label>Q1 Respuesta</label><input type="text" name="q1r"></div>
+      <div><label>Q1 Puntaje</label><input type="number" min="0" name="q1p"></div>
 
-    <form method="post" action="{{ url_for('import_xlsx', entity='encuestas') }}" enctype="multipart/form-data" class="input-file">
-      <input id="file-encuestas" class="js-file" type="file" name="file" accept=".xlsx" required>
-      <label for="file-encuestas" class="btn">Elegir archivo</label>
-      <span class="file-name" data-for="file-encuestas">Ningún archivo</span>
-      <button class="btn" type="submit">Importar Excel</button>
-    </form>
-  </div>
+      <div><label>Q2 Respuesta</label><input type="text" name="q2r"></div>
+      <div><label>Q2 Puntaje</label><input type="number" min="0" name="q2p"></div>
 
-  <form method="post" action="{{ url_for('encuestas_add') }}">
-    <div class="grid" style="grid-template-columns: repeat(3, minmax(220px,1fr));">
-      <div>
-        <label>Fecha y hora</label>
-        <input type="datetime-local" name="fecha_hora" required>
-      </div>
-      <div>
-        <label>Q1 Respuesta</label>
-        <input type="text" name="q1_resp">
-      </div>
-      <div>
-        <label>Q1 Puntaje</label>
-        <input type="number" name="q1_pto" min="0" max="10">
-      </div>
+      <div><label>Q3 Respuesta</label><input type="text" name="q3r"></div>
+      <div><label>Q3 Puntaje</label><input type="number" min="0" name="q3p"></div>
 
-      <div>
-        <label>Q2 Respuesta</label>
-        <input type="text" name="q2_resp">
-      </div>
-      <div>
-        <label>Q2 Puntaje</label>
-        <input type="number" name="q2_pto" min="0" max="10">
-      </div>
-      <div>
-        <label>Q3 Respuesta</label>
-        <input type="text" name="q3_resp">
-      </div>
+      <div><label>Q4 Respuesta</label><input type="text" name="q4r"></div>
+      <div><label>Q4 Puntaje</label><input type="number" min="0" name="q4p"></div>
 
-      <div>
-        <label>Q3 Puntaje</label>
-        <input type="number" name="q3_pto" min="0" max="10">
-      </div>
-      <div>
-        <label>Q4 Respuesta</label>
-        <input type="text" name="q4_resp">
-      </div>
-      <div>
-        <label>Q4 Puntaje</label>
-        <input type="number" name="q4_pto" min="0" max="10">
-      </div>
+      <div><label>Q5 Respuesta</label><input type="text" name="q5r"></div>
+      <div><label>Q5 Puntaje</label><input type="number" min="0" name="q5p"></div>
 
-      <div>
-        <label>Q5 Respuesta</label>
-        <input type="text" name="q5_resp">
-      </div>
-      <div>
-        <label>Q5 Puntaje</label>
-        <input type="number" name="q5_pto" min="0" max="10">
-      </div>
-      <div>
+      <div><label>Total</label><input type="number" min="0" name="total"></div>
+      <div><label>Promedio</label><input type="number" min="0" step="0.01" name="promedio"></div>
+
+      <div style="grid-column:1/-1">
         <label>Comentarios</label>
-        <input type="text" name="comentarios">
-      </div>
-
-      <div>
-        <label>Total</label>
-        <input type="number" name="total" step="0.01">
-      </div>
-      <div>
-        <label>Promedio</label>
-        <input type="number" name="promedio" step="0.01">
+        <textarea name="comentarios"></textarea>
       </div>
     </div>
     <div class="toolbar">
       <button class="btn" type="submit">Guardar</button>
-      <a class="btn" href="{{ url_for('listar', modulo='encuestas') }}">Ver registros</a>
-      <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="btn" href="{{ url_for('registros', modulo='encuestas') }}">Ver registros</a>
+      <a class="btn" href="{{ url_for('download_template', modulo='encuestas') }}">Descargar plantilla</a>
+      <form class="file-wrap" method="post" action="{{ url_for('import_template', modulo='encuestas') }}" enctype="multipart/form-data" style="display:inline;">
+        <label class="btn-file">Elegir archivo<input type="file" name="file" accept=".xlsx,.csv" required></label>
+        <button class="btn" type="submit">Importar</button>
+      </form>
     </div>
   </form>
-
-  <hr/>
-
-  <!-- ================== ATENCIÓN AL PÚBLICO ================== -->
-  <a id="atencion"></a>
+</div>
+{% elif t == 'atencion' %}
+<div class="section">
   <h2>Atención al público</h2>
-
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('template_xlsx', entity='atencion') }}">Descargar plantilla Excel</a>
-
-    <form method="post" action="{{ url_for('import_xlsx', entity='atencion') }}" enctype="multipart/form-data" class="input-file">
-      <input id="file-atencion" class="js-file" type="file" name="file" accept=".xlsx" required>
-      <label for="file-atencion" class="btn">Elegir archivo</label>
-      <span class="file-name" data-for="file-atencion">Ningún archivo</span>
-      <button class="btn" type="submit">Importar Excel</button>
-    </form>
-  </div>
-
-  <form method="post" action="{{ url_for('atencion_add') }}">
-    <div class="grid">
-      <div>
-        <label>Fecha</label>
-        <input type="date" name="fecha" required>
-      </div>
-      <div>
-        <label>Tiempo promedio (mm:ss)</label>
-        <input type="text" name="tiempo_prom" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}" title="Formato mm:ss, ej: 03:54" required>
-      </div>
-      <div>
-        <label>Cantidad</label>
-        <input type="number" min="0" name="cantidad" required>
-      </div>
+  <form method="post" action="{{ url_for('save_atencion') }}">
+    <div class="grid cols-3">
+      <div><label>Fecha</label><input type="date" name="fecha" required></div>
+      <div><label>Tiempo promedio (mm:ss)</label><input type="text" name="tiempo" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}" required></div>
+      <div><label>Cantidad</label><input type="number" min="0" name="cantidad" required></div>
     </div>
     <div class="toolbar">
       <button class="btn" type="submit">Guardar</button>
-      <a class="btn" href="{{ url_for('listar', modulo='atencion') }}">Ver registros</a>
-      <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="btn" href="{{ url_for('registros', modulo='atencion') }}">Ver registros</a>
+      <a class="btn" href="{{ url_for('download_template', modulo='atencion') }}">Descargar plantilla</a>
+      <form class="file-wrap" method="post" action="{{ url_for('import_template', modulo='atencion') }}" enctype="multipart/form-data" style="display:inline;">
+        <label class="btn-file">Elegir archivo<input type="file" name="file" accept=".xlsx,.csv" required></label>
+        <button class="btn" type="submit">Importar</button>
+      </form>
     </div>
   </form>
+</div>
+{% endif %}
 
 {% endblock %}
-
