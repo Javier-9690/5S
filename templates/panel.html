@@ -6,7 +6,6 @@
     <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
   </div>
 
-  {# ------------- CENSO ------------- #}
   {% if tab=='censo' %}
     <h2>Censo</h2>
     <div class="toolbar">
@@ -27,10 +26,8 @@
       </div>
       <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
     </form>
-  {% endif %}
 
-  {# ------------- EVENTOS ------------- #}
-  {% if tab=='eventos' %}
+  {% elif tab=='eventos' %}
     <h2>Eventos de seguridad</h2>
     <div class="toolbar">
       <a class="btn" href="{{ url_for('template_xlsx', entity='eventos') }}">Descargar plantilla Excel</a>
@@ -51,10 +48,8 @@
       </div>
       <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
     </form>
-  {% endif %}
 
-  {# ------------- DUPLICIDADES ------------- #}
-  {% if tab=='duplicidades' %}
+  {% elif tab=='duplicidades' %}
     <h2>Duplicidades</h2>
     <div class="toolbar">
       <a class="btn" href="{{ url_for('template_xlsx', entity='duplicidades') }}">Descargar plantilla Excel</a>
@@ -79,7 +74,7 @@
       </div>
       <div style="display:grid; grid-template-columns: repeat(3, minmax(200px,1fr)); gap:12px; margin-top:8px;">
         <div><label>Empresa contratista</label><input type="text" name="empresa_contratista"></div>
-        <div><label>TIPO DE RIESGO</label><input type="text" name="tipo_riesgo" placeholder="Psicosocial, etc."></div>
+        <div><label>TIPO DE RIESGO (Psicosocial)</label><input type="text" name="tipo_riesgo"></div>
         <div><label>PABELLON</label><input type="text" name="pabellon"></div>
       </div>
       <div style="display:grid; grid-template-columns: repeat(3, minmax(200px,1fr)); gap:12px; margin-top:8px;">
@@ -97,10 +92,8 @@
       <div style="margin-top:8px; max-width:260px;"><label>Fecha de Cierre</label><input type="date" name="fecha_cierre"></div>
       <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
     </form>
-  {% endif %}
 
-  {# ------------- ENCUESTA ------------- #}
-  {% if tab=='encuesta' %}
+  {% elif tab=='encuesta' %}
     <h2>Encuesta de satisfacción</h2>
     <div class="toolbar">
       <a class="btn" href="{{ url_for('template_xlsx', entity='encuesta') }}">Descargar plantilla Excel</a>
@@ -114,18 +107,22 @@
         <label>FECHA_HORA</label><input type="datetime-local" name="fecha_hora" required>
       </div>
       <div style="display:grid; grid-template-columns: repeat(2, minmax(240px,1fr)); gap:12px; margin-top:8px;">
-        {% for i in range(1,6) %}
-          <div><label>Q{{i}}_RESPUESTA</label><input type="text" name="q{{i}}_respuesta"></div>
-          <div><label>Q{{i}}_PUNTAJE</label><input type="number" name="q{{i}}_puntaje" min="0" max="10"></div>
-        {% endfor %}
+        <div><label>Q1_RESPUESTA</label><input type="text" name="q1_respuesta"></div>
+        <div><label>Q1_PUNTAJE</label><input type="number" name="q1_puntaje" min="0" max="10"></div>
+        <div><label>Q2_RESPUESTA</label><input type="text" name="q2_respuesta"></div>
+        <div><label>Q2_PUNTAJE</label><input type="number" name="q2_puntaje" min="0" max="10"></div>
+        <div><label>Q3_RESPUESTA</label><input type="text" name="q3_respuesta"></div>
+        <div><label>Q3_PUNTAJE</label><input type="number" name="q3_puntaje" min="0" max="10"></div>
+        <div><label>Q4_RESPUESTA</label><input type="text" name="q4_respuesta"></div>
+        <div><label>Q4_PUNTAJE</label><input type="number" name="q4_puntaje" min="0" max="10"></div>
+        <div><label>Q5_RESPUESTA</label><input type="text" name="q5_respuesta"></div>
+        <div><label>Q5_PUNTAJE</label><input type="number" name="q5_puntaje" min="0" max="10"></div>
       </div>
       <div style="margin-top:8px;"><label>COMENTARIOS</label><textarea name="comentarios"></textarea></div>
       <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
     </form>
-  {% endif %}
 
-  {# ------------- ATENCIÓN ------------- #}
-  {% if tab=='atencion' %}
+  {% elif tab=='atencion' %}
     <h2>Atención al público</h2>
     <div class="toolbar">
       <a class="btn" href="{{ url_for('template_xlsx', entity='atencion') }}">Descargar plantilla Excel</a>
@@ -139,186 +136,6 @@
         <div><label>FECHA</label><input type="date" name="fecha" required></div>
         <div><label>TIEMPO PROMEDIO (mm:ss)</label><input type="text" name="tiempo_promedio" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}" title="mm:ss, ej: 03:54"></div>
         <div><label>CANTIDAD</label><input type="number" name="cantidad" min="0" placeholder="0"></div>
-      </div>
-      <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
-    </form>
-  {% endif %}
-
-  {# ------------- ROBOS Y HURTOS ------------- #}
-  {% if tab=='robos' %}
-    <h2>Robos y hurtos</h2>
-    <div class="toolbar">
-      <a class="btn" href="{{ url_for('template_xlsx', entity='robos') }}">Descargar plantilla Excel</a>
-      <form method="post" action="{{ url_for('import_xlsx', entity='robos') }}" enctype="multipart/form-data" style="display:inline-flex; gap:8px;">
-        <input type="file" name="file" accept=".xlsx" required>
-        <button class="btn" type="submit">Importar Excel</button>
-      </form>
-    </div>
-    <form method="post" action="{{ url_for('panel', tab='robos') }}" style="margin-top:10px;">
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(200px,1fr)); gap:12px;">
-        <div><label>Fecha</label><input type="date" name="fecha" required></div>
-        <div><label>Hora</label><input type="time" name="hora" required></div>
-        <div><label>Módulo</label><input type="text" name="modulo"></div>
-        <div><label>Habitación</label><input type="text" name="habitacion"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(200px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Empresa</label><input type="text" name="empresa"></div>
-        <div><label>Nombre cliente</label><input type="text" name="nombre_cliente"></div>
-        <div><label>Rut</label><input type="text" name="rut"></div>
-        <div><label>Medio del Reclamo</label><input type="text" name="medio_reclamo"></div>
-      </div>
-      <div style="margin-top:8px;"><label>Especies</label><textarea name="especies"></textarea></div>
-      <div style="margin-top:8px;"><label>Observaciones</label><textarea name="observaciones"></textarea></div>
-      <div style="max-width:380px; margin-top:8px;"><label>Nombre de quien recepciona la denuncia</label><input type="text" name="recepciona"></div>
-      <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
-    </form>
-  {% endif %}
-
-  {# ------------- MISCELÁNEO ------------- #}
-  {% if tab=='miscelaneo' %}
-    <h2>Misceláneo</h2>
-    <div class="toolbar">
-      <a class="btn" href="{{ url_for('template_xlsx', entity='miscelaneo') }}">Descargar plantilla Excel</a>
-      <form method="post" action="{{ url_for('import_xlsx', entity='miscelaneo') }}" enctype="multipart/form-data" style="display:inline-flex; gap:8px;">
-        <input type="file" name="file" accept=".xlsx" required>
-        <button class="btn" type="submit">Importar Excel</button>
-      </form>
-    </div>
-    <form method="post" action="{{ url_for('panel', tab='miscelaneo') }}" style="margin-top:10px;">
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(200px,1fr)); gap:12px;">
-        <div><label>OT</label><input type="text" name="ot"></div>
-        <div><label>División</label><input type="text" name="division"></div>
-        <div><label>Área</label><input type="text" name="area"></div>
-        <div><label>Lugar</label><input type="text" name="lugar"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(200px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Ubicación</label><input type="text" name="ubicacion"></div>
-        <div><label>Disciplina</label><input type="text" name="disciplina"></div>
-        <div><label>Especialidad</label><input type="text" name="especialidad"></div>
-        <div><label>Falla</label><input type="text" name="falla"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(3, minmax(200px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Empresa</label><input type="text" name="empresa"></div>
-        <div><label>Fecha creación</label><input type="date" name="fecha_creacion"></div>
-        <div><label>Fecha inicio</label><input type="date" name="fecha_inicio"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(3, minmax(200px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Fecha término</label><input type="date" name="fecha_termino"></div>
-        <div><label>Fecha aprobación</label><input type="date" name="fecha_aprobacion"></div>
-        <div><label>Estado</label><input type="text" name="estado"></div>
-      </div>
-      <div style="margin-top:8px;"><label>Comentario</label><textarea name="comentario"></textarea></div>
-      <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
-    </form>
-  {% endif %}
-
-  {# ------------- DESVIACIONES ------------- #}
-  {% if tab=='desviaciones' %}
-    <h2>Desviaciones</h2>
-    <div class="toolbar">
-      <a class="btn" href="{{ url_for('template_xlsx', entity='desviaciones') }}">Descargar plantilla Excel</a>
-      <form method="post" action="{{ url_for('import_xlsx', entity='desviaciones') }}" enctype="multipart/form-data" style="display:inline-flex; gap:8px;">
-        <input type="file" name="file" accept=".xlsx" required>
-        <button class="btn" type="submit">Importar Excel</button>
-      </form>
-    </div>
-    <form method="post" action="{{ url_for('panel', tab='desviaciones') }}" style="margin-top:10px;">
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px;">
-        <div><label>N° Solicitud</label><input type="text" name="n_solicitud"></div>
-        <div><label>Fecha</label><input type="date" name="fecha" required></div>
-        <div><label>ID</label><input type="text" name="id_interno"></div>
-        <div><label>Empresa contratista</label><input type="text" name="empresa_contratista"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Descripción Problema</label><textarea name="descripcion_problema"></textarea></div>
-        <div><label>TIPO DE RIESGO</label><input type="text" name="tipo_riesgo"></div>
-        <div><label>Tipo de Solicitud</label><input type="text" name="tipo_solicitud"></div>
-        <div><label>PABELLON</label><input type="text" name="pabellon"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Habitación</label><input type="text" name="habitacion"></div>
-        <div><label>Vía Solicitud</label><input type="text" name="via_solicitud"></div>
-        <div><label>Quién informa</label><input type="text" name="quien_informa"></div>
-        <div><label>Riesgo Material</label><input type="text" name="riesgo_material"></div>
-      </div>
-      <div style="max-width:420px; margin-top:8px;"><label>Correo Destino</label><input type="text" name="correo_destino"></div>
-      <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
-    </form>
-  {% endif %}
-
-  {# ------------- SOLICITUD Y OT ------------- #}
-  {% if tab=='solicitud_ot' %}
-    <h2>Solicitud y OT de usuario</h2>
-    <div class="toolbar">
-      <a class="btn" href="{{ url_for('template_xlsx', entity='solicitud_ot') }}">Descargar plantilla Excel</a>
-      <form method="post" action="{{ url_for('import_xlsx', entity='solicitud_ot') }}" enctype="multipart/form-data" style="display:inline-flex; gap:8px;">
-        <input type="file" name="file" accept=".xlsx" required>
-        <button class="btn" type="submit">Importar Excel</button>
-      </form>
-    </div>
-    <form method="post" action="{{ url_for('panel', tab='solicitud_ot') }}" style="margin-top:10px;">
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px;">
-        <div><label>N° Solicitud</label><input type="text" name="n_solicitud"></div>
-        <div><label>Descripción Problema</label><input type="text" name="descripcion_problema"></div>
-        <div><label>Tipo de Solicitud</label><input type="text" name="tipo_solicitud"></div>
-        <div><label>Módulo</label><input type="text" name="modulo"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Habitación</label><input type="text" name="habitacion"></div>
-        <div><label>Tipo de turno</label><input type="text" name="tipo_turno"></div>
-        <div><label>Jornada</label><input type="text" name="jornada"></div>
-        <div><label>Vía Solicitud</label><input type="text" name="via_solicitud"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Correo Usuario (solo reclamo)</label><input type="text" name="correo_usuario"></div>
-        <div><label>Tipo Tarea</label><input type="text" name="tipo_tarea"></div>
-        <div><label>OT</label><input type="text" name="ot"></div>
-        <div><label>Fecha Inicio</label><input type="date" name="fecha_inicio"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Estado</label><input type="text" name="estado"></div>
-        <div><label>Tiempo de Respuesta (mm:ss)</label><input type="text" name="tiempo_respuesta" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}"></div>
-        <div><label>Satisfacción Reclamo</label><input type="text" name="satisfaccion_reclamo"></div>
-        <div><label>Motivo</label><input type="text" name="motivo"></div>
-      </div>
-      <div style="margin-top:8px;"><label>Observación</label><textarea name="observacion"></textarea></div>
-      <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
-    </form>
-  {% endif %}
-
-  {# ------------- RECLAMOS ------------- #}
-  {% if tab=='reclamos' %}
-    <h2>Reclamos de usuarios</h2>
-    <div class="toolbar">
-      <a class="btn" href="{{ url_for('template_xlsx', entity='reclamos') }}">Descargar plantilla Excel</a>
-      <form method="post" action="{{ url_for('import_xlsx', entity='reclamos') }}" enctype="multipart/form-data" style="display:inline-flex; gap:8px;">
-        <input type="file" name="file" accept=".xlsx" required>
-        <button class="btn" type="submit">Importar Excel</button>
-      </form>
-    </div>
-    <form method="post" action="{{ url_for('panel', tab='reclamos') }}" style="margin-top:10px;">
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px;">
-        <div><label>N° Solicitud</label><input type="text" name="n_solicitud"></div>
-        <div><label>Fecha</label><input type="date" name="fecha" required></div>
-        <div><label>ID</label><input type="text" name="id_interno"></div>
-        <div><label>Empresa contratista</label><input type="text" name="empresa_contratista"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Descripción Problema</label><textarea name="descripcion_problema"></textarea></div>
-        <div><label>Tipo de Solicitud</label><input type="text" name="tipo_solicitud"></div>
-        <div><label>PABELLON</label><input type="text" name="pabellon"></div>
-        <div><label>Habitación</label><input type="text" name="habitacion"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Vía Solicitud</label><input type="text" name="via_solicitud"></div>
-        <div><label>Ingresar Contacto</label><input type="text" name="ingresar_contacto"></div>
-        <div><label>Nombre usuario</label><input type="text" name="nombre_usuario"></div>
-        <div><label>Responsable</label><input type="text" name="responsable"></div>
-      </div>
-      <div style="display:grid; grid-template-columns: repeat(3, minmax(220px,1fr)); gap:12px; margin-top:8px;">
-        <div><label>Estatus</label><input type="text" name="estatus" placeholder="Abierto/Cerrado"></div>
-        <div><label>Notificación Usuario</label><input type="text" name="notificacion_usuario"></div>
-        <div><label>Plan de Acción</label><input type="text" name="plan_accion"></div>
       </div>
       <div class="toolbar"><button class="btn" type="submit">Guardar</button></div>
     </form>
