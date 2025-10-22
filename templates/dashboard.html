@@ -1,31 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>Dashboard</h1>
+  <div class="toolbar">
+    <a class="btn" href="{{ url_for('registros') }}">Registros</a>
+    <a class="btn" href="{{ url_for('panel', tab='censo') }}">Panel de ingreso</a>
+  </div>
 
   <form method="get" action="{{ url_for('dashboard') }}" style="margin-top:10px;">
-    <div class="grid" style="grid-template-columns: repeat(4, minmax(160px,1fr));">
-      <div>
-        <label>Desde</label>
-        <input type="date" name="from" value="{{ d_from if d_from else '' }}">
-      </div>
-      <div>
-        <label>Hasta</label>
-        <input type="date" name="to" value="{{ d_to if d_to else '' }}">
-      </div>
+    <div style="display:grid; grid-template-columns: repeat(4, minmax(160px,1fr)); gap:12px;">
+      <div><label>Desde</label><input type="date" name="from" value="{{ d_from if d_from else '' }}"></div>
+      <div><label>Hasta</label><input type="date" name="to" value="{{ d_to if d_to else '' }}"></div>
       <div>
         <label>Semana</label>
         <select name="semana">
           <option value="">-- (opcional) --</option>
           {% for num, r in week_map.items()|sort %}
-            <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>
-              {{ num }} ({{ r[0] }} → {{ r[1] }})
-            </option>
+            <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>{{ num }} ({{ r[0] }} → {{ r[1] }})</option>
           {% endfor %}
         </select>
       </div>
-      <div style="align-self:end;">
-        <button class="btn" type="submit">Aplicar filtros</button>
-      </div>
+      <div style="align-self:end;"><button class="btn" type="submit">Aplicar filtros</button></div>
     </div>
   </form>
 
@@ -89,4 +83,5 @@
     </script>
   {% endif %}
 {% endblock %}
+
 
