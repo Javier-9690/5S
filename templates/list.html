@@ -23,32 +23,75 @@
     </div>
   </form>
 
-  <h2 style="margin-top:14px;">Censo</h2>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('download_entity', entity='censo', **request.args) }}">Descargar CSV</a>
+  <!-- Descarga: lista desplegable por ítem -->
+  <div class="toolbar" style="margin-top:10px;">
+    <form id="dlForm" onsubmit="event.preventDefault(); doDownload();" style="display:inline-flex; gap:8px; align-items:center;">
+      <label class="muted">Descargar CSV de: </label>
+      <select id="dlEntity" style="min-width:220px;">
+        <option value="censo">Censo</option>
+        <option value="eventos">Eventos de seguridad</option>
+        <option value="duplicidades">Duplicidades</option>
+        <option value="encuesta">Encuesta de satisfacción</option>
+        <option value="atencion">Atención al público</option>
+      </select>
+      <button class="btn" type="submit">Descargar</button>
+    </form>
   </div>
+  <script>
+    function doDownload(){
+      const ent = document.getElementById('dlEntity').value;
+      const qs = new URLSearchParams(window.location.search);
+      const url = `{{ url_for('download_entity', entity='__X__') }}`.replace('__X__', ent) + (qs.toString() ? `?${qs.toString()}` : '');
+      window.location.href = url;
+    }
+  </script>
+
+  <h2 style="margin-top:14px;">Censo</h2>
   <div style="overflow:auto;">
     <table>
-      <thead><tr><th>Fecha</th><th>Censo día</th><th>Censo noche</th><th>Total</th></tr></thead>
-      <tbody>{% for r in census %}<tr><td>{{ r.fecha }}</td><td>{{ r.censo_dia }}</td><td>{{ r.censo_noche }}</td><td>{{ r.total }}</td></tr>{% endfor %}</tbody>
+      <thead><tr><th>Fecha</th><th>Censo día</th><th>Censo noche</th><th>Total</th><th>Acciones</th></tr></thead>
+      <tbody>
+        {% for r in census %}
+          <tr>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.censo_dia }}</td>
+            <td>{{ r.censo_noche }}</td>
+            <td>{{ r.total }}</td>
+            <td style="white-space:nowrap;">
+              <form method="post" action="{{ url_for('delete_entity', entity='censo', rid=r.id) }}" onsubmit="return confirm('¿Eliminar registro de censo?');" style="display:inline;">
+                <button class="btn btn-danger" type="submit">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
   </div>
 
   <h2 style="margin-top:14px;">Eventos de seguridad</h2>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('download_entity', entity='eventos', **request.args) }}">Descargar CSV</a>
-  </div>
   <div style="overflow:auto;">
     <table>
-      <thead><tr><th>Fecha</th><th>Horario</th><th>Qué ocurrió</th><th>Nombre afectado</th><th>Acción</th></tr></thead>
-      <tbody>{% for r in eventos %}<tr><td>{{ r.fecha }}</td><td>{{ r.horario }}</td><td>{{ r.que_ocurrio }}</td><td>{{ r.nombre_afectado }}</td><td>{{ r.accion }}</td></tr>{% endfor %}</tbody>
+      <thead><tr><th>Fecha</th><th>Horario</th><th>Qué ocurrió</th><th>Nombre afectado</th><th>Acción</th><th>Acciones</th></tr></thead>
+      <tbody>
+        {% for r in eventos %}
+          <tr>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.horario }}</td>
+            <td>{{ r.que_ocurrio }}</td>
+            <td>{{ r.nombre_afectado }}</td>
+            <td>{{ r.accion }}</td>
+            <td style="white-space:nowrap;">
+              <form method="post" action="{{ url_for('delete_entity', entity='eventos', rid=r.id) }}" onsubmit="return confirm('¿Eliminar evento?');" style="display:inline;">
+                <button class="btn btn-danger" type="submit">Eliminar</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
     </table>
   </div>
 
   <h2 style="margin-top:14px;">Duplicidades</h2>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('download_entity', entity='duplicidades', **request.args) }}">Descargar CSV</a>
-  </div>
   <div style="overflow:auto;">
     <table>
       <thead>
@@ -56,17 +99,32 @@
           <th>Semana</th><th>Fecha</th><th>ID</th><th>Empresa</th><th>Descripción</th>
           <th>Riesgo</th><th>Pabellón</th><th>Habitación</th><th>Contacto</th>
           <th>Usuario</th><th>Responsable</th><th>Estatus</th><th>Notificación</th>
-          <th>Plan de acción</th><th>Fecha cierre</th>
+          <th>Plan de acción</th><th>Fecha cierre</th><th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for r in duplics %}
           <tr>
-            <td>{{ r.semana }}</td><td>{{ r.fecha }}</td><td>{{ r.id_interno }}</td><td>{{ r.empresa_contratista }}</td>
-            <td>{{ r.descripcion_problema }}</td><td>{{ r.tipo_riesgo }}</td><td>{{ r.pabellon }}</td>
-            <td>{{ r.habitacion }}</td><td>{{ r.ingresar_contacto }}</td><td>{{ r.nombre_usuario }}</td>
-            <td>{{ r.responsable }}</td><td>{{ r.estatus }}</td><td>{{ r.notificacion_usuario }}</td>
-            <td>{{ r.plan_accion }}</td><td>{{ r.fecha_cierre if r.fecha_cierre else '' }}</td>
+            <td>{{ r.semana }}</td>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.id_interno }}</td>
+            <td>{{ r.empresa_contratista }}</td>
+            <td>{{ r.descripcion_problema }}</td>
+            <td>{{ r.tipo_riesgo }}</td>
+            <td>{{ r.pabellon }}</td>
+            <td>{{ r.habitacion }}</td>
+            <td>{{ r.ingresar_contacto }}</td>
+            <td>{{ r.nombre_usuario }}</td>
+            <td>{{ r.responsable }}</td>
+            <td>{{ r.estatus }}</td>
+            <td>{{ r.notificacion_usuario }}</td>
+            <td>{{ r.plan_accion }}</td>
+            <td>{{ r.fecha_cierre if r.fecha_cierre else '' }}</td>
+            <td style="white-space:nowrap;">
+              <form method="post" action="{{ url_for('delete_entity', entity='duplicidades', rid=r.id) }}" onsubmit="return confirm('¿Eliminar duplicidad?');" style="display:inline;">
+                <button class="btn btn-danger" type="submit">Eliminar</button>
+              </form>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
@@ -74,16 +132,13 @@
   </div>
 
   <h2 style="margin-top:14px;">Encuesta de satisfacción</h2>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('download_entity', entity='encuestas', **request.args) }}">Descargar CSV</a>
-  </div>
   <div style="overflow:auto;">
     <table>
       <thead>
         <tr>
           <th>Fecha Hora</th>
           <th>Q1(R/P)</th><th>Q2(R/P)</th><th>Q3(R/P)</th><th>Q4(R/P)</th><th>Q5(R/P)</th>
-          <th>Total</th><th>Promedio</th><th>Comentarios</th>
+          <th>Total</th><th>Promedio</th><th>Comentarios</th><th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -98,6 +153,11 @@
             <td>{{ r.total }}</td>
             <td>{{ r.promedio }}</td>
             <td>{{ r.comentarios }}</td>
+            <td style="white-space:nowrap;">
+              <form method="post" action="{{ url_for('delete_entity', entity='encuesta', rid=r.id) }}" onsubmit="return confirm('¿Eliminar encuesta?');" style="display:inline;">
+                <button class="btn btn-danger" type="submit">Eliminar</button>
+              </form>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
@@ -105,19 +165,24 @@
   </div>
 
   <h2 style="margin-top:14px;">Atención al público</h2>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('download_entity', entity='atencion', **request.args) }}">Descargar CSV</a>
-  </div>
   <div style="overflow:auto;">
     <table>
-      <thead><tr><th>Fecha</th><th>Tiempo promedio (mm:ss)</th><th>Cantidad</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Tiempo promedio (mm:ss)</th><th>Cantidad</th><th>Acciones</th></tr></thead>
       <tbody>
         {% for r in atenciones %}
-          <tr><td>{{ r.fecha }}</td><td>{{ '%02d:%02d'|format((r.tiempo_promedio_sec//60),(r.tiempo_promedio_sec%60)) }}</td><td>{{ r.cantidad }}</td></tr>
+          <tr>
+            <td>{{ r.fecha }}</td>
+            <td>{{ '%02d:%02d'|format((r.tiempo_promedio_sec//60),(r.tiempo_promedio_sec%60)) }}</td>
+            <td>{{ r.cantidad }}</td>
+            <td style="white-space:nowrap;">
+              <form method="post" action="{{ url_for('delete_entity', entity='atencion', rid=r.id) }}" onsubmit="return confirm('¿Eliminar atención?');" style="display:inline;">
+                <button class="btn btn-danger" type="submit">Eliminar</button>
+              </form>
+            </td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 {% endblock %}
-
 
