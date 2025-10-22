@@ -1,67 +1,148 @@
 {% extends "base.html" %}
 {% block content %}
-  <h1>Registros guardados</h1>
+  <h1>Registros</h1>
   <div class="toolbar">
-    <a class="btn" href="{{ url_for('form_semana') }}">Ingresar nuevo registro</a>
-    <a class="btn" href="{{ url_for('download_csv') }}">Descargar CSV</a>
+    <a class="btn" href="{{ url_for('panel', tab='censo') }}">Panel de ingreso</a>
     <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
   </div>
 
-  {% if not capturas_id_reg %}
-    <p class="muted" style="margin-top:12px;">No hay capturas aún.</p>
-  {% else %}
-    {% for capture_id, c in capturas_id_reg %}
-      <div style="margin-top:16px;">
-        <h3 style="margin:0 0 6px;">
-          Semana {{ c['semana'] }} ({{ c['rango'][0] }} → {{ c['rango'][1] }})
-        </h3>
-        <div class="muted">Creado: {{ c['creado'] }}</div>
-
-        <div class="grid" style="grid-template-columns: repeat(5, minmax(160px,1fr)); margin:12px 0;">
-          <div class="card"><strong>Prom. Censo</strong><div>{{ c['prom_censo'] }}</div></div>
-          <div class="card"><strong>Prom. Eventos de seguridad</strong><div>{{ c['prom_eventos'] }}</div></div>
-          <div class="card"><strong>Prom. Duplicidad</strong><div>{{ c['prom_duplicidad'] }}</div></div>
-          <div class="card"><strong>Prom. Encuesta</strong><div>{{ c['prom_encuesta'] }}</div></div>
-          <div class="card"><strong>Tiempo prom.</strong><div>{{ c['prom_tiempo'] }}</div></div>
-        </div>
-
-        <div style="overflow:auto; margin-top:8px;">
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Censo</th>
-                <th>Eventos de seguridad</th>
-                <th>Duplicidad</th>
-                <th>Encuesta</th>
-                <th>Tiempo (mm:ss)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for i in range(c['fechas']|length) %}
-                <tr>
-                  <td>{{ c['fechas'][i] }}</td>
-                  <td>{{ c['censo'][i] }}</td>
-                  <td>{{ c['eventos_seguridad'][i] }}</td>
-                  <td>{{ c['duplicidad'][i] }}</td>
-                  <td>{{ c['encuesta'][i] }}</td>
-                  <td>{{ c['tiempo'][i] }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-
-        <form action="{{ url_for('borrar', capture_id=capture_id) }}" method="post"
-              onsubmit="return confirm('¿Eliminar el registro de la semana {{ c['semana'] }}?');"
-              style="margin-top:8px;">
-          <button class="btn" type="submit">Eliminar registro</button>
-        </form>
+  <!-- Filtros -->
+  <form method="get" action="{{ url_for('registros') }}" style="margin-top:10px;">
+    <div class="grid" style="grid-template-columns: repeat(4, minmax(160px,1fr));">
+      <div>
+        <label>Desde</label>
+        <input type="date" name="from" value="{{ d_from if d_from else '' }}">
       </div>
-    {% endfor %}
-  {% endif %}
-{% endblock %}
+      <div>
+        <label>Hasta</label>
+        <input type="date" name="to" value="{{ d_to if d_to else '' }}">
+      </div>
+      <div>
+        <label>Semana</label>
+        <select name="semana">
+          <option value="">-- (opcional) --</option>
+          {% for num, r in week_map.items()|sort %}
+            <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>
+              {{ num }} ({{ r[0] }} → {{ r[1] }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="align-self:end;">
+        <button class="btn" type="submit">Aplicar filtros</button>
+      </div>
+    </div>
+  </form>
 
+  <!-- CENSO -->
+  <h2 style="margin-top:14px;">Censo</h2>
+  <div class="toolbar">
+    <a class="btn" href="{{ url_for('download_entity', entity='censo', **request.args) }}">Descargar CSV</a>
+  </div>
+  <div style="overflow:auto;">
+    <table>
+      <thead><tr><th>Fecha</th><th>Censo día</th><th>Censo noche</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for r in census %}
+          <tr><td>{{ r.fecha }}</td><td>{{ r.censo_dia }}</td><td>{{ r.censo_noche }}</td><td>{{ r.total }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- EVENTOS -->
+  <h2 style="margin-top:14px;">Eventos de seguridad</h2>
+  <div class="toolbar">
+    <a class="btn" href="{{ url_for('download_entity', entity='eventos', **request.args) }}">Descargar CSV</a>
+  </div>
+  <div style="overflow:auto;">
+    <table>
+      <thead><tr><th>Fecha</th><th>Horario</th><th>Qué ocurrió</th><th>Nombre afectado</th><th>Acción</th></tr></thead>
+      <tbody>
+        {% for r in eventos %}
+          <tr><td>{{ r.fecha }}</td><td>{{ r.horario }}</td><td>{{ r.que_ocurrio }}</td><td>{{ r.nombre_afectado }}</td><td>{{ r.accion }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DUPLICIDADES -->
+  <h2 style="margin-top:14px;">Duplicidades</h2>
+  <div class="toolbar">
+    <a class="btn" href="{{ url_for('download_entity', entity='duplicidades', **request.args) }}">Descargar CSV</a>
+  </div>
+  <div style="overflow:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Semana</th><th>Fecha</th><th>ID</th><th>Empresa</th><th>Descripción</th>
+          <th>Riesgo</th><th>Pabellón</th><th>Habitación</th><th>Contacto</th>
+          <th>Usuario</th><th>Responsable</th><th>Estatus</th><th>Notificación</th>
+          <th>Plan de acción</th><th>Fecha cierre</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in duplics %}
+          <tr>
+            <td>{{ r.semana }}</td><td>{{ r.fecha }}</td><td>{{ r.id_interno }}</td><td>{{ r.empresa_contratista }}</td>
+            <td>{{ r.descripcion_problema }}</td><td>{{ r.tipo_riesgo }}</td><td>{{ r.pabellon }}</td>
+            <td>{{ r.habitacion }}</td><td>{{ r.ingresar_contacto }}</td><td>{{ r.nombre_usuario }}</td>
+            <td>{{ r.responsable }}</td><td>{{ r.estatus }}</td><td>{{ r.notificacion_usuario }}</td>
+            <td>{{ r.plan_accion }}</td><td>{{ r.fecha_cierre if r.fecha_cierre else '' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ENCUESTAS -->
+  <h2 style="margin-top:14px;">Encuesta de satisfacción</h2>
+  <div class="toolbar">
+    <a class="btn" href="{{ url_for('download_entity', entity='encuestas', **request.args) }}">Descargar CSV</a>
+  </div>
+  <div style="overflow:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha Hora</th>
+          <th>Q1(R/P)</th><th>Q2(R/P)</th><th>Q3(R/P)</th><th>Q4(R/P)</th><th>Q5(R/P)</th>
+          <th>Total</th><th>Promedio</th><th>Comentarios</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in encuestas %}
+          <tr>
+            <td>{{ r.fecha_hora }}</td>
+            <td>{{ r.q1_respuesta }} / {{ r.q1_puntaje }}</td>
+            <td>{{ r.q2_respuesta }} / {{ r.q2_puntaje }}</td>
+            <td>{{ r.q3_respuesta }} / {{ r.q3_puntaje }}</td>
+            <td>{{ r.q4_respuesta }} / {{ r.q4_puntaje }}</td>
+            <td>{{ r.q5_respuesta }} / {{ r.q5_puntaje }}</td>
+            <td>{{ r.total }}</td>
+            <td>{{ r.promedio }}</td>
+            <td>{{ r.comentarios }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ATENCIÓN -->
+  <h2 style="margin-top:14px;">Atención al público</h2>
+  <div class="toolbar">
+    <a class="btn" href="{{ url_for('download_entity', entity='atencion', **request.args) }}">Descargar CSV</a>
+  </div>
+  <div style="overflow:auto;">
+    <table>
+      <thead><tr><th>Fecha</th><th>Tiempo promedio (mm:ss)</th><th>Cantidad</th></tr></thead>
+      <tbody>
+        {% for r in atenciones %}
+          <tr><td>{{ r.fecha }}</td><td>{{ '%02d:%02d'|format((r.tiempo_promedio_sec//60),(r.tiempo_promedio_sec%60)) }}</td><td>{{ r.cantidad }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
 
 
 
