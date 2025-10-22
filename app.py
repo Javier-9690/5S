@@ -541,7 +541,7 @@ def panel():
 @app.get("/registros")
 def registros():
     d_from, d_to, semana_sel = resolve_filters(request.args)
-    vista = request.args.get("vista", "censo")  # <--- NUEVO
+    vista = request.args.get("vista", "censo")  # <= NUEVO
     db = SessionLocal()
     try:
         if semana_sel:
@@ -563,7 +563,6 @@ def registros():
 
         atenciones = between(db.query(AtencionEntry), AtencionEntry.fecha).order_by(AtencionEntry.fecha.desc()).all()
 
-        # nuevos módulos
         robos = db.query(RoboHurtoEntry)
         if d_from: robos = robos.filter(RoboHurtoEntry.fecha >= d_from)
         if d_to:   robos = robos.filter(RoboHurtoEntry.fecha <= d_to)
@@ -576,7 +575,7 @@ def registros():
         if d_to:   desviaciones = desviaciones.filter(DesviacionEntry.fecha <= d_to)
         desviaciones = desviaciones.order_by(DesviacionEntry.fecha.desc()).all()
 
-        solicitud_ot = db.query(SolicitudOTEntry).order_by(SolicitudOTEntry.id.desc()).all()
+        solicitudes_ot = db.query(SolicitudOTEntry).order_by(SolicitudOTEntry.id.desc()).all()
 
         reclamos = db.query(ReclamoUsuarioEntry)
         if d_from: reclamos = reclamos.filter(ReclamoUsuarioEntry.fecha >= d_from)
@@ -589,8 +588,8 @@ def registros():
             census=census, eventos=eventos, duplics=duplics,
             encuestas=encuestas, atenciones=atenciones,
             robos=robos, miscelaneo=miscelaneo, desviaciones=desviaciones,
-            solicitud_ot=solicitud_ot, reclamos=reclamos,
-            vista=vista,                 # <--- NUEVO
+            solicitudes_ot=solicitudes_ot, reclamos=reclamos,  # ojo: nombre plural usado en template
+            vista=vista,
             current_tab=None
         )
     finally:
