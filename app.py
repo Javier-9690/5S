@@ -12,10 +12,13 @@ from flask import (
 
 # ---------- BD ----------
 from sqlalchemy import (
-    create_engine, Column, Integer, String, Date, DateTime, Time, Float, Text, ForeignKey
+    create_engine, Column, Integer, String, Date, DateTime, Time, Float, Text
 )
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship
+from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
+
+# Excel
+from openpyxl import Workbook, load_workbook
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
@@ -95,11 +98,6 @@ WEEK_MAP = {
     95: ("2026-10-19", "2026-10-25"),
     96: ("2026-10-26", "2026-11-01"),
 }
-def week_dates(week_number: int):
-    if week_number not in WEEK_MAP: return []
-    start_str, _ = WEEK_MAP[week_number]
-    d0 = date.fromisoformat(start_str)
-    return [d0 + timedelta(days=i) for i in range(7)]
 def week_range(week_number: int):
     if week_number not in WEEK_MAP: return (None, None)
     s, e = WEEK_MAP[week_number]
@@ -113,7 +111,7 @@ def mmss_to_seconds(s: str) -> int:
 def seconds_to_mmss(x: int) -> str:
     m, s = divmod(max(0, int(x)), 60); return f"{m:02d}:{s:02d}"
 
-# ---------- Modelos (5 entidades) ----------
+# ---------- Modelos ----------
 class CensusEntry(Base):
     __tablename__ = "census_entries"
     id = Column(Integer, primary_key=True)
@@ -127,7 +125,7 @@ class EventSeguridad(Base):
     __tablename__ = "eventos_seguridad"
     id = Column(Integer, primary_key=True)
     fecha = Column(Date, nullable=False)
-    horario = Column(String(50), nullable=False)  # Mañana/Tarde/Noche o HH:MM
+    horario = Column(String(50), nullable=False)
     que_ocurrio = Column(Text, nullable=False)
     nombre_afectado = Column(String(200), nullable=True)
     accion = Column(Text, nullable=True)
@@ -146,7 +144,7 @@ class DuplicidadEntry(Base):
     habitacion = Column(String(100), nullable=True)
     ingresar_contacto = Column(String(200), nullable=True)
     nombre_usuario = Column(String(200), nullable=True)
-    responsable = Column(String(200), nullable=True)  # Toma Requerimiento
+    responsable = Column(String(200), nullable=True)
     estatus = Column(String(50), nullable=True)  # Cerrado/Abierto
     notificacion_usuario = Column(String(200), nullable=True)
     plan_accion = Column(Text, nullable=True)
@@ -184,19 +182,11 @@ Base.metadata.create_all(ENGINE)
 
 # ---------- Helpers filtros ----------
 def resolve_filters(args):
-    """
-    Devuelve (d_from, d_to) a partir de:
-      - rango por fecha (from=YYYY-MM-DD, to=YYYY-MM-DD)
-      - o semana (semana=int -> usa WEEK_MAP)
-    """
     semana = args.get("semana", type=int)
     d_from = args.get("from")
     d_to = args.get("to")
-
     if semana and semana in WEEK_MAP:
-        s, e = week_range(semana)
-        return s, e, semana
-    # rango libre
+        return *week_range(semana), semana
     df = date.fromisoformat(d_from) if d_from else None
     dt = date.fromisoformat(d_to) if d_to else None
     return df, dt, None
@@ -210,7 +200,7 @@ def health():
 def home():
     return redirect(url_for("panel", tab="censo"))
 
-# ---------- PANEL con sidebar ----------
+# ---------- PANEL (sidebar SIEMPRE en base.html) ----------
 @app.route("/panel", methods=["GET", "POST"])
 def panel():
     tab = request.args.get("tab", "censo")  # censo | eventos | duplicidades | encuesta | atencion
@@ -260,7 +250,6 @@ def panel():
 
             elif tab == "encuesta":
                 fh_raw = request.form.get("fecha_hora")
-                # acepta "YYYY-MM-DDTHH:MM" (input datetime-local), o "YYYY-MM-DD HH:MM"
                 if "T" in fh_raw: fecha_hora = datetime.fromisoformat(fh_raw)
                 else: fecha_hora = datetime.fromisoformat(fh_raw.replace(" ", "T"))
                 vals = {}
@@ -297,8 +286,8 @@ def panel():
 
             return redirect(url_for("panel", tab=tab))
 
-        # GET: solo renderizar
-        return render_template("panel.html", tab=tab, week_map=WEEK_MAP)
+        # GET
+        return render_template("panel.html", tab=tab, week_map=WEEK_MAP, current_tab=tab)
     finally:
         db.close()
 
@@ -308,11 +297,9 @@ def registros():
     d_from, d_to, semana_sel = resolve_filters(request.args)
     db = SessionLocal()
     try:
-        # si semana: convertir a rango
         if semana_sel:
             d_from, d_to = week_range(semana_sel)
 
-        # construir queries por rango (si hay filtros)
         def between(q, col):
             if d_from: q = q.filter(col >= d_from)
             if d_to:   q = q.filter(col <= d_to)
@@ -329,7 +316,8 @@ def registros():
 
         return render_template("list.html",
                                semana_sel=semana_sel, d_from=d_from, d_to=d_to, week_map=WEEK_MAP,
-                               census=census, eventos=eventos, duplics=duplics, encuestas=encuestas, atenciones=atenciones)
+                               census=census, eventos=eventos, duplics=duplics, encuestas=encuestas, atenciones=atenciones,
+                               current_tab=None)
     finally:
         db.close()
 
@@ -431,16 +419,154 @@ def download_entity(entity):
     finally:
         db.close()
 
-# ---------- Dashboard (usa filtros) ----------
+# ---------- Templates Excel por entidad ----------
+TEMPLATES = {
+    "censo": ["FECHA", "CENSO_DIA", "CENSO_NOCHE", "TOTAL"],
+    "eventos": ["FECHA", "HORARIO", "QUE_OCURRIO", "NOMBRE_AFECTADO", "ACCION"],
+    "duplicidades": [
+        "SEMANA","FECHA","ID","EMPRESA_CONTRATISTA","DESCRIPCION_PROBLEMA","TIPO_RIESGO",
+        "PABELLON","HABITACION","INGRESAR_CONTACTO","NOMBRE_USUARIO","RESPONSABLE","ESTATUS",
+        "NOTIFICACION_USUARIO","PLAN_ACCION","FECHA_CIERRE"
+    ],
+    "encuesta": [
+        "FECHA_HORA",
+        "Q1_RESPUESTA","Q1_PUNTAJE","Q2_RESPUESTA","Q2_PUNTAJE","Q3_RESPUESTA","Q3_PUNTAJE",
+        "Q4_RESPUESTA","Q4_PUNTAJE","Q5_RESPUESTA","Q5_PUNTAJE","TOTAL","PROMEDIO","COMENTARIOS"
+    ],
+    "atencion": ["FECHA","TIEMPO_PROMEDIO_MMSS","CANTIDAD"]
+}
+
+@app.get("/template/<string:entity>.xlsx")
+def template_xlsx(entity):
+    entity = entity.lower()
+    if entity not in TEMPLATES:
+        flash("Entidad no válida para plantilla.")
+        return redirect(url_for("panel", tab="censo"))
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plantilla"
+    ws.append(TEMPLATES[entity])
+    out = io.BytesIO()
+    wb.save(out); out.seek(0)
+    return send_file(out, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                     as_attachment=True, download_name=f"plantilla_{entity}.xlsx")
+
+# ---------- Importación Excel por entidad ----------
+@app.post("/import/<string:entity>")
+def import_xlsx(entity):
+    entity = entity.lower()
+    if entity not in TEMPLATES:
+        flash("Entidad no válida para importación.")
+        return redirect(url_for("panel", tab="censo"))
+
+    f = request.files.get("file")
+    if not f or f.filename == "":
+        flash("Sube un archivo .xlsx.")
+        return redirect(url_for("panel", tab=entity if entity != "eventos" else "eventos"))
+
+    try:
+        wb = load_workbook(filename=io.BytesIO(f.read()), data_only=True)
+        ws = wb.active
+        headers = [str(c.value).strip() if c.value is not None else "" for c in next(ws.iter_rows(min_row=1, max_row=1))]
+        expected = TEMPLATES[entity]
+        if [h.upper() for h in headers] != expected:
+            flash(f"Encabezados inválidos. Esperado: {', '.join(expected)}")
+            return redirect(url_for("panel", tab=entity if entity != "eventos" else "eventos"))
+
+        inserted = 0
+        db = SessionLocal()
+        try:
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                if all(cell is None or str(cell).strip()=="" for cell in row):
+                    continue
+                if entity == "censo":
+                    fecha = date.fromisoformat(str(row[0]))
+                    cd = int(row[1] or 0); cn = int(row[2] or 0)
+                    total = int(row[3] or (cd+cn))
+                    db.add(CensusEntry(fecha=fecha, censo_dia=cd, censo_noche=cn, total=total))
+
+                elif entity == "eventos":
+                    fecha = date.fromisoformat(str(row[0]))
+                    horario = str(row[1] or "").strip()
+                    que = str(row[2] or "").strip()
+                    nom = str(row[3] or "").strip()
+                    acc = str(row[4] or "").strip()
+                    db.add(EventSeguridad(fecha=fecha, horario=horario, que_ocurrio=que,
+                                          nombre_afectado=nom, accion=acc))
+
+                elif entity == "duplicidades":
+                    semana = int(row[0])
+                    fecha = date.fromisoformat(str(row[1]))
+                    db.add(DuplicidadEntry(
+                        semana=semana, fecha=fecha,
+                        id_interno=str(row[2] or "").strip(),
+                        empresa_contratista=str(row[3] or "").strip(),
+                        descripcion_problema=str(row[4] or "").strip(),
+                        tipo_riesgo=str(row[5] or "").strip(),
+                        pabellon=str(row[6] or "").strip(),
+                        habitacion=str(row[7] or "").strip(),
+                        ingresar_contacto=str(row[8] or "").strip(),
+                        nombre_usuario=str(row[9] or "").strip(),
+                        responsable=str(row[10] or "").strip(),
+                        estatus=str(row[11] or "").strip(),
+                        notificacion_usuario=str(row[12] or "").strip(),
+                        plan_accion=str(row[13] or "").strip(),
+                        fecha_cierre=(date.fromisoformat(str(row[14])) if row[14] else None)
+                    ))
+
+                elif entity == "encuesta":
+                    fh_raw = str(row[0])
+                    if "T" in fh_raw: fh = datetime.fromisoformat(fh_raw)
+                    else: fh = datetime.fromisoformat(fh_raw.replace(" ", "T"))
+                    def to_int(v): 
+                        try: return int(v)
+                        except: return None
+                    q1r,q1p,q2r,q2p,q3r,q3p,q4r,q4p,q5r,q5p,tot,prm,com = row[1:14]
+                    db.add(EncuestaEntry(
+                        fecha_hora=fh,
+                        q1_respuesta=str(q1r or ""), q1_puntaje=to_int(q1p),
+                        q2_respuesta=str(q2r or ""), q2_puntaje=to_int(q2p),
+                        q3_respuesta=str(q3r or ""), q3_puntaje=to_int(q3p),
+                        q4_respuesta=str(q4r or ""), q4_puntaje=to_int(q4p),
+                        q5_respuesta=str(q5r or ""), q5_puntaje=to_int(q5p),
+                        total=to_int(tot),
+                        promedio=float(prm) if prm not in (None,"") else None,
+                        comentarios=str(com or "")
+                    ))
+
+                elif entity == "atencion":
+                    fecha = date.fromisoformat(str(row[0]))
+                    mmss = str(row[1] or "").strip()
+                    if mmss and not TIME_RE.match(mmss):
+                        mmss = "00:00"
+                    cant = int(row[2] or 0)
+                    db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=mmss_to_seconds(mmss), cantidad=cant))
+
+                inserted += 1
+
+            db.commit()
+            flash(f"Importación de {entity} OK: {inserted} filas.")
+        except Exception as e:
+            db.rollback()
+            flash(f"Error importando {entity}: {e}")
+        finally:
+            db.close()
+
+    except Exception as e:
+        flash(f"No se pudo leer el Excel: {e}")
+
+    # volver al tab correspondiente
+    tab = "eventos" if entity=="eventos" else entity
+    return redirect(url_for("panel", tab=tab))
+
+# ---------- Dashboard (con toolbar solicitada) ----------
 @app.get("/dashboard")
 def dashboard():
     d_from, d_to, semana_sel = resolve_filters(request.args)
     if semana_sel: d_from, d_to = week_range(semana_sel)
     db = SessionLocal()
     try:
-        # Agregar por día con datos disponibles:
-        # Usaremos: Censo total, Eventos count (por fila), Duplicidades count (por fila), Encuesta count (por fila), Atención: promedio tiempo y cantidad
-        per_day = {}  # key = ISO date -> dict
+        per_day = {}
         def bucket(dkey):
             return per_day.setdefault(dkey, {
                 "censo": 0,
@@ -490,7 +616,8 @@ def dashboard():
             b["atencion_tiempos"].append(r.tiempo_promedio_sec)
 
         if not per_day:
-            return render_template("dashboard.html", have_data=False, week_map=WEEK_MAP)
+            return render_template("dashboard.html", have_data=False, week_map=WEEK_MAP,
+                                   d_from=d_from, d_to=d_to, semana_sel=semana_sel, current_tab=None)
 
         ordered_days = sorted(per_day.keys())
         s_censo, s_eventos, s_dup, s_enc, s_att_cant, s_att_mm = [], [], [], [], [], []
@@ -510,9 +637,10 @@ def dashboard():
             "duplicidades_total": sum(s_dup),
             "encuestas_total": sum(s_enc),
             "atencion_cant_total": sum(s_att_cant),
-            "atencion_tiempo_prom_global": seconds_to_mmss(int(mean(
-                [int(x*60) for x in s_att_mm if x>0]
-            ))) if any(x>0 for x in s_att_mm) else "00:00",
+            "atencion_tiempo_prom_global": (
+                seconds_to_mmss(int(mean([int(x*60) for x in s_att_mm if x>0])))
+                if any(x>0 for x in s_att_mm) else "00:00"
+            ),
         }
 
         return render_template("dashboard.html",
@@ -528,7 +656,8 @@ def dashboard():
                                    "atencion_min": s_att_mm
                                },
                                cards=cards,
-                               d_from=d_from, d_to=d_to, semana_sel=semana_sel)
+                               d_from=d_from, d_to=d_to, semana_sel=semana_sel,
+                               current_tab=None)
     finally:
         db.close()
 
