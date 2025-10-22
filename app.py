@@ -791,6 +791,47 @@ def download_entity(entity):
         )
     finally:
         db.close()
+        
+# --- Mapa entidad → Modelo para eliminar ---
+ENTITY_MODEL = {
+    "censo": CensusEntry,
+    "eventos": EventSeguridad,
+    "duplicidades": DuplicidadEntry,
+    "encuestas": EncuestaEntry,
+    "atencion": AtencionEntry,
+    "robos": RoboHurtoEntry,
+    "miscelaneo": MiscelaneoEntry,
+    "desviaciones": DesviacionEntry,
+    "solicitud_ot": SolicitudOTEntry,
+    "reclamos": ReclamoUsuarioEntry,
+}
+
+@app.post("/delete/<string:entity>/<int:rid>")
+def delete_record(entity, rid):
+    """Elimina un registro por entidad e ID y redirige a la lista con los filtros actuales."""
+    Model = ENTITY_MODEL.get(entity)
+    if not Model:
+        flash("Entidad no válida.")
+        return redirect(url_for("registros"))
+
+    db = SessionLocal()
+    try:
+        obj = db.get(Model, rid)
+        if not obj:
+            flash("Registro no encontrado.")
+        else:
+            db.delete(obj)
+            db.commit()
+            flash("Registro eliminado.")
+    except Exception as e:
+        db.rollback()
+        flash(f"No se pudo eliminar: {e}")
+    finally:
+        db.close()
+
+    # Volver a donde estaba el usuario (mantiene filtros)
+    next_url = request.form.get("next") or url_for("registros")
+    return redirect(next_url)
 
 # -----------------------------------------------------------------------------
 # PLANTILLAS EXCEL + IMPORTACIÓN POR MÓDULO
