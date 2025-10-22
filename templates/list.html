@@ -1,11 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>Registros</h1>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('panel', tab='censo') }}">Panel de ingreso</a>
-    <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
-  </div>
-
+ 
   <form method="get" action="{{ url_for('registros') }}" style="margin-top:10px;">
     <div style="display:grid; grid-template-columns: repeat(4, minmax(160px,1fr)); gap:12px;">
       <div><label>Desde</label><input type="date" name="from" value="{{ d_from if d_from else '' }}"></div>
@@ -22,6 +18,16 @@
       <div style="align-self:end;"><button class="btn" type="submit">Aplicar filtros</button></div>
     </div>
   </form>
+
+{% macro delbtn(entity, id) -%}
+<form method="post"
+      action="{{ url_for('delete_record', entity=entity, rid=id) }}"
+      onsubmit="return confirm('¿Eliminar este registro?');"
+      style="display:inline;">
+  <input type="hidden" name="next" value="{{ request.full_path }}">
+  <button class="btn" type="submit" style="padding:4px 8px;">Eliminar</button>
+</form>
+{%- endmacro %}
 
   <!-- Censo -->
   <h2 style="margin-top:14px;">Censo</h2>
