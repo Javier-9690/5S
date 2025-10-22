@@ -1,107 +1,91 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>Dashboard</h1>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('form_semana') }}">Ingresar nuevo registro</a>
-    <a class="btn" href="{{ url_for('listar') }}">Registros</a>
-  </div>
+
+  <form method="get" action="{{ url_for('dashboard') }}" style="margin-top:10px;">
+    <div class="grid" style="grid-template-columns: repeat(4, minmax(160px,1fr));">
+      <div>
+        <label>Desde</label>
+        <input type="date" name="from" value="{{ d_from if d_from else '' }}">
+      </div>
+      <div>
+        <label>Hasta</label>
+        <input type="date" name="to" value="{{ d_to if d_to else '' }}">
+      </div>
+      <div>
+        <label>Semana</label>
+        <select name="semana">
+          <option value="">-- (opcional) --</option>
+          {% for num, r in week_map.items()|sort %}
+            <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>
+              {{ num }} ({{ r[0] }} → {{ r[1] }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="align-self:end;">
+        <button class="btn" type="submit">Aplicar filtros</button>
+      </div>
+    </div>
+  </form>
 
   {% if not have_data %}
-    <p class="muted" style="margin-top:12px;">Aún no hay datos.</p>
+    <p class="muted" style="margin-top:12px;">Sin datos en el rango/semana seleccionado.</p>
   {% else %}
-    <!-- Tarjetas -->
-    <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-top:12px;">
+    <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:12px; margin-top:12px;">
       <div class="card"><strong>Censo total</strong><div>{{ cards.censo_total }}</div></div>
-      <div class="card"><strong>Eventos de seguridad</strong><div>{{ cards.eventos_total }}</div></div>
-      <div class="card"><strong>Duplicidad</strong><div>{{ cards.duplicidad_total }}</div></div>
-      <div class="card"><strong>Encuestas</strong><div>{{ cards.encuesta_total }}</div></div>
-      <div class="card"><strong>Tiempo prom. global</strong><div>{{ cards.tiempo_prom_global }}</div></div>
+      <div class="card"><strong>Eventos</strong><div>{{ cards.eventos_total }}</div></div>
+      <div class="card"><strong>Duplicidades</strong><div>{{ cards.duplicidades_total }}</div></div>
+      <div class="card"><strong>Encuestas</strong><div>{{ cards.encuestas_total }}</div></div>
+      <div class="card"><strong>Atenciones</strong><div>{{ cards.atencion_cant_total }}</div></div>
+      <div class="card"><strong>Tiempo atención prom.</strong><div>{{ cards.atencion_tiempo_prom_global }}</div></div>
     </div>
 
     <style>
-      .chart-box{width:100%; height:380px; margin:10px 0 24px;}
+      .chart-box{width:100%; height:360px; margin:10px 0 24px;}
       .chart-title{font-weight:800; font-size:18px; margin:14px 0 4px;}
+      .panel{background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px;}
     </style>
 
-    <div class="panel">
+    <div class="panel" style="margin-top:12px;">
       <div class="chart-title">Censo por día</div>
-      <div class="chart-box"><canvas id="chartCenso"></canvas></div>
+      <div class="chart-box"><canvas id="c1"></canvas></div>
 
       <div class="chart-title">Eventos de seguridad por día</div>
-      <div class="chart-box"><canvas id="chartEventos"></canvas></div>
+      <div class="chart-box"><canvas id="c2"></canvas></div>
 
-      <div class="chart-title">Duplicidad por día</div>
-      <div class="chart-box"><canvas id="chartDuplicidad"></canvas></div>
+      <div class="chart-title">Duplicidades por día</div>
+      <div class="chart-box"><canvas id="c3"></canvas></div>
 
-      <div class="chart-title">Encuesta por día</div>
-      <div class="chart-box"><canvas id="chartEncuesta"></canvas></div>
+      <div class="chart-title">Encuestas por día</div>
+      <div class="chart-box"><canvas id="c4"></canvas></div>
 
-      <div class="chart-title">Tiempo promedio por día (min)</div>
-      <div class="chart-box"><canvas id="chartTiempo"></canvas></div>
-    </div>
+      <div class="chart-title">Atenciones por día</div>
+      <div class="chart-box"><canvas id="c5"></canvas></div>
 
-    <h2 style="margin-top:18px;">Resumen por semana</h2>
-    <div class="panel">
-      <div style="overflow:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Semana</th>
-              <th>Rango</th>
-              <th>Censo</th>
-              <th>Eventos de seguridad</th>
-              <th>Duplicidad</th>
-              <th>Encuesta</th>
-              <th>Tiempo prom.</th>
-              <th>Duplicidad/100 censo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in table %}
-              <tr>
-                <td>{{ r['semana'] }}</td>
-                <td>{{ r['rango'][0] }} → {{ r['rango'][1] }}</td>
-                <td>{{ r['censo'] }}</td>
-                <td>{{ r['eventos'] }}</td>
-                <td>{{ r['duplicidad'] }}</td>
-                <td>{{ r['encuesta'] }}</td>
-                <td>{{ r['t_prom'] }}</td>
-                <td>{{ '%.2f%%'|format(r['dup_x100']) }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+      <div class="chart-title">Tiempo promedio de atención (min) por día</div>
+      <div class="chart-box"><canvas id="c6"></canvas></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      const labels = {{ series.labels_days|tojson }};
-      const censo = {{ series.censo|tojson }};
-      const eventos = {{ series.eventos|tojson }};
-      const duplicidad = {{ series.duplicidad|tojson }};
-      const encuesta = {{ series.encuesta|tojson }};
-      const tavgSec = {{ series.tavg_sec|tojson }};
-      const tavgMin = tavgSec.map(s => (s / 60).toFixed(2));
+      const labels = {{ labels|tojson }};
+      const s = {{ series|tojson }};
 
-      function lineConfig(lbl, data){
+      function cfg(lbl, data){
         return {
           type: 'line',
-          data: { labels, datasets: [{ label: lbl, data, tension: 0.25, pointRadius: 2 }] },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } },
-            scales: { x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true }}, y: { beginAtZero: true } }
-          }
-        };
+          data: { labels, datasets: [{ label: lbl, data, tension: .25, pointRadius: 2 }] },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
+                     scales:{ y:{ beginAtZero: true }, x:{ ticks:{ autoSkip:true, maxRotation:45 }}}}
+        }
       }
-
-      new Chart(document.getElementById('chartCenso'),      lineConfig('Censo por día', censo));
-      new Chart(document.getElementById('chartEventos'),    lineConfig('Eventos de seguridad por día', eventos));
-      new Chart(document.getElementById('chartDuplicidad'), lineConfig('Duplicidad por día', duplicidad));
-      new Chart(document.getElementById('chartEncuesta'),   lineConfig('Encuesta por día', encuesta));
-      new Chart(document.getElementById('chartTiempo'),     lineConfig('Tiempo promedio por día (min)', tavgMin));
+      new Chart(document.getElementById('c1'), cfg('Censo', s.censo));
+      new Chart(document.getElementById('c2'), cfg('Eventos', s.eventos));
+      new Chart(document.getElementById('c3'), cfg('Duplicidades', s.duplicidades));
+      new Chart(document.getElementById('c4'), cfg('Encuestas', s.encuestas));
+      new Chart(document.getElementById('c5'), cfg('Atenciones', s.atencion_cant));
+      new Chart(document.getElementById('c6'), cfg('Tiempo atención (min)', s.atencion_min));
     </script>
   {% endif %}
 {% endblock %}
