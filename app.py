@@ -1,26 +1,27 @@
 import os
-import csv
 import io
+import csv
 import re
 from statistics import mean
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, time, timedelta
 
 from flask import (
-    Flask, render_template, request, redirect,
-    url_for, flash, send_file, jsonify
+    Flask, render_template, request, redirect, url_for,
+    flash, send_file, jsonify
 )
 
-# -------------------- BD: SQLAlchemy --------------------
-from sqlalchemy import create_engine, Column, Integer, Date, DateTime, ForeignKey
+# ---------- BD ----------
+from sqlalchemy import (
+    create_engine, Column, Integer, String, Date, DateTime, Time, Float, Text, ForeignKey
+)
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from sqlalchemy.exc import SQLAlchemyError
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
 
-# ---------- Conexión a BD ----------
-def _normalize_db_url(url: str) -> str:
-    # Fuerza driver psycopg2 y SSL si no viene
+# ---------- Utilidades ----------
+def normalize_db_url(url: str) -> str:
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+psycopg2://", 1)
     elif url.startswith("postgresql://"):
@@ -32,40 +33,11 @@ def _normalize_db_url(url: str) -> str:
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("Falta la variable de entorno DATABASE_URL")
-
-ENGINE = create_engine(_normalize_db_url(DATABASE_URL), pool_pre_ping=True)
+ENGINE = create_engine(normalize_db_url(DATABASE_URL), pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=ENGINE, autocommit=False, autoflush=False)
 Base = declarative_base()
 
-# ---------- Modelos ----------
-class Capture(Base):
-    __tablename__ = "captures"
-    id = Column(Integer, primary_key=True)
-    semana = Column(Integer, nullable=False)
-    rango_start = Column(Date, nullable=False)
-    rango_end = Column(Date, nullable=False)
-    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
-
-    days = relationship("CaptureDay", back_populates="capture",
-                        cascade="all, delete-orphan")
-
-class CaptureDay(Base):
-    __tablename__ = "capture_days"
-    id = Column(Integer, primary_key=True)
-    capture_id = Column(Integer, ForeignKey("captures.id", ondelete="CASCADE"), nullable=False)
-    fecha = Column(Date, nullable=False)
-    censo = Column(Integer, nullable=False, default=0)
-    eventos_seguridad = Column(Integer, nullable=False, default=0)
-    duplicidad = Column(Integer, nullable=False, default=0)
-    encuesta = Column(Integer, nullable=False, default=0)
-    tiempo_sec = Column(Integer, nullable=False, default=0)  # guardamos mm:ss como segundos
-
-    capture = relationship("Capture", back_populates="days")
-
-# Crea tablas si no existen
-Base.metadata.create_all(ENGINE)
-
-# -------------------- Semanas / utilitarios --------------------
+# ---------- Semanas ----------
 WEEK_MAP = {
     42: ("2025-10-13", "2025-10-19"),
     43: ("2025-10-20", "2025-10-26"),
@@ -123,292 +95,445 @@ WEEK_MAP = {
     95: ("2026-10-19", "2026-10-25"),
     96: ("2026-10-26", "2026-11-01"),
 }
-
 def week_dates(week_number: int):
-    if week_number not in WEEK_MAP:
-        return []
+    if week_number not in WEEK_MAP: return []
     start_str, _ = WEEK_MAP[week_number]
     d0 = date.fromisoformat(start_str)
     return [d0 + timedelta(days=i) for i in range(7)]
+def week_range(week_number: int):
+    if week_number not in WEEK_MAP: return (None, None)
+    s, e = WEEK_MAP[week_number]
+    return (date.fromisoformat(s), date.fromisoformat(e))
 
+# ---------- Tiempo mm:ss ----------
 TIME_RE = re.compile(r"^\d{2}:\d{2}$")
-
 def mmss_to_seconds(s: str) -> int:
-    if not s:
-        return 0
-    m, ss = s.split(":")
-    return int(m) * 60 + int(ss)
-
+    if not s: return 0
+    m, ss = s.split(":"); return int(m)*60 + int(ss)
 def seconds_to_mmss(x: int) -> str:
-    m, s = divmod(max(0, int(x)), 60)
-    return f"{m:02d}:{s:02d}"
+    m, s = divmod(max(0, int(x)), 60); return f"{m:02d}:{s:02d}"
 
-# -------------------- Rutas --------------------
+# ---------- Modelos (5 entidades) ----------
+class CensusEntry(Base):
+    __tablename__ = "census_entries"
+    id = Column(Integer, primary_key=True)
+    fecha = Column(Date, nullable=False)
+    censo_dia = Column(Integer, nullable=False, default=0)
+    censo_noche = Column(Integer, nullable=False, default=0)
+    total = Column(Integer, nullable=False, default=0)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class EventSeguridad(Base):
+    __tablename__ = "eventos_seguridad"
+    id = Column(Integer, primary_key=True)
+    fecha = Column(Date, nullable=False)
+    horario = Column(String(50), nullable=False)  # Mañana/Tarde/Noche o HH:MM
+    que_ocurrio = Column(Text, nullable=False)
+    nombre_afectado = Column(String(200), nullable=True)
+    accion = Column(Text, nullable=True)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class DuplicidadEntry(Base):
+    __tablename__ = "duplicidades"
+    id = Column(Integer, primary_key=True)
+    semana = Column(Integer, nullable=False)
+    fecha = Column(Date, nullable=False)
+    id_interno = Column(String(100), nullable=True)
+    empresa_contratista = Column(String(200), nullable=True)
+    descripcion_problema = Column(Text, nullable=True)
+    tipo_riesgo = Column(String(200), nullable=True)  # Psicosocial
+    pabellon = Column(String(100), nullable=True)
+    habitacion = Column(String(100), nullable=True)
+    ingresar_contacto = Column(String(200), nullable=True)
+    nombre_usuario = Column(String(200), nullable=True)
+    responsable = Column(String(200), nullable=True)  # Toma Requerimiento
+    estatus = Column(String(50), nullable=True)  # Cerrado/Abierto
+    notificacion_usuario = Column(String(200), nullable=True)
+    plan_accion = Column(Text, nullable=True)
+    fecha_cierre = Column(Date, nullable=True)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class EncuestaEntry(Base):
+    __tablename__ = "encuestas"
+    id = Column(Integer, primary_key=True)
+    fecha_hora = Column(DateTime, nullable=False)
+    q1_respuesta = Column(Text, nullable=True)
+    q1_puntaje = Column(Integer, nullable=True)
+    q2_respuesta = Column(Text, nullable=True)
+    q2_puntaje = Column(Integer, nullable=True)
+    q3_respuesta = Column(Text, nullable=True)
+    q3_puntaje = Column(Integer, nullable=True)
+    q4_respuesta = Column(Text, nullable=True)
+    q4_puntaje = Column(Integer, nullable=True)
+    q5_respuesta = Column(Text, nullable=True)
+    q5_puntaje = Column(Integer, nullable=True)
+    total = Column(Integer, nullable=True)
+    promedio = Column(Float, nullable=True)
+    comentarios = Column(Text, nullable=True)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class AtencionEntry(Base):
+    __tablename__ = "atencion_publico"
+    id = Column(Integer, primary_key=True)
+    fecha = Column(Date, nullable=False)
+    tiempo_promedio_sec = Column(Integer, nullable=False, default=0)  # mm:ss -> seg
+    cantidad = Column(Integer, nullable=False, default=0)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+Base.metadata.create_all(ENGINE)
+
+# ---------- Helpers filtros ----------
+def resolve_filters(args):
+    """
+    Devuelve (d_from, d_to) a partir de:
+      - rango por fecha (from=YYYY-MM-DD, to=YYYY-MM-DD)
+      - o semana (semana=int -> usa WEEK_MAP)
+    """
+    semana = args.get("semana", type=int)
+    d_from = args.get("from")
+    d_to = args.get("to")
+
+    if semana and semana in WEEK_MAP:
+        s, e = week_range(semana)
+        return s, e, semana
+    # rango libre
+    df = date.fromisoformat(d_from) if d_from else None
+    dt = date.fromisoformat(d_to) if d_to else None
+    return df, dt, None
+
+# ---------- Rutas básicas ----------
 @app.get("/health")
 def health():
     return jsonify(status="ok"), 200
 
 @app.get("/")
-def root():
-    return redirect(url_for("form_semana"))
+def home():
+    return redirect(url_for("panel", tab="censo"))
 
-@app.get("/captura")
-def form_semana():
-    semana_sel = request.args.get("semana", type=int)
-    dias = week_dates(semana_sel) if semana_sel else []
-    return render_template("semana_form.html",
-                           week_map=WEEK_MAP,
-                           semana_sel=semana_sel,
-                           dias=dias)
-
-@app.post("/guardar")
-def guardar():
-    semana = request.form.get("semana", type=int)
-    if not semana or semana not in WEEK_MAP:
-        flash("Selecciona una semana válida.")
-        return redirect(url_for("form_semana", semana=semana or ""))
-
-    dias = week_dates(semana)
-    n = 7
-
-    def gi(name): return [request.form.get(f"{name}_{i}", "").strip() for i in range(n)]
-    censo      = gi("censo")
-    eventos    = gi("eventos")
-    duplicidad = gi("duplicidad")
-    encuesta   = gi("encuesta")
-    tiempo     = gi("tiempo")
-
-    def is_int_or_empty(s): return s == "" or s.isdigit()
-    errs = []
-    for i in range(n):
-        if not is_int_or_empty(censo[i]):      errs.append(f"Censo día {i+1} debe ser número.")
-        if not is_int_or_empty(eventos[i]):    errs.append(f"Eventos de seguridad día {i+1} debe ser número.")
-        if not is_int_or_empty(duplicidad[i]): errs.append(f"Duplicidad día {i+1} debe ser número.")
-        if not is_int_or_empty(encuesta[i]):   errs.append(f"Encuesta día {i+1} debe ser número.")
-        if tiempo[i] and not TIME_RE.match(tiempo[i]):
-            errs.append(f"Tiempo día {i+1} debe ser mm:ss (ej: 03:54).")
-    if errs:
-        flash("\n".join(errs))
-        return redirect(url_for("form_semana", semana=semana))
-
-    to_int = lambda s: int(s) if s else 0
-
-    # Persistir en BD
+# ---------- PANEL con sidebar ----------
+@app.route("/panel", methods=["GET", "POST"])
+def panel():
+    tab = request.args.get("tab", "censo")  # censo | eventos | duplicidades | encuesta | atencion
+    db = SessionLocal()
     try:
-        db = SessionLocal()
-        rango_start = date.fromisoformat(WEEK_MAP[semana][0])
-        rango_end   = date.fromisoformat(WEEK_MAP[semana][1])
-        cap = Capture(semana=semana, rango_start=rango_start, rango_end=rango_end)
-        db.add(cap)
-        db.flush()  # obtiene cap.id
+        if request.method == "POST":
+            if tab == "censo":
+                fecha = date.fromisoformat(request.form["fecha"])
+                cd = int(request.form.get("censo_dia", 0) or 0)
+                cn = int(request.form.get("censo_noche", 0) or 0)
+                total = int(request.form.get("total", cd + cn) or (cd + cn))
+                db.add(CensusEntry(fecha=fecha, censo_dia=cd, censo_noche=cn, total=total))
+                db.commit(); flash("Censo guardado.")
 
-        for i, d in enumerate(dias):
-            t_sec = mmss_to_seconds(tiempo[i]) if tiempo[i] else 0
-            day = CaptureDay(
-                capture_id=cap.id,
-                fecha=d,
-                censo=to_int(censo[i]),
-                eventos_seguridad=to_int(eventos[i]),
-                duplicidad=to_int(duplicidad[i]),
-                encuesta=to_int(encuesta[i]),
-                tiempo_sec=t_sec
-            )
-            db.add(day)
+            elif tab == "eventos":
+                fecha = date.fromisoformat(request.form["fecha"])
+                horario = request.form.get("horario", "").strip()
+                que = request.form.get("que_ocurrio", "").strip()
+                nom = request.form.get("nombre_afectado", "").strip()
+                accion = request.form.get("accion", "").strip()
+                db.add(EventSeguridad(fecha=fecha, horario=horario, que_ocurrio=que,
+                                      nombre_afectado=nom, accion=accion))
+                db.commit(); flash("Evento de seguridad guardado.")
 
-        db.commit()
-        flash("Datos guardados.")
-    except SQLAlchemyError as e:
-        if 'db' in locals(): db.rollback()
-        flash(f"Error al guardar en BD: {e}")
+            elif tab == "duplicidades":
+                semana = int(request.form["semana"])
+                fecha = date.fromisoformat(request.form["fecha"])
+                rec = DuplicidadEntry(
+                    semana=semana,
+                    fecha=fecha,
+                    id_interno=request.form.get("id", "").strip(),
+                    empresa_contratista=request.form.get("empresa_contratista", "").strip(),
+                    descripcion_problema=request.form.get("descripcion_problema", "").strip(),
+                    tipo_riesgo=request.form.get("tipo_riesgo", "").strip(),
+                    pabellon=request.form.get("pabellon", "").strip(),
+                    habitacion=request.form.get("habitacion", "").strip(),
+                    ingresar_contacto=request.form.get("ingresar_contacto", "").strip(),
+                    nombre_usuario=request.form.get("nombre_usuario", "").strip(),
+                    responsable=request.form.get("responsable", "").strip(),
+                    estatus=request.form.get("estatus", "").strip(),
+                    notificacion_usuario=request.form.get("notificacion_usuario", "").strip(),
+                    plan_accion=request.form.get("plan_accion", "").strip(),
+                    fecha_cierre=(date.fromisoformat(request.form["fecha_cierre"])
+                                  if request.form.get("fecha_cierre") else None),
+                )
+                db.add(rec); db.commit(); flash("Duplicidad guardada.")
+
+            elif tab == "encuesta":
+                fh_raw = request.form.get("fecha_hora")
+                # acepta "YYYY-MM-DDTHH:MM" (input datetime-local), o "YYYY-MM-DD HH:MM"
+                if "T" in fh_raw: fecha_hora = datetime.fromisoformat(fh_raw)
+                else: fecha_hora = datetime.fromisoformat(fh_raw.replace(" ", "T"))
+                vals = {}
+                total = 0; n = 0
+                for i in range(1,6):
+                    r = request.form.get(f"q{i}_respuesta", "")
+                    p = request.form.get(f"q{i}_puntaje", "")
+                    p = int(p) if str(p).isdigit() else None
+                    vals[i] = (r, p)
+                    if p is not None: total += p; n += 1
+                promedio = (total / n) if n>0 else None
+                db.add(EncuestaEntry(
+                    fecha_hora=fecha_hora,
+                    q1_respuesta=vals[1][0], q1_puntaje=vals[1][1],
+                    q2_respuesta=vals[2][0], q2_puntaje=vals[2][1],
+                    q3_respuesta=vals[3][0], q3_puntaje=vals[3][1],
+                    q4_respuesta=vals[4][0], q4_puntaje=vals[4][1],
+                    q5_respuesta=vals[5][0], q5_puntaje=vals[5][1],
+                    total=total if n>0 else None,
+                    promedio=round(promedio,2) if promedio is not None else None,
+                    comentarios=request.form.get("comentarios", "").strip(),
+                ))
+                db.commit(); flash("Encuesta guardada.")
+
+            elif tab == "atencion":
+                fecha = date.fromisoformat(request.form["fecha"])
+                mmss = request.form.get("tiempo_promedio", "").strip()
+                if mmss and not TIME_RE.match(mmss):
+                    flash("Tiempo promedio debe ser mm:ss (ej: 03:54)")
+                    return redirect(url_for("panel", tab=tab))
+                cant = int(request.form.get("cantidad", 0) or 0)
+                db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=mmss_to_seconds(mmss), cantidad=cant))
+                db.commit(); flash("Atención guardada.")
+
+            return redirect(url_for("panel", tab=tab))
+
+        # GET: solo renderizar
+        return render_template("panel.html", tab=tab, week_map=WEEK_MAP)
     finally:
-        if 'db' in locals(): db.close()
+        db.close()
 
-    return redirect(url_for("listar"))
-
-@app.post("/borrar/<int:capture_id>")
-def borrar(capture_id):
-    try:
-        db = SessionLocal()
-        cap = db.get(Capture, capture_id)
-        if not cap:
-            flash("Registro no encontrado.")
-        else:
-            db.delete(cap)  # cascade borra los días
-            db.commit()
-            flash("Registro eliminado.")
-    except SQLAlchemyError as e:
-        if 'db' in locals(): db.rollback()
-        flash(f"Error al eliminar: {e}")
-    finally:
-        if 'db' in locals(): db.close()
-
-    return redirect(url_for("listar"))
-
+# ---------- Listados con filtros ----------
 @app.get("/registros")
-def listar():
-    pares = []  # [(capture_id, reg), ...]
+def registros():
+    d_from, d_to, semana_sel = resolve_filters(request.args)
+    db = SessionLocal()
     try:
-        db = SessionLocal()
-        caps = db.query(Capture).order_by(Capture.id.desc()).all()
-        for cap in caps:
-            days = sorted(cap.days, key=lambda d: d.fecha)
-            fechas = [d.fecha.isoformat() for d in days]
-            censo = [d.censo for d in days]
-            eventos = [d.eventos_seguridad for d in days]
-            duplicidad = [d.duplicidad for d in days]
-            encuesta = [d.encuesta for d in days]
-            tiempos = [seconds_to_mmss(d.tiempo_sec) for d in days]
-            t_secs = [d.tiempo_sec for d in days] or [0]
+        # si semana: convertir a rango
+        if semana_sel:
+            d_from, d_to = week_range(semana_sel)
 
-            reg = {
-                "semana": cap.semana,
-                "rango": (cap.rango_start.isoformat(), cap.rango_end.isoformat()),
-                "fechas": fechas,
-                "censo": censo,
-                "eventos_seguridad": eventos,
-                "duplicidad": duplicidad,
-                "encuesta": encuesta,
-                "tiempo": tiempos,
-                "creado": cap.creado.isoformat(timespec="seconds") + "Z",
-                "prom_censo": round(mean(censo), 2) if censo else 0,
-                "prom_eventos": round(mean(eventos), 2) if eventos else 0,
-                "prom_duplicidad": round(mean(duplicidad), 2) if duplicidad else 0,
-                "prom_encuesta": round(mean(encuesta), 2) if encuesta else 0,
-                "prom_tiempo": seconds_to_mmss(int(mean(t_secs))) if t_secs else "00:00",
-            }
-            pares.append((cap.id, reg))
-    except SQLAlchemyError as e:
-        flash(f"Error al leer BD: {e}")
+        # construir queries por rango (si hay filtros)
+        def between(q, col):
+            if d_from: q = q.filter(col >= d_from)
+            if d_to:   q = q.filter(col <= d_to)
+            return q
+
+        census = between(db.query(CensusEntry), CensusEntry.fecha).order_by(CensusEntry.fecha.desc()).all()
+        eventos = between(db.query(EventSeguridad), EventSeguridad.fecha).order_by(EventSeguridad.fecha.desc()).all()
+        duplics = between(db.query(DuplicidadEntry), DuplicidadEntry.fecha).order_by(DuplicidadEntry.fecha.desc()).all()
+        encuestas = db.query(EncuestaEntry)
+        if d_from: encuestas = encuestas.filter(EncuestaEntry.fecha_hora >= datetime.combine(d_from, time.min))
+        if d_to:   encuestas = encuestas.filter(EncuestaEntry.fecha_hora <= datetime.combine(d_to, time.max))
+        encuestas = encuestas.order_by(EncuestaEntry.fecha_hora.desc()).all()
+        atenciones = between(db.query(AtencionEntry), AtencionEntry.fecha).order_by(AtencionEntry.fecha.desc()).all()
+
+        return render_template("list.html",
+                               semana_sel=semana_sel, d_from=d_from, d_to=d_to, week_map=WEEK_MAP,
+                               census=census, eventos=eventos, duplics=duplics, encuestas=encuestas, atenciones=atenciones)
     finally:
-        if 'db' in locals(): db.close()
+        db.close()
 
-    return render_template("list.html", capturas_id_reg=pares)
-
-@app.get("/download.csv")
-def download_csv():
-    """Exporta SIEMPRE desde la BD (captures + capture_days)."""
+# ---------- Descargas CSV por entidad ----------
+@app.get("/download/<string:entity>.csv")
+def download_entity(entity):
+    d_from, d_to, semana_sel = resolve_filters(request.args)
+    if semana_sel: d_from, d_to = week_range(semana_sel)
+    db = SessionLocal()
     try:
-        db = SessionLocal()
-        caps = db.query(Capture).order_by(Capture.semana).all()
-        if not caps:
-            flash("No hay datos para descargar.")
-            return redirect(url_for("listar"))
+        buf = io.StringIO()
+        w = None
 
-        rows = []
-        for cap in caps:
-            for d in sorted(cap.days, key=lambda x: x.fecha):
-                rows.append({
-                    "semana": cap.semana,
-                    "fecha": d.fecha.isoformat(),
-                    "censo": d.censo,
-                    "eventos_de_seguridad": d.eventos_seguridad,
-                    "duplicidad": d.duplicidad,
-                    "encuesta_satisfaccion": d.encuesta,
-                    "tiempo_atencion_mmss": seconds_to_mmss(d.tiempo_sec),
+        if entity == "censo":
+            q = db.query(CensusEntry)
+            if d_from: q = q.filter(CensusEntry.fecha >= d_from)
+            if d_to:   q = q.filter(CensusEntry.fecha <= d_to)
+            rows = q.order_by(CensusEntry.fecha).all()
+            w = csv.DictWriter(buf, fieldnames=["fecha", "censo_dia", "censo_noche", "total"])
+            w.writeheader()
+            for r in rows:
+                w.writerow({"fecha": r.fecha.isoformat(), "censo_dia": r.censo_dia, "censo_noche": r.censo_noche, "total": r.total})
+
+        elif entity == "eventos":
+            q = db.query(EventSeguridad)
+            if d_from: q = q.filter(EventSeguridad.fecha >= d_from)
+            if d_to:   q = q.filter(EventSeguridad.fecha <= d_to)
+            rows = q.order_by(EventSeguridad.fecha).all()
+            w = csv.DictWriter(buf, fieldnames=["fecha","horario","que_ocurrio","nombre_afectado","accion"])
+            w.writeheader()
+            for r in rows:
+                w.writerow({"fecha": r.fecha.isoformat(), "horario": r.horario, "que_ocurrio": r.que_ocurrio,
+                            "nombre_afectado": r.nombre_afectado or "", "accion": r.accion or ""})
+
+        elif entity == "duplicidades":
+            q = db.query(DuplicidadEntry)
+            if d_from: q = q.filter(DuplicidadEntry.fecha >= d_from)
+            if d_to:   q = q.filter(DuplicidadEntry.fecha <= d_to)
+            rows = q.order_by(DuplicidadEntry.fecha).all()
+            headers = ["semana","fecha","id","empresa_contratista","descripcion_problema","tipo_riesgo",
+                       "pabellon","habitacion","ingresar_contacto","nombre_usuario","responsable","estatus",
+                       "notificacion_usuario","plan_accion","fecha_cierre"]
+            w = csv.DictWriter(buf, fieldnames=headers)
+            w.writeheader()
+            for r in rows:
+                w.writerow({
+                    "semana": r.semana, "fecha": r.fecha.isoformat(), "id": r.id_interno or "",
+                    "empresa_contratista": r.empresa_contratista or "", "descripcion_problema": r.descripcion_problema or "",
+                    "tipo_riesgo": r.tipo_riesgo or "", "pabellon": r.pabellon or "", "habitacion": r.habitacion or "",
+                    "ingresar_contacto": r.ingresar_contacto or "", "nombre_usuario": r.nombre_usuario or "",
+                    "responsable": r.responsable or "", "estatus": r.estatus or "",
+                    "notificacion_usuario": r.notificacion_usuario or "", "plan_accion": r.plan_accion or "",
+                    "fecha_cierre": r.fecha_cierre.isoformat() if r.fecha_cierre else ""
                 })
 
-        buf = io.StringIO()
-        fieldnames = [
-            "semana", "fecha", "censo",
-            "eventos_de_seguridad", "duplicidad",
-            "encuesta_satisfaccion", "tiempo_atencion_mmss"
-        ]
-        writer = csv.DictWriter(buf, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(rows)
+        elif entity == "encuestas":
+            q = db.query(EncuestaEntry)
+            if d_from: q = q.filter(EncuestaEntry.fecha_hora >= datetime.combine(d_from, time.min))
+            if d_to:   q = q.filter(EncuestaEntry.fecha_hora <= datetime.combine(d_to, time.max))
+            rows = q.order_by(EncuestaEntry.fecha_hora).all()
+            headers = ["fecha_hora","q1_respuesta","q1_puntaje","q2_respuesta","q2_puntaje",
+                       "q3_respuesta","q3_puntaje","q4_respuesta","q4_puntaje","q5_respuesta","q5_puntaje",
+                       "total","promedio","comentarios"]
+            w = csv.DictWriter(buf, fieldnames=headers)
+            w.writeheader()
+            for r in rows:
+                w.writerow({
+                    "fecha_hora": r.fecha_hora.isoformat(timespec="minutes"),
+                    "q1_respuesta": r.q1_respuesta or "", "q1_puntaje": r.q1_puntaje or "",
+                    "q2_respuesta": r.q2_respuesta or "", "q2_puntaje": r.q2_puntaje or "",
+                    "q3_respuesta": r.q3_respuesta or "", "q3_puntaje": r.q3_puntaje or "",
+                    "q4_respuesta": r.q4_respuesta or "", "q4_puntaje": r.q4_puntaje or "",
+                    "q5_respuesta": r.q5_respuesta or "", "q5_puntaje": r.q5_puntaje or "",
+                    "total": r.total if r.total is not None else "",
+                    "promedio": r.promedio if r.promedio is not None else "",
+                    "comentarios": r.comentarios or "",
+                })
+
+        elif entity == "atencion":
+            q = db.query(AtencionEntry)
+            if d_from: q = q.filter(AtencionEntry.fecha >= d_from)
+            if d_to:   q = q.filter(AtencionEntry.fecha <= d_to)
+            rows = q.order_by(AtencionEntry.fecha).all()
+            w = csv.DictWriter(buf, fieldnames=["fecha","tiempo_promedio_mmss","cantidad"])
+            w.writeheader()
+            for r in rows:
+                w.writerow({"fecha": r.fecha.isoformat(), "tiempo_promedio_mmss": seconds_to_mmss(r.tiempo_promedio_sec),
+                            "cantidad": r.cantidad})
+        else:
+            flash("Entidad no válida.")
+            return redirect(url_for("registros"))
 
         return send_file(
             io.BytesIO(buf.getvalue().encode("utf-8-sig")),
             mimetype="text/csv",
             as_attachment=True,
-            download_name="capturas.csv"
+            download_name=f"{entity}.csv"
         )
-    except SQLAlchemyError as e:
-        flash(f"Error al exportar: {e}")
-        return redirect(url_for("listar"))
     finally:
-        if 'db' in locals(): db.close()
+        db.close()
 
-# ---------------- Dashboard (por día) ----------------
+# ---------- Dashboard (usa filtros) ----------
 @app.get("/dashboard")
 def dashboard():
+    d_from, d_to, semana_sel = resolve_filters(request.args)
+    if semana_sel: d_from, d_to = week_range(semana_sel)
+    db = SessionLocal()
     try:
-        db = SessionLocal()
-        days = db.query(CaptureDay).join(Capture, CaptureDay.capture_id==Capture.id).all()
-        if not days:
-            return render_template("dashboard.html",
-                                   have_data=False, cards={}, labels=[], series={}, table=[])
+        # Agregar por día con datos disponibles:
+        # Usaremos: Censo total, Eventos count (por fila), Duplicidades count (por fila), Encuesta count (por fila), Atención: promedio tiempo y cantidad
+        per_day = {}  # key = ISO date -> dict
+        def bucket(dkey):
+            return per_day.setdefault(dkey, {
+                "censo": 0,
+                "eventos": 0,
+                "duplicidades": 0,
+                "encuestas": 0,
+                "atencion_cant": 0,
+                "atencion_tiempos": []
+            })
 
-        # agregación por día
-        per_day = {}
-        for d in days:
-            key = d.fecha.isoformat()
-            g = per_day.setdefault(key, {"censo":0,"eventos":0,"duplicidad":0,"encuesta":0,"tiempos":[]})
-            g["censo"] += d.censo
-            g["eventos"] += d.eventos_seguridad
-            g["duplicidad"] += d.duplicidad
-            g["encuesta"] += d.encuesta
-            g["tiempos"].append(d.tiempo_sec)
+        # Censo
+        q = db.query(CensusEntry)
+        if d_from: q = q.filter(CensusEntry.fecha >= d_from)
+        if d_to:   q = q.filter(CensusEntry.fecha <= d_to)
+        for r in q.all():
+            b = bucket(r.fecha.isoformat())
+            b["censo"] += (r.total or (r.censo_dia + r.censo_noche))
 
-        ordered_dates = sorted(per_day.keys())
-        s_censo, s_eventos, s_duplicidad, s_encuesta, s_tavg = [], [], [], [], []
-        for k in ordered_dates:
+        # Eventos
+        q = db.query(EventSeguridad)
+        if d_from: q = q.filter(EventSeguridad.fecha >= d_from)
+        if d_to:   q = q.filter(EventSeguridad.fecha <= d_to)
+        for r in q.all():
+            bucket(r.fecha.isoformat())["eventos"] += 1
+
+        # Duplicidades
+        q = db.query(DuplicidadEntry)
+        if d_from: q = q.filter(DuplicidadEntry.fecha >= d_from)
+        if d_to:   q = q.filter(DuplicidadEntry.fecha <= d_to)
+        for r in q.all():
+            bucket(r.fecha.isoformat())["duplicidades"] += 1
+
+        # Encuestas
+        q = db.query(EncuestaEntry)
+        if d_from: q = q.filter(EncuestaEntry.fecha_hora >= datetime.combine(d_from, time.min))
+        if d_to:   q = q.filter(EncuestaEntry.fecha_hora <= datetime.combine(d_to, time.max))
+        for r in q.all():
+            bucket(r.fecha_hora.date().isoformat())["encuestas"] += 1
+
+        # Atención
+        q = db.query(AtencionEntry)
+        if d_from: q = q.filter(AtencionEntry.fecha >= d_from)
+        if d_to:   q = q.filter(AtencionEntry.fecha <= d_to)
+        for r in q.all():
+            b = bucket(r.fecha.isoformat())
+            b["atencion_cant"] += r.cantidad
+            b["atencion_tiempos"].append(r.tiempo_promedio_sec)
+
+        if not per_day:
+            return render_template("dashboard.html", have_data=False, week_map=WEEK_MAP)
+
+        ordered_days = sorted(per_day.keys())
+        s_censo, s_eventos, s_dup, s_enc, s_att_cant, s_att_mm = [], [], [], [], [], []
+        for k in ordered_days:
             g = per_day[k]
             s_censo.append(g["censo"])
             s_eventos.append(g["eventos"])
-            s_duplicidad.append(g["duplicidad"])
-            s_encuesta.append(g["encuesta"])
-            s_tavg.append(int(mean(g["tiempos"])) if g["tiempos"] else 0)
+            s_dup.append(g["duplicidades"])
+            s_enc.append(g["encuestas"])
+            s_att_cant.append(g["atencion_cant"])
+            prom_s = int(mean(g["atencion_tiempos"])) if g["atencion_tiempos"] else 0
+            s_att_mm.append(round(prom_s/60.0, 2))
 
         cards = {
             "censo_total": sum(s_censo),
             "eventos_total": sum(s_eventos),
-            "duplicidad_total": sum(s_duplicidad),
-            "encuesta_total": sum(s_encuesta),
-            "tiempo_prom_global": seconds_to_mmss(int(mean([x for x in s_tavg if x>0])) if any(s_tavg) else 0),
-        }
-
-        # tabla por semana
-        caps = db.query(Capture).order_by(Capture.semana).all()
-        table = []
-        for cap in caps:
-            ds = cap.days
-            censo_sum = sum(d.censo for d in ds)
-            dup_sum = sum(d.duplicidad for d in ds)
-            t_prom_s = int(mean([d.tiempo_sec for d in ds])) if ds else 0
-            table.append({
-                "semana": cap.semana,
-                "rango": (cap.rango_start.isoformat(), cap.rango_end.isoformat()),
-                "censo": censo_sum,
-                "eventos": sum(d.eventos_seguridad for d in ds),
-                "duplicidad": dup_sum,
-                "encuesta": sum(d.encuesta for d in ds),
-                "t_prom": seconds_to_mmss(t_prom_s),
-                "dup_x100": round((dup_sum / censo_sum * 100), 2) if censo_sum else 0.0
-            })
-
-        series = {
-            "labels_days": ordered_dates,
-            "censo": s_censo,
-            "eventos": s_eventos,
-            "duplicidad": s_duplicidad,
-            "encuesta": s_encuesta,
-            "tavg_sec": s_tavg,
+            "duplicidades_total": sum(s_dup),
+            "encuestas_total": sum(s_enc),
+            "atencion_cant_total": sum(s_att_cant),
+            "atencion_tiempo_prom_global": seconds_to_mmss(int(mean(
+                [int(x*60) for x in s_att_mm if x>0]
+            ))) if any(x>0 for x in s_att_mm) else "00:00",
         }
 
         return render_template("dashboard.html",
                                have_data=True,
+                               week_map=WEEK_MAP,
+                               labels=ordered_days,
+                               series={
+                                   "censo": s_censo,
+                                   "eventos": s_eventos,
+                                   "duplicidades": s_dup,
+                                   "encuestas": s_enc,
+                                   "atencion_cant": s_att_cant,
+                                   "atencion_min": s_att_mm
+                               },
                                cards=cards,
-                               labels=ordered_dates,
-                               series=series,
-                               table=table)
-    except SQLAlchemyError as e:
-        flash(f"Error en dashboard: {e}")
-        return render_template("dashboard.html", have_data=False, cards={}, labels=[], series={}, table=[])
+                               d_from=d_from, d_to=d_to, semana_sel=semana_sel)
     finally:
-        if 'db' in locals(): db.close()
+        db.close()
 
-# ---------------- Main ----------------
+# ---------- Main ----------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
 
