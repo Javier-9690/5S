@@ -811,10 +811,21 @@ ENTITY_MODEL = {
 
 @app.post("/delete/<string:entity>/<int:rid>")
 def delete_record(entity, rid):
-    """Elimina un registro por entidad e ID y redirige a la lista con los filtros actuales."""
-    Model = ENTITY_MODEL.get(entity)
+    mapping = {
+        "censo": CensusEntry,
+        "eventos": EventSeguridad,
+        "duplicidades": DuplicidadEntry,
+        "encuestas": EncuestaEntry,
+        "atencion": AtencionEntry,
+        "robos": RoboHurtoEntry,
+        "miscelaneo": MiscelaneoEntry,
+        "desviaciones": DesviacionEntry,
+        "solicitud_ot": SolicitudOTEntry,
+        "reclamos": ReclamoUsuarioEntry,
+    }
+    Model = mapping.get(entity)
     if not Model:
-        flash("Entidad no válida.")
+        flash("Entidad inválida.")
         return redirect(url_for("registros"))
 
     db = SessionLocal()
@@ -832,9 +843,8 @@ def delete_record(entity, rid):
     finally:
         db.close()
 
-    # Volver a donde estaba el usuario (mantiene filtros)
-    next_url = request.form.get("next") or url_for("registros")
-    return redirect(next_url)
+    nxt = request.form.get("next")
+    return redirect(nxt or url_for("registros"))
 
 # -----------------------------------------------------------------------------
 # PLANTILLAS EXCEL + IMPORTACIÓN POR MÓDULO
