@@ -541,6 +541,7 @@ def panel():
 @app.get("/registros")
 def registros():
     d_from, d_to, semana_sel = resolve_filters(request.args)
+    vista = request.args.get("vista", "censo")  # <--- NUEVO
     db = SessionLocal()
     try:
         if semana_sel:
@@ -582,13 +583,16 @@ def registros():
         if d_to:   reclamos = reclamos.filter(ReclamoUsuarioEntry.fecha <= d_to)
         reclamos = reclamos.order_by(ReclamoUsuarioEntry.fecha.desc()).all()
 
-        return render_template("list.html",
-                               semana_sel=semana_sel, d_from=d_from, d_to=d_to, week_map=WEEK_MAP,
-                               census=census, eventos=eventos, duplics=duplics,
-                               encuestas=encuestas, atenciones=atenciones,
-                               robos=robos, miscelaneo=miscelaneo, desviaciones=desviaciones,
-                               solicitud_ot=solicitud_ot, reclamos=reclamos,
-                               current_tab=None)
+        return render_template(
+            "list.html",
+            semana_sel=semana_sel, d_from=d_from, d_to=d_to, week_map=WEEK_MAP,
+            census=census, eventos=eventos, duplics=duplics,
+            encuestas=encuestas, atenciones=atenciones,
+            robos=robos, miscelaneo=miscelaneo, desviaciones=desviaciones,
+            solicitud_ot=solicitud_ot, reclamos=reclamos,
+            vista=vista,                 # <--- NUEVO
+            current_tab=None
+        )
     finally:
         db.close()
 
