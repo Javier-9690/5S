@@ -22,22 +22,21 @@
         </select>
       </div>
 
-      {# NUEVO: selector de vista #}
       <div>
         <label>Mostrar</label>
+        {% set opciones = [
+          ('censo','Censo'),
+          ('eventos','Eventos de seguridad'),
+          ('duplicidades','Duplicidades'),
+          ('encuestas','Encuesta de satisfacción'),
+          ('atencion','Atención al público'),
+          ('robos','Robos y hurtos'),
+          ('miscelaneo','Misceláneo'),
+          ('desviaciones','Desviaciones'),
+          ('solicitud_ot','Solicitud y OT de usuario'),
+          ('reclamos','Reclamos de usuarios')
+        ] %}
         <select name="vista" onchange="this.form.submit()">
-          {% set opciones = [
-            ('censo','Censo'),
-            ('eventos','Eventos de seguridad'),
-            ('duplicidades','Duplicidades'),
-            ('encuestas','Encuesta de satisfacción'),
-            ('atencion','Atención al público'),
-            ('robos','Robos y hurtos'),
-            ('miscelaneo','Misceláneo'),
-            ('desviaciones','Desviaciones'),
-            ('solicitud_ot','Solicitud y OT de usuario'),
-            ('reclamos','Reclamos de usuarios')
-          ] %}
           {% for v, label in opciones %}
             <option value="{{ v }}" {{ 'selected' if vista==v }}>{{ label }}</option>
           {% endfor %}
@@ -52,13 +51,13 @@
 
   {# Macro para botón Eliminar (mantiene filtros) #}
   {% macro delbtn(entity, id) -%}
-  <form method="post"
-        action="{{ url_for('delete_record', entity=entity, rid=id) }}"
-        onsubmit="return confirm('¿Eliminar este registro?');"
-        style="display:inline;">
-    <input type="hidden" name="next" value="{{ request.full_path }}">
-    <button class="btn" type="submit" style="padding:4px 8px;">Eliminar</button>
-  </form>
+    <form method="post"
+          action="{{ url_for('delete_record', entity=entity, rid=id) }}"
+          onsubmit="return confirm('¿Eliminar este registro?');"
+          style="display:inline;">
+      <input type="hidden" name="next" value="{{ request.full_path }}">
+      <button class="btn" type="submit" style="padding:4px 8px;">Eliminar</button>
+    </form>
   {%- endmacro %}
 
   {# ---- CENSO ---- #}
@@ -76,7 +75,10 @@
           {% for r in census %}
             <tr>
               <td>{{ delbtn('censo', r.id) }}</td>
-              <td>{{ r.fecha }}</td><td>{{ r.censo_dia }}</td><td>{{ r.censo_noche }}</td><td>{{ r.total }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.censo_dia }}</td>
+              <td>{{ r.censo_noche }}</td>
+              <td>{{ r.total }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -102,7 +104,11 @@
           {% for r in eventos %}
             <tr>
               <td>{{ delbtn('eventos', r.id) }}</td>
-              <td>{{ r.fecha }}</td><td>{{ r.horario }}</td><td>{{ r.que_ocurrio }}</td><td>{{ r.nombre_afectado }}</td><td>{{ r.accion }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.horario }}</td>
+              <td>{{ r.que_ocurrio }}</td>
+              <td>{{ r.nombre_afectado or '' }}</td>
+              <td>{{ r.accion or '' }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -131,11 +137,21 @@
           {% for r in duplics %}
             <tr>
               <td>{{ delbtn('duplicidades', r.id) }}</td>
-              <td>{{ r.semana }}</td><td>{{ r.fecha }}</td><td>{{ r.id_interno }}</td><td>{{ r.empresa_contratista }}</td>
-              <td>{{ r.descripcion_problema }}</td><td>{{ r.tipo_riesgo }}</td><td>{{ r.pabellon }}</td>
-              <td>{{ r.habitacion }}</td><td>{{ r.ingresar_contacto }}</td><td>{{ r.nombre_usuario }}</td>
-              <td>{{ r.responsable }}</td><td>{{ r.estatus }}</td><td>{{ r.notificacion_usuario }}</td>
-              <td>{{ r.plan_accion }}</td><td>{{ r.fecha_cierre if r.fecha_cierre else '' }}</td>
+              <td>{{ r.semana }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.id_interno or '' }}</td>
+              <td>{{ r.empresa_contratista or '' }}</td>
+              <td>{{ r.descripcion_problema or '' }}</td>
+              <td>{{ r.tipo_riesgo or '' }}</td>
+              <td>{{ r.pabellon or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.ingresar_contacto or '' }}</td>
+              <td>{{ r.nombre_usuario or '' }}</td>
+              <td>{{ r.responsable or '' }}</td>
+              <td>{{ r.estatus or '' }}</td>
+              <td>{{ r.notificacion_usuario or '' }}</td>
+              <td>{{ r.plan_accion or '' }}</td>
+              <td>{{ r.fecha_cierre if r.fecha_cierre else '' }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -164,14 +180,14 @@
             <tr>
               <td>{{ delbtn('encuestas', r.id) }}</td>
               <td>{{ r.fecha_hora }}</td>
-              <td>{{ r.q1_respuesta }} / {{ r.q1_puntaje }}</td>
-              <td>{{ r.q2_respuesta }} / {{ r.q2_puntaje }}</td>
-              <td>{{ r.q3_respuesta }} / {{ r.q3_puntaje }}</td>
-              <td>{{ r.q4_respuesta }} / {{ r.q4_puntaje }}</td>
-              <td>{{ r.q5_respuesta }} / {{ r.q5_puntaje }}</td>
-              <td>{{ r.total }}</td>
-              <td>{{ r.promedio }}</td>
-              <td>{{ r.comentarios }}</td>
+              <td>{{ (r.q1_respuesta or '') ~ ' / ' ~ (r.q1_puntaje if r.q1_puntaje is not none else '') }}</td>
+              <td>{{ (r.q2_respuesta or '') ~ ' / ' ~ (r.q2_puntaje if r.q2_puntaje is not none else '') }}</td>
+              <td>{{ (r.q3_respuesta or '') ~ ' / ' ~ (r.q3_puntaje if r.q3_puntaje is not none else '') }}</td>
+              <td>{{ (r.q4_respuesta or '') ~ ' / ' ~ (r.q4_puntaje if r.q4_puntaje is not none else '') }}</td>
+              <td>{{ (r.q5_respuesta or '') ~ ' / ' ~ (r.q5_puntaje if r.q5_puntaje is not none else '') }}</td>
+              <td>{{ r.total if r.total is not none else '' }}</td>
+              <td>{{ r.promedio if r.promedio is not none else '' }}</td>
+              <td>{{ r.comentarios or '' }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -226,9 +242,17 @@
           {% for r in robos %}
             <tr>
               <td>{{ delbtn('robos', r.id) }}</td>
-              <td>{{ r.fecha }}</td><td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td><td>{{ r.modulo }}</td>
-              <td>{{ r.habitacion }}</td><td>{{ r.empresa }}</td><td>{{ r.nombre_cliente }}</td>
-              <td>{{ r.rut }}</td><td>{{ r.medio_reclamo }}</td><td>{{ r.especies }}</td><td>{{ r.observaciones }}</td><td>{{ r.recepciona }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
+              <td>{{ r.modulo or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.empresa or '' }}</td>
+              <td>{{ r.nombre_cliente or '' }}</td>
+              <td>{{ r.rut or '' }}</td>
+              <td>{{ r.medio_reclamo or '' }}</td>
+              <td>{{ r.especies or '' }}</td>
+              <td>{{ r.observaciones or '' }}</td>
+              <td>{{ r.recepciona or '' }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -253,13 +277,24 @@
           </tr>
         </thead>
         <tbody>
-          {% for r in miscelaneos %}
+          {% for r in miscelaneo %}
             <tr>
               <td>{{ delbtn('miscelaneo', r.id) }}</td>
-              <td>{{ r.ot }}</td><td>{{ r.division }}</td><td>{{ r.area }}</td><td>{{ r.lugar }}</td><td>{{ r.ubicacion }}</td>
-              <td>{{ r.disciplina }}</td><td>{{ r.especialidad }}</td><td>{{ r.falla }}</td><td>{{ r.empresa }}</td>
-              <td>{{ r.fecha_creacion or '' }}</td><td>{{ r.fecha_inicio or '' }}</td><td>{{ r.fecha_termino or '' }}</td>
-              <td>{{ r.fecha_aprobacion or '' }}</td><td>{{ r.estado }}</td><td>{{ r.comentario }}</td>
+              <td>{{ r.ot or '' }}</td>
+              <td>{{ r.division or '' }}</td>
+              <td>{{ r.area or '' }}</td>
+              <td>{{ r.lugar or '' }}</td>
+              <td>{{ r.ubicacion or '' }}</td>
+              <td>{{ r.disciplina or '' }}</td>
+              <td>{{ r.especialidad or '' }}</td>
+              <td>{{ r.falla or '' }}</td>
+              <td>{{ r.empresa or '' }}</td>
+              <td>{{ r.fecha_creacion or '' }}</td>
+              <td>{{ r.fecha_inicio or '' }}</td>
+              <td>{{ r.fecha_termino or '' }}</td>
+              <td>{{ r.fecha_aprobacion or '' }}</td>
+              <td>{{ r.estado or '' }}</td>
+              <td>{{ r.comentario or '' }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -273,7 +308,7 @@
     <div class="toolbar">
       <a class="btn" href="{{ url_for('download_entity', entity='desviaciones', **request.args) }}">Descargar CSV</a>
     </div>
-    <div style="overflow:auto%;">
+    <div style="overflow:auto;">
       <table>
         <thead>
           <tr>
@@ -287,10 +322,19 @@
           {% for r in desviaciones %}
             <tr>
               <td>{{ delbtn('desviaciones', r.id) }}</td>
-              <td>{{ r.n_solicitud }}</td><td>{{ r.fecha }}</td><td>{{ r.id_interno }}</td><td>{{ r.empresa_contratista }}</td>
-              <td>{{ r.descripcion_problema }}</td><td>{{ r.tipo_riesgo }}</td><td>{{ r.tipo_solicitud }}</td>
-              <td>{{ r.pabellon }}</td><td>{{ r.habitacion }}</td><td>{{ r.via_solicitud }}</td>
-              <td>{{ r.quien_informa }}</td><td>{{ r.riesgo_material }}</td><td>{{ r.correo_destino }}</td>
+              <td>{{ r.n_solicitud or '' }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.id_interno or '' }}</td>
+              <td>{{ r.empresa_contratista or '' }}</td>
+              <td>{{ r.descripcion_problema or '' }}</td>
+              <td>{{ r.tipo_riesgo or '' }}</td>
+              <td>{{ r.tipo_solicitud or '' }}</td>
+              <td>{{ r.pabellon or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.via_solicitud or '' }}</td>
+              <td>{{ r.quien_informa or '' }}</td>
+              <td>{{ r.riesgo_material or '' }}</td>
+              <td>{{ r.correo_destino or '' }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -318,12 +362,23 @@
           {% for r in solicitudes_ot %}
             <tr>
               <td>{{ delbtn('solicitud_ot', r.id) }}</td>
-              <td>{{ r.n_solicitud }}</td><td>{{ r.descripcion_problema }}</td><td>{{ r.tipo_solicitud }}</td>
-              <td>{{ r.modulo }}</td><td>{{ r.habitacion }}</td><td>{{ r.tipo_turno }}</td><td>{{ r.jornada }}</td>
-              <td>{{ r.via_solicitud }}</td><td>{{ r.correo_usuario }}</td><td>{{ r.tipo_tarea }}</td><td>{{ r.ot }}</td>
-              <td>{{ r.fecha_inicio or '' }}</td><td>{{ r.estado }}</td>
+              <td>{{ r.n_solicitud or '' }}</td>
+              <td>{{ r.descripcion_problema or '' }}</td>
+              <td>{{ r.tipo_solicitud or '' }}</td>
+              <td>{{ r.modulo or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.tipo_turno or '' }}</td>
+              <td>{{ r.jornada or '' }}</td>
+              <td>{{ r.via_solicitud or '' }}</td>
+              <td>{{ r.correo_usuario or '' }}</td>
+              <td>{{ r.tipo_tarea or '' }}</td>
+              <td>{{ r.ot or '' }}</td>
+              <td>{{ r.fecha_inicio or '' }}</td>
+              <td>{{ r.estado or '' }}</td>
               <td>{% if r.tiempo_respuesta_sec is not none %}{{ '%02d:%02d'|format((r.tiempo_respuesta_sec//60),(r.tiempo_respuesta_sec%60)) }}{% endif %}</td>
-              <td>{{ r.satisfaccion_reclamo }}</td><td>{{ r.motivo }}</td><td>{{ r.observacion }}</td>
+              <td>{{ r.satisfaccion_reclamo or '' }}</td>
+              <td>{{ r.motivo or '' }}</td>
+              <td>{{ r.observacion or '' }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -351,15 +406,26 @@
           {% for r in reclamos %}
             <tr>
               <td>{{ delbtn('reclamos', r.id) }}</td>
-              <td>{{ r.n_solicitud }}</td><td>{{ r.fecha }}</td><td>{{ r.id_interno }}</td><td>{{ r.empresa_contratista }}</td>
-              <td>{{ r.descripcion_problema }}</td><td>{{ r.tipo_solicitud }}</td><td>{{ r.pabellon }}</td>
-              <td>{{ r.habitacion }}</td><td>{{ r.via_solicitud }}</td><td>{{ r.ingresar_contacto }}</td><td>{{ r.nombre_usuario }}</td>
-              <td>{{ r.responsable }}</td><td>{{ r.estatus }}</td><td>{{ r.notificacion_usuario }}</td><td>{{ r.plan_accion }}</td>
+              <td>{{ r.n_solicitud or '' }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.id_interno or '' }}</td>
+              <td>{{ r.empresa_contratista or '' }}</td>
+              <td>{{ r.descripcion_problema or '' }}</td>
+              <td>{{ r.tipo_solicitud or '' }}</td>
+              <td>{{ r.pabellon or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.via_solicitud or '' }}</td>
+              <td>{{ r.ingresar_contacto or '' }}</td>
+              <td>{{ r.nombre_usuario or '' }}</td>
+              <td>{{ r.responsable or '' }}</td>
+              <td>{{ r.estatus or '' }}</td>
+              <td>{{ r.notificacion_usuario or '' }}</td>
+              <td>{{ r.plan_accion or '' }}</td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   {% endif %}
-
 {% endblock %}
+
