@@ -1,11 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
   <h1>Dashboard</h1>
-  <div class="toolbar">
-    <a class="btn" href="{{ url_for('registros') }}">Registros</a>
-    <a class="btn" href="{{ url_for('panel', tab='censo') }}">Panel de ingreso</a>
-  </div>
-
+ 
   <form method="get" action="{{ url_for('dashboard') }}" style="margin-top:10px;">
     <div style="display:grid; grid-template-columns: repeat(4, minmax(160px,1fr)); gap:12px;">
       <div><label>Desde</label><input type="date" name="from" value="{{ d_from if d_from else '' }}"></div>
