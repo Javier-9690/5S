@@ -159,13 +159,13 @@ class DuplicidadEntry(Base):
     id_interno = Column(String(100), nullable=True)
     empresa_contratista = Column(String(200), nullable=True)
     descripcion_problema = Column(Text, nullable=True)
-    tipo_riesgo = Column(String(200), nullable=True)  # Psicosocial
+    tipo_riesgo = Column(String(200), nullable=True)
     pabellon = Column(String(100), nullable=True)
     habitacion = Column(String(100), nullable=True)
     ingresar_contacto = Column(String(200), nullable=True)
     nombre_usuario = Column(String(200), nullable=True)
     responsable = Column(String(200), nullable=True)
-    estatus = Column(String(50), nullable=True)  # Cerrado/Abierto
+    estatus = Column(String(50), nullable=True)
     notificacion_usuario = Column(String(200), nullable=True)
     plan_accion = Column(Text, nullable=True)
     fecha_cierre = Column(Date, nullable=True)
@@ -198,7 +198,7 @@ class AtencionEntry(Base):
     cantidad = Column(Integer, nullable=False, default=0)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
-# --- Nuevos módulos ---
+# --- Módulos agregados previamente ---
 class RoboHurtoEntry(Base):
     __tablename__ = "robos_hurtos"
     id = Column(Integer, primary_key=True)
@@ -295,6 +295,7 @@ class ReclamoUsuarioEntry(Base):
     plan_accion = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
+# ---------------- NUEVOS 5 MÓDULOS ----------------
 class ActivacionAlarmaEntry(Base):
     __tablename__ = "activacion_alarma"
     id = Column(Integer, primary_key=True)
@@ -303,8 +304,8 @@ class ActivacionAlarmaEntry(Base):
     nombre_recepcionista = Column(String(200), nullable=True)
     fecha = Column(Date, nullable=False)
     empresa = Column(String(200), nullable=True)
-    id_interno = Column(String(100), nullable=True)  # "ID"
-    co = Column(String(100), nullable=True)          # "C.O."
+    id_interno = Column(String(100), nullable=True)
+    co = Column(String(100), nullable=True)
     aviso_mantencion_h = Column(Float, nullable=True)
     llegada_mantencion_h = Column(Float, nullable=True)
     aviso_lider_h = Column(Float, nullable=True)
@@ -341,7 +342,7 @@ class OnboardingEntry(Base):
     rut = Column(String(50), nullable=True)
     empresa = Column(String(200), nullable=True)
     id_interno = Column(String(100), nullable=True)
-    archivo_pdf = Column(String(300), nullable=True)  # guarda nombre/ruta del archivo
+    archivo_pdf = Column(String(300), nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 class AperturaHabitacionEntry(Base):
@@ -351,7 +352,7 @@ class AperturaHabitacionEntry(Base):
     habitacion = Column(String(100), nullable=True)
     hora = Column(Time, nullable=True)
     responsable = Column(String(200), nullable=True)
-    estado_chapa = Column(Text, nullable=True)  # motivo por el que no abre
+    estado_chapa = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 class CumplimientoEECCEntry(Base):
@@ -400,8 +401,10 @@ def home():
 # -----------------------------------------------------------------------------
 @app.route("/panel", methods=["GET", "POST"])
 def panel():
-    tab = request.args.get("tab", "censo")  # censo | eventos | duplicidades | encuesta | atencion
-                                            # robos | miscelaneo | desviaciones | solicitud_ot | reclamos
+    # tabs: censo | eventos | duplicidades | encuesta | atencion |
+    #       robos | miscelaneo | desviaciones | solicitud_ot | reclamos |
+    #       alarmas | extensiones | onboarding | apertura | cumplimiento
+    tab = request.args.get("tab", "censo")
     db = SessionLocal()
     try:
         if request.method == "POST":
@@ -597,6 +600,96 @@ def panel():
                 )
                 db.add(rec); db.commit(); flash("Reclamo de usuario guardado.")
 
+            # -------------------- ACTIVACIÓN DE ALARMA --------------------
+            elif tab == "alarmas":
+                fecha = date.fromisoformat(request.form["fecha"])
+                def f2t(v):
+                    v = (v or "").strip()
+                    return datetime.strptime(v, "%H:%M").time() if v else None
+                def f2float(v):
+                    try:
+                        return float(v) if (v is not None and str(v).strip()!="") else None
+                    except:
+                        return None
+                rec = ActivacionAlarmaEntry(
+                    modulo=request.form.get("modulo","").strip(),
+                    n_habitacion=request.form.get("n_habitacion","").strip(),
+                    nombre_recepcionista=request.form.get("nombre_recepcionista","").strip(),
+                    fecha=fecha,
+                    empresa=request.form.get("empresa","").strip(),
+                    id_interno=request.form.get("id_interno","").strip(),
+                    co=request.form.get("co","").strip(),
+                    aviso_mantencion_h=f2float(request.form.get("aviso_mantencion_h")),
+                    llegada_mantencion_h=f2float(request.form.get("llegada_mantencion_h")),
+                    aviso_lider_h=f2float(request.form.get("aviso_lider_h")),
+                    llegada_lider_h=f2float(request.form.get("llegada_lider_h")),
+                    hora_reporte_salfa=f2t(request.form.get("hora_reporte_salfa")),
+                    tipo_evento=request.form.get("tipo_evento","").strip(),
+                    tipo_actividad=request.form.get("tipo_actividad","").strip(),
+                    fecha_reporte=(date.fromisoformat(request.form["fecha_reporte"])
+                                   if request.form.get("fecha_reporte") else None),
+                    turno_recepcion_ingresos=request.form.get("turno_recepcion_ingresos","").strip(),
+                    observaciones=request.form.get("observaciones","").strip(),
+                )
+                db.add(rec); db.commit(); flash("Activación de alarma guardada.")
+
+            # -------------------- EXTENSIÓN / EXCEPCIÓN --------------------
+            elif tab == "extensiones":
+                rec = ExtensionExcepcionEntry(
+                    fecha_solicitud=date.fromisoformat(request.form["fecha_solicitud"]),
+                    id_interno=request.form.get("id_interno","").strip(),
+                    empresa=request.form.get("empresa","").strip(),
+                    co=request.form.get("co","").strip(),
+                    gerencia=request.form.get("gerencia","").strip(),
+                    proyecto=request.form.get("proyecto","").strip(),
+                    cant_clientes=(int(request.form.get("cant_clientes")) if request.form.get("cant_clientes") else None),
+                    desde=(date.fromisoformat(request.form["desde"]) if request.form.get("desde") else None),
+                    hasta=(date.fromisoformat(request.form["hasta"]) if request.form.get("hasta") else None),
+                    aprobador=request.form.get("aprobador","").strip(),
+                    observacion=request.form.get("observacion","").strip(),
+                )
+                db.add(rec); db.commit(); flash("Extensión/Excepción guardada.")
+
+            # -------------------- ONBOARDING --------------------
+            elif tab == "onboarding":
+                fh_raw = request.form.get("fecha_hora")
+                fecha_hora = datetime.fromisoformat(fh_raw.replace(" ", "T")) if "T" not in fh_raw else datetime.fromisoformat(fh_raw)
+                rec = OnboardingEntry(
+                    fecha_hora=fecha_hora,
+                    nombre=request.form.get("nombre","").strip(),
+                    rut=request.form.get("rut","").strip(),
+                    empresa=request.form.get("empresa","").strip(),
+                    id_interno=request.form.get("id_interno","").strip(),
+                    archivo_pdf=request.form.get("archivo_pdf","").strip(),
+                )
+                db.add(rec); db.commit(); flash("Onboarding guardado.")
+
+            # -------------------- APERTURA DE HABITACIÓN --------------------
+            elif tab == "apertura":
+                def f2t(v):
+                    v = (v or "").strip()
+                    return datetime.strptime(v, "%H:%M").time() if v else None
+                rec = AperturaHabitacionEntry(
+                    fecha=date.fromisoformat(request.form["fecha"]),
+                    habitacion=request.form.get("habitacion","").strip(),
+                    hora=f2t(request.form.get("hora")),
+                    responsable=request.form.get("responsable","").strip(),
+                    estado_chapa=request.form.get("estado_chapa","").strip(),
+                )
+                db.add(rec); db.commit(); flash("Apertura de habitación guardada.")
+
+            # -------------------- CUMPLIMIENTO EECC --------------------
+            elif tab == "cumplimiento":
+                rec = CumplimientoEECCEntry(
+                    empresa=request.form.get("empresa","").strip(),
+                    n_contrato=request.form.get("n_contrato","").strip(),
+                    co=request.form.get("co","").strip(),
+                    correo_electronico=request.form.get("correo_electronico","").strip(),
+                    id_interno=request.form.get("id_interno","").strip(),
+                    turno=request.form.get("turno","").strip(),
+                )
+                db.add(rec); db.commit(); flash("Cumplimiento EECC guardado.")
+
             return redirect(url_for("panel", tab=tab))
 
         # GET
@@ -611,7 +704,7 @@ def panel():
 @app.get("/registros")
 def registros():
     d_from, d_to, semana_sel = resolve_filters(request.args)
-    vista = request.args.get("vista", "censo")  # <= NUEVO
+    vista = request.args.get("vista", "censo")
     db = SessionLocal()
     try:
         if semana_sel:
@@ -652,13 +745,38 @@ def registros():
         if d_to:   reclamos = reclamos.filter(ReclamoUsuarioEntry.fecha <= d_to)
         reclamos = reclamos.order_by(ReclamoUsuarioEntry.fecha.desc()).all()
 
+        # --------- NUEVOS 5 MÓDULOS ----------
+        alarmas = db.query(ActivacionAlarmaEntry)
+        if d_from: alarmas = alarmas.filter(ActivacionAlarmaEntry.fecha >= d_from)
+        if d_to:   alarmas = alarmas.filter(ActivacionAlarmaEntry.fecha <= d_to)
+        alarmas = alarmas.order_by(ActivacionAlarmaEntry.fecha.desc()).all()
+
+        extensiones = db.query(ExtensionExcepcionEntry)
+        if d_from: extensiones = extensiones.filter(ExtensionExcepcionEntry.fecha_solicitud >= d_from)
+        if d_to:   extensiones = extensiones.filter(ExtensionExcepcionEntry.fecha_solicitud <= d_to)
+        extensiones = extensiones.order_by(ExtensionExcepcionEntry.fecha_solicitud.desc()).all()
+
+        onboarding = db.query(OnboardingEntry)
+        if d_from: onboarding = onboarding.filter(OnboardingEntry.fecha_hora >= datetime.combine(d_from, time.min))
+        if d_to:   onboarding = onboarding.filter(OnboardingEntry.fecha_hora <= datetime.combine(d_to, time.max))
+        onboarding = onboarding.order_by(OnboardingEntry.fecha_hora.desc()).all()
+
+        apertura = db.query(AperturaHabitacionEntry)
+        if d_from: apertura = apertura.filter(AperturaHabitacionEntry.fecha >= d_from)
+        if d_to:   apertura = apertura.filter(AperturaHabitacionEntry.fecha <= d_to)
+        apertura = apertura.order_by(AperturaHabitacionEntry.fecha.desc()).all()
+
+        cumplimiento = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.id.desc()).all()
+
         return render_template(
             "list.html",
             semana_sel=semana_sel, d_from=d_from, d_to=d_to, week_map=WEEK_MAP,
             census=census, eventos=eventos, duplics=duplics,
             encuestas=encuestas, atenciones=atenciones,
             robos=robos, miscelaneo=miscelaneo, desviaciones=desviaciones,
-            solicitudes_ot=solicitudes_ot, reclamos=reclamos,  # ojo: nombre plural usado en template
+            solicitudes_ot=solicitudes_ot, reclamos=reclamos,
+            alarmas=alarmas, extensiones=extensiones, onboarding=onboarding,
+            apertura=apertura, cumplimiento=cumplimiento,
             vista=vista,
             current_tab=None
         )
@@ -751,7 +869,7 @@ def download_entity(entity):
                 w.writerow({"fecha": r.fecha.isoformat(), "tiempo_promedio_mmss": seconds_to_mmss(r.tiempo_promedio_sec),
                             "cantidad": r.cantidad})
 
-        # ---------------- nuevos módulos CSV ----------------
+        # ---------------- CSV de módulos previos ----------------
         elif entity == "robos":
             q = db.query(RoboHurtoEntry)
             if d_from: q = q.filter(RoboHurtoEntry.fecha >= d_from)
@@ -852,6 +970,96 @@ def download_entity(entity):
                     "plan_accion": r.plan_accion or "",
                 })
 
+        # --------- CSV NUEVOS 5 ----------
+        elif entity == "alarmas":
+            q = db.query(ActivacionAlarmaEntry)
+            if d_from: q = q.filter(ActivacionAlarmaEntry.fecha >= d_from)
+            if d_to:   q = q.filter(ActivacionAlarmaEntry.fecha <= d_to)
+            rows = q.order_by(ActivacionAlarmaEntry.fecha).all()
+            headers = ["MODULO","N_HABITACION","NOMBRE_RECEPCIONISTA","FECHA","EMPRESA","ID","CO",
+                       "AVISO_MANTENCION_H","LLEGADA_MANTENCION_H","AVISO_LIDER_H","LLEGADA_LIDER_H",
+                       "HORA_REPORTE_SALFA","TIPO_EVENTO","TIPO_ACTIVIDAD","FECHA_REPORTE",
+                       "TURNO_RECEPCION_INGRESOS","OBSERVACIONES"]
+            w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
+            for r in rows:
+                w.writerow({
+                    "MODULO": r.modulo or "", "N_HABITACION": r.n_habitacion or "",
+                    "NOMBRE_RECEPCIONISTA": r.nombre_recepcionista or "",
+                    "FECHA": r.fecha.isoformat(), "EMPRESA": r.empresa or "",
+                    "ID": r.id_interno or "", "CO": r.co or "",
+                    "AVISO_MANTENCION_H": r.aviso_mantencion_h if r.aviso_mantencion_h is not None else "",
+                    "LLEGADA_MANTENCION_H": r.llegada_mantencion_h if r.llegada_mantencion_h is not None else "",
+                    "AVISO_LIDER_H": r.aviso_lider_h if r.aviso_lider_h is not None else "",
+                    "LLEGADA_LIDER_H": r.llegada_lider_h if r.llegada_lider_h is not None else "",
+                    "HORA_REPORTE_SALFA": r.hora_reporte_salfa.strftime("%H:%M") if r.hora_reporte_salfa else "",
+                    "TIPO_EVENTO": r.tipo_evento or "", "TIPO_ACTIVIDAD": r.tipo_actividad or "",
+                    "FECHA_REPORTE": r.fecha_reporte.isoformat() if r.fecha_reporte else "",
+                    "TURNO_RECEPCION_INGRESOS": r.turno_recepcion_ingresos or "",
+                    "OBSERVACIONES": r.observaciones or "",
+                })
+
+        elif entity == "extensiones":
+            q = db.query(ExtensionExcepcionEntry)
+            if d_from: q = q.filter(ExtensionExcepcionEntry.fecha_solicitud >= d_from)
+            if d_to:   q = q.filter(ExtensionExcepcionEntry.fecha_solicitud <= d_to)
+            rows = q.order_by(ExtensionExcepcionEntry.fecha_solicitud).all()
+            headers = ["FECHA_SOLICITUD","ID","EMPRESA","CO","GERENCIA","PROYECTO","CANT_CLIENTES",
+                       "DESDE","HASTA","APROBADOR","OBSERVACION"]
+            w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
+            for r in rows:
+                w.writerow({
+                    "FECHA_SOLICITUD": r.fecha_solicitud.isoformat(), "ID": r.id_interno or "",
+                    "EMPRESA": r.empresa or "", "CO": r.co or "", "GERENCIA": r.gerencia or "",
+                    "PROYECTO": r.proyecto or "", "CANT_CLIENTES": r.cant_clientes if r.cant_clientes is not None else "",
+                    "DESDE": r.desde.isoformat() if r.desde else "",
+                    "HASTA": r.hasta.isoformat() if r.hasta else "",
+                    "APROBADOR": r.aprobador or "", "OBSERVACION": r.observacion or "",
+                })
+
+        elif entity == "onboarding":
+            q = db.query(OnboardingEntry)
+            if d_from: q = q.filter(OnboardingEntry.fecha_hora >= datetime.combine(d_from, time.min))
+            if d_to:   q = q.filter(OnboardingEntry.fecha_hora <= datetime.combine(d_to, time.max))
+            rows = q.order_by(OnboardingEntry.fecha_hora).all()
+            headers = ["FECHA_HORA","NOMBRE","RUT","EMPRESA","ID","ARCHIVO_PDF"]
+            w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
+            for r in rows:
+                w.writerow({
+                    "FECHA_HORA": r.fecha_hora.isoformat(timespec="minutes"),
+                    "NOMBRE": r.nombre or "", "RUT": r.rut or "", "EMPRESA": r.empresa or "",
+                    "ID": r.id_interno or "", "ARCHIVO_PDF": r.archivo_pdf or "",
+                })
+
+        elif entity == "apertura":
+            q = db.query(AperturaHabitacionEntry)
+            if d_from: q = q.filter(AperturaHabitacionEntry.fecha >= d_from)
+            if d_to:   q = q.filter(AperturaHabitacionEntry.fecha <= d_to)
+            rows = q.order_by(AperturaHabitacionEntry.fecha).all()
+            headers = ["FECHA","HABITACION","HORA","RESPONSABLE","ESTADO_CHAPA"]
+            w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
+            for r in rows:
+                w.writerow({
+                    "FECHA": r.fecha.isoformat(),
+                    "HABITACION": r.habitacion or "",
+                    "HORA": r.hora.strftime("%H:%M") if r.hora else "",
+                    "RESPONSABLE": r.responsable or "",
+                    "ESTADO_CHAPA": r.estado_chapa or "",
+                })
+
+        elif entity == "cumplimiento":
+            rows = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.id).all()
+            headers = ["EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"]
+            w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
+            for r in rows:
+                w.writerow({
+                    "EMPRESA": r.empresa or "",
+                    "N_CONTRATO": r.n_contrato or "",
+                    "CO": r.co or "",
+                    "CORREO_ELECTRONICO": r.correo_electronico or "",
+                    "ID": r.id_interno or "",
+                    "TURNO": r.turno or "",
+                })
+
         else:
             flash("Entidad no válida.")
             return redirect(url_for("registros"))
@@ -877,22 +1085,17 @@ ENTITY_MODEL = {
     "desviaciones": DesviacionEntry,
     "solicitud_ot": SolicitudOTEntry,
     "reclamos": ReclamoUsuarioEntry,
+    # nuevos
+    "alarmas": ActivacionAlarmaEntry,
+    "extensiones": ExtensionExcepcionEntry,
+    "onboarding": OnboardingEntry,
+    "apertura": AperturaHabitacionEntry,
+    "cumplimiento": CumplimientoEECCEntry,
 }
 
 @app.post("/delete/<string:entity>/<int:rid>")
 def delete_record(entity, rid):
-    mapping = {
-        "censo": CensusEntry,
-        "eventos": EventSeguridad,
-        "duplicidades": DuplicidadEntry,
-        "encuestas": EncuestaEntry,
-        "atencion": AtencionEntry,
-        "robos": RoboHurtoEntry,
-        "miscelaneo": MiscelaneoEntry,
-        "desviaciones": DesviacionEntry,
-        "solicitud_ot": SolicitudOTEntry,
-        "reclamos": ReclamoUsuarioEntry,
-    }
+    mapping = ENTITY_MODEL
     Model = mapping.get(entity)
     if not Model:
         flash("Entidad inválida.")
@@ -935,7 +1138,7 @@ TEMPLATES = {
     ],
     "atencion": ["FECHA","TIEMPO_PROMEDIO_MMSS","CANTIDAD"],
 
-    # nuevos
+    # agregados previos
     "robos": [
         "FECHA","HORA","MODULO","HABITACION","EMPRESA","NOMBRE_CLIENTE","RUT",
         "MEDIO_RECLAMO","ESPECIES","OBSERVACIONES","RECEPCIONA"
@@ -958,6 +1161,21 @@ TEMPLATES = {
         "HABITACION","VIA_SOLICITUD","INGRESAR_CONTACTO","NOMBRE_USUARIO","RESPONSABLE","ESTATUS",
         "NOTIFICACION_USUARIO","PLAN_ACCION"
     ],
+
+    # --------- NUEVOS 5 ---------
+    "alarmas": [
+        "MODULO","N_HABITACION","NOMBRE_RECEPCIONISTA","FECHA","EMPRESA","ID","CO",
+        "AVISO_MANTENCION_H","LLEGADA_MANTENCION_H","AVISO_LIDER_H","LLEGADA_LIDER_H",
+        "HORA_REPORTE_SALFA","TIPO_EVENTO","TIPO_ACTIVIDAD","FECHA_REPORTE",
+        "TURNO_RECEPCION_INGRESOS","OBSERVACIONES"
+    ],
+    "extensiones": [
+        "FECHA_SOLICITUD","ID","EMPRESA","CO","GERENCIA","PROYECTO","CANT_CLIENTES",
+        "DESDE","HASTA","APROBADOR","OBSERVACION"
+    ],
+    "onboarding": ["FECHA_HORA","NOMBRE","RUT","EMPRESA","ID","ARCHIVO_PDF"],
+    "apertura": ["FECHA","HABITACION","HORA","RESPONSABLE","ESTADO_CHAPA"],
+    "cumplimiento": ["EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"],
 }
 
 @app.get("/template/<string:entity>.xlsx")
@@ -1066,7 +1284,7 @@ def import_xlsx(entity):
                     fh_raw = str(row[0])
                     if "T" in fh_raw: fh = datetime.fromisoformat(fh_raw)
                     else: fh = datetime.fromisoformat(fh_raw.replace(" ", "T"))
-                    def t_int(v): 
+                    def t_int(v):
                         try: return int(v)
                         except: return None
                     db.add(EncuestaEntry(
@@ -1089,7 +1307,7 @@ def import_xlsx(entity):
                     cant = to_int(row[2])
                     db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=mmss_to_seconds(mmss), cantidad=cant))
 
-                # ---------------- nuevos ----------------
+                # ---------------- agregados previos ----------------
                 elif entity == "robos":
                     db.add(RoboHurtoEntry(
                         fecha=date.fromisoformat(str(row[0])),
@@ -1181,6 +1399,82 @@ def import_xlsx(entity):
                         estatus=str(row[12] or "").strip(),
                         notificacion_usuario=str(row[13] or "").strip(),
                         plan_accion=str(row[14] or "").strip(),
+                    ))
+
+                # ---------------- NUEVOS 5 ----------------
+                elif entity == "alarmas":
+                    def hhmm(v):
+                        s = str(v or "").strip()
+                        return datetime.strptime(s, "%H:%M").time() if s else None
+                    def ffloat(v):
+                        try:
+                            return float(v) if (v not in (None, "") ) else None
+                        except:
+                            return None
+                    db.add(ActivacionAlarmaEntry(
+                        modulo=str(row[0] or "").strip(),
+                        n_habitacion=str(row[1] or "").strip(),
+                        nombre_recepcionista=str(row[2] or "").strip(),
+                        fecha=date.fromisoformat(str(row[3])),
+                        empresa=str(row[4] or "").strip(),
+                        id_interno=str(row[5] or "").strip(),
+                        co=str(row[6] or "").strip(),
+                        aviso_mantencion_h=ffloat(row[7]),
+                        llegada_mantencion_h=ffloat(row[8]),
+                        aviso_lider_h=ffloat(row[9]),
+                        llegada_lider_h=ffloat(row[10]),
+                        hora_reporte_salfa=hhmm(row[11]),
+                        tipo_evento=str(row[12] or "").strip(),
+                        tipo_actividad=str(row[13] or "").strip(),
+                        fecha_reporte=(date.fromisoformat(str(row[14])) if row[14] else None),
+                        turno_recepcion_ingresos=str(row[15] or "").strip(),
+                        observaciones=str(row[16] or "").strip(),
+                    ))
+
+                elif entity == "extensiones":
+                    db.add(ExtensionExcepcionEntry(
+                        fecha_solicitud=date.fromisoformat(str(row[0])),
+                        id_interno=str(row[1] or "").strip(),
+                        empresa=str(row[2] or "").strip(),
+                        co=str(row[3] or "").strip(),
+                        gerencia=str(row[4] or "").strip(),
+                        proyecto=str(row[5] or "").strip(),
+                        cant_clientes=to_int(row[6], None),
+                        desde=(date.fromisoformat(str(row[7])) if row[7] else None),
+                        hasta=(date.fromisoformat(str(row[8])) if row[8] else None),
+                        aprobador=str(row[9] or "").strip(),
+                        observacion=str(row[10] or "").strip(),
+                    ))
+
+                elif entity == "onboarding":
+                    fh_raw = str(row[0])
+                    fh = datetime.fromisoformat(fh_raw if "T" in fh_raw else fh_raw.replace(" ", "T"))
+                    db.add(OnboardingEntry(
+                        fecha_hora=fh,
+                        nombre=str(row[1] or "").strip(),
+                        rut=str(row[2] or "").strip(),
+                        empresa=str(row[3] or "").strip(),
+                        id_interno=str(row[4] or "").strip(),
+                        archivo_pdf=str(row[5] or "").strip(),
+                    ))
+
+                elif entity == "apertura":
+                    db.add(AperturaHabitacionEntry(
+                        fecha=date.fromisoformat(str(row[0])),
+                        habitacion=str(row[1] or "").strip(),
+                        hora=safe_time_hhmm(row[2]),
+                        responsable=str(row[3] or "").strip(),
+                        estado_chapa=str(row[4] or "").strip(),
+                    ))
+
+                elif entity == "cumplimiento":
+                    db.add(CumplimientoEECCEntry(
+                        empresa=str(row[0] or "").strip(),
+                        n_contrato=str(row[1] or "").strip(),
+                        co=str(row[2] or "").strip(),
+                        correo_electronico=str(row[3] or "").strip(),
+                        id_interno=str(row[4] or "").strip(),
+                        turno=str(row[5] or "").strip(),
                     ))
 
                 inserted += 1
@@ -1310,3 +1604,4 @@ def dashboard():
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
