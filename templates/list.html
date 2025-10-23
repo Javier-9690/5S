@@ -34,7 +34,12 @@
           ('miscelaneo','Misceláneo'),
           ('desviaciones','Desviaciones'),
           ('solicitud_ot','Solicitud y OT de usuario'),
-          ('reclamos','Reclamos de usuarios')
+          ('reclamos','Reclamos de usuarios'),
+          ('activacion_alarma', 'Activación de alarma'),
+          ('extension_excepcion', 'Extensión y excepción'),
+          ('onboarding', 'Registro onboarding'),
+          ('apertura_habitacion', 'Apertura de habitación'),
+          ('eecc_cumplimiento', 'Cumplimiento EECC')
         ] %}
         <select name="vista" onchange="this.form.submit()">
           {% for v, label in opciones %}
@@ -49,7 +54,7 @@
     </div>
   </form>
 
-  {# Macro para botón Eliminar (mantiene filtros) #}
+  {# Macro botón eliminar que preserva los filtros actuales #}
   {% macro delbtn(entity, id) -%}
     <form method="post"
           action="{{ url_for('delete_record', entity=entity, rid=id) }}"
@@ -427,5 +432,189 @@
       </table>
     </div>
   {% endif %}
+
+  {# ================== NUEVOS MÓDULOS ================== #}
+
+  {# ---- ACTIVACIÓN DE ALARMA ---- #}
+  {% if vista == 'activacion_alarma' %}
+    <h2 style="margin-top:14px;">Activación de alarma</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='activacion_alarma', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Acciones</th>
+            <th>Módulo</th><th>N° Habitación</th><th>Nombre Recepcionista</th><th>Fecha</th><th>Empresa</th>
+            <th>ID</th><th>C.O.</th>
+            <th>Aviso mantención (h)</th><th>Llegada mantención (h)</th>
+            <th>Aviso Líder (h)</th><th>Llegada Líder (h)</th>
+            <th>Hora Reporte SALFA</th>
+            <th>Tipo Evento</th><th>Tipo Actividad</th><th>Fecha Reporte</th><th>Turno Recepción/Ingresos</th>
+            <th>Observaciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in activaciones %}
+          <tr>
+            <td>{{ delbtn('activacion_alarma', r.id) }}</td>
+            <td>{{ r.modulo or '' }}</td>
+            <td>{{ r.habitacion or '' }}</td>
+            <td>{{ r.nombre_recepcionista or '' }}</td>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.empresa or '' }}</td>
+            <td>{{ r.id_interno or '' }}</td>
+            <td>{{ r.co or '' }}</td>
+            <td>{{ r.aviso_mantencion_horas if r.aviso_mantencion_horas is not none else '' }}</td>
+            <td>{{ r.llegada_mantencion_horas if r.llegada_mantencion_horas is not none else '' }}</td>
+            <td>{{ r.aviso_lider_horas if r.aviso_lider_horas is not none else '' }}</td>
+            <td>{{ r.llegada_lider_horas if r.llegada_lider_horas is not none else '' }}</td>
+            <td>{{ r.hora_reporte_salfa.strftime('%H:%M') if r.hora_reporte_salfa else '' }}</td>
+            <td>{{ r.tipo_evento or '' }}</td>
+            <td>{{ r.tipo_actividad or '' }}</td>
+            <td>{{ r.fecha_reporte or '' }}</td>
+            <td>{{ r.turno_recepcion or '' }}</td>
+            <td>{{ r.observaciones or '' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {# ---- EXTENSIÓN Y EXCEPCIÓN ---- #}
+  {% if vista == 'extension_excepcion' %}
+    <h2 style="margin-top:14px;">Extensión y excepción</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='extension_excepcion', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
+        <tr>
+          <th>Acciones</th>
+          <th>Fecha solicitud</th><th>ID</th><th>Empresa</th><th>CO</th><th>Gerencia</th>
+          <th>Proyecto</th><th>Cant. clientes</th><th>Desde</th><th>Hasta</th><th>Aprobador</th><th>Observación</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in extensiones %}
+          <tr>
+            <td>{{ delbtn('extension_excepcion', r.id) }}</td>
+            <td>{{ r.fecha_solicitud }}</td>
+            <td>{{ r.id_interno or '' }}</td>
+            <td>{{ r.empresa or '' }}</td>
+            <td>{{ r.co or '' }}</td>
+            <td>{{ r.gerencia or '' }}</td>
+            <td>{{ r.proyecto or '' }}</td>
+            <td>{{ r.cant_clientes if r.cant_clientes is not none else '' }}</td>
+            <td>{{ r.desde or '' }}</td>
+            <td>{{ r.hasta or '' }}</td>
+            <td>{{ r.aprobador or '' }}</td>
+            <td>{{ r.observacion or '' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {# ---- REGISTRO ONBOARDING ---- #}
+  {% if vista == 'onboarding' %}
+    <h2 style="margin-top:14px;">Registro onboarding</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='onboarding', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
+        <tr>
+          <th>Acciones</th>
+          <th>Fecha/Hora</th><th>Nombre</th><th>RUT</th><th>Empresa</th><th>ID</th><th>Archivo PDF</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in onboardings %}
+          <tr>
+            <td>{{ delbtn('onboarding', r.id) }}</td>
+            <td>{{ r.fecha_hora }}</td>
+            <td>{{ r.nombre or '' }}</td>
+            <td>{{ r.rut or '' }}</td>
+            <td>{{ r.empresa or '' }}</td>
+            <td>{{ r.id_interno or '' }}</td>
+            <td>
+              {% if r.archivo_pdf_path %}
+                <a class="btn" style="padding:4px 8px;" href="{{ url_for('download_onboarding_pdf', rid=r.id) }}">Ver PDF</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {# ---- APERTURA DE HABITACIÓN ---- #}
+  {% if vista == 'apertura_habitacion' %}
+    <h2 style="margin-top:14px;">Apertura de habitación</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='apertura_habitacion', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
+        <tr>
+          <th>Acciones</th>
+          <th>Fecha</th><th>Habitación</th><th>Hora</th><th>Responsable</th><th>Estado de la chapa (motivo)</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in aperturas %}
+          <tr>
+            <td>{{ delbtn('apertura_habitacion', r.id) }}</td>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.habitacion or '' }}</td>
+            <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
+            <td>{{ r.responsable or '' }}</td>
+            <td>{{ r.estado_chapa or '' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {# ---- CUMPLIMIENTO EECC ---- #}
+  {% if vista == 'eecc_cumplimiento' %}
+    <h2 style="margin-top:14px;">Cumplimiento de reportabilidad de EECC</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='eecc_cumplimiento', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
+        <tr>
+          <th>Acciones</th>
+          <th>Empresa</th><th>N° Contrato</th><th>C.O.</th><th>Correo</th><th>ID</th><th>Turno</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in eeccs %}
+          <tr>
+            <td>{{ delbtn('eecc_cumplimiento', r.id) }}</td>
+            <td>{{ r.empresa or '' }}</td>
+            <td>{{ r.n_contrato or '' }}</td>
+            <td>{{ r.co or '' }}</td>
+            <td>{{ r.correo or '' }}</td>
+            <td>{{ r.id_interno or '' }}</td>
+            <td>{{ r.turno or '' }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
 {% endblock %}
 
