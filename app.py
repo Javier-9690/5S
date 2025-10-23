@@ -295,6 +295,76 @@ class ReclamoUsuarioEntry(Base):
     plan_accion = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
+class ActivacionAlarmaEntry(Base):
+    __tablename__ = "activacion_alarma"
+    id = Column(Integer, primary_key=True)
+    modulo = Column(String(100), nullable=True)
+    n_habitacion = Column(String(100), nullable=True)
+    nombre_recepcionista = Column(String(200), nullable=True)
+    fecha = Column(Date, nullable=False)
+    empresa = Column(String(200), nullable=True)
+    id_interno = Column(String(100), nullable=True)  # "ID"
+    co = Column(String(100), nullable=True)          # "C.O."
+    aviso_mantencion_h = Column(Float, nullable=True)
+    llegada_mantencion_h = Column(Float, nullable=True)
+    aviso_lider_h = Column(Float, nullable=True)
+    llegada_lider_h = Column(Float, nullable=True)
+    hora_reporte_salfa = Column(Time, nullable=True)
+    tipo_evento = Column(String(200), nullable=True)
+    tipo_actividad = Column(String(200), nullable=True)
+    fecha_reporte = Column(Date, nullable=True)
+    turno_recepcion_ingresos = Column(String(200), nullable=True)
+    observaciones = Column(Text, nullable=True)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class ExtensionExcepcionEntry(Base):
+    __tablename__ = "extension_excepcion"
+    id = Column(Integer, primary_key=True)
+    fecha_solicitud = Column(Date, nullable=False)
+    id_interno = Column(String(100), nullable=True)
+    empresa = Column(String(200), nullable=True)
+    co = Column(String(100), nullable=True)
+    gerencia = Column(String(200), nullable=True)
+    proyecto = Column(String(200), nullable=True)
+    cant_clientes = Column(Integer, nullable=True)
+    desde = Column(Date, nullable=True)
+    hasta = Column(Date, nullable=True)
+    aprobador = Column(String(200), nullable=True)
+    observacion = Column(Text, nullable=True)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class OnboardingEntry(Base):
+    __tablename__ = "onboarding"
+    id = Column(Integer, primary_key=True)
+    fecha_hora = Column(DateTime, nullable=False)
+    nombre = Column(String(200), nullable=True)
+    rut = Column(String(50), nullable=True)
+    empresa = Column(String(200), nullable=True)
+    id_interno = Column(String(100), nullable=True)
+    archivo_pdf = Column(String(300), nullable=True)  # guarda nombre/ruta del archivo
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class AperturaHabitacionEntry(Base):
+    __tablename__ = "apertura_habitacion"
+    id = Column(Integer, primary_key=True)
+    fecha = Column(Date, nullable=False)
+    habitacion = Column(String(100), nullable=True)
+    hora = Column(Time, nullable=True)
+    responsable = Column(String(200), nullable=True)
+    estado_chapa = Column(Text, nullable=True)  # motivo por el que no abre
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class CumplimientoEECCEntry(Base):
+    __tablename__ = "cumplimiento_eecc"
+    id = Column(Integer, primary_key=True)
+    empresa = Column(String(200), nullable=True)
+    n_contrato = Column(String(100), nullable=True)
+    co = Column(String(100), nullable=True)
+    correo_electronico = Column(String(200), nullable=True)
+    id_interno = Column(String(100), nullable=True)
+    turno = Column(String(100), nullable=True)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
 
 # Crear tablas si no existen
 Base.metadata.create_all(ENGINE)
