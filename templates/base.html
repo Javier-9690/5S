@@ -19,7 +19,7 @@
     }
     body{ background-color:#f7f7f8; }
 
-    /* Header con logos + título */
+    /* Header con logos + título principal (se mantiene) */
     .app-header{
       position: sticky; top:0; z-index:1030;
       background:#ffffff; border-bottom:1px solid var(--border-color);
@@ -46,23 +46,80 @@
       .app-shell{ grid-template-columns: 1fr; }
     }
 
-    /* Sidebar en Bootstrap (card + list group) */
     .sidebar {
       position: sticky; top:92px; align-self:start;
     }
 
-    /* Contenido principal */
     .content-card{
       background:#fff; border:1px solid var(--border-color); border-radius:.75rem;
       box-shadow:0 2px 10px rgba(0,0,0,.06);
     }
 
-    /* Mejoras visuales menores */
     .muted{ color:#6b7280; font-size:.95rem; }
     footer{ text-align:center; color:#9ca3af; padding:16px; font-size:12px; margin-top:16px; }
 
-    /* Quitar estilos ad-hoc antiguos para dejar a Bootstrap tomar control de botones */
-    /* (Tus plantillas ya usan .btn; con el script de abajo se convertirán en btn btn-primary) */
+    /* ==== Ajuste de tamaños de títulos internos ==== */
+    /* Títulos de páginas dentro del contenido (p.ej. "Panel de ingreso") */
+    .content-card h1{
+      font-size: 1.5rem;           /* antes ~2rem */
+      line-height: 1.2;
+      margin-bottom: .75rem;
+      font-weight: 700;
+    }
+    /* Subtítulos/secciones (p.ej. "Atención al público") */
+    .content-card h2{
+      font-size: 1.1rem;           /* antes ~1.375rem */
+      line-height: 1.3;
+      margin-top: .25rem;
+      margin-bottom: .75rem;
+      font-weight: 700;
+      color: #334155;              /* Slate-700 */
+    }
+
+    /* ==== Estilo azul para el botón "Elegir archivo" de inputs type="file" ==== */
+    input[type="file"]{
+      /* Mantén ancho completo como el resto de controles */
+      width: 100%;
+    }
+    /* Navegadores modernos */
+    input[type="file"]::file-selector-button{
+      border: none;
+      border-radius: .5rem;
+      padding: .5rem .9rem;
+      margin-right: .75rem;
+      background-color: var(--bs-primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    input[type="file"]::file-selector-button:hover{
+      filter: brightness(.95);
+    }
+    input[type="file"]::file-selector-button:active{
+      filter: brightness(.9);
+    }
+    input[type="file"]:focus-visible{
+      outline: none;
+      box-shadow: 0 0 0 .25rem rgba(13,110,253,.25); /* foco estilo Bootstrap */
+      border-radius: .5rem;
+    }
+    /* Fallback WebKit (Safari/antiguos) */
+    input[type="file"]::-webkit-file-upload-button{
+      border: none;
+      border-radius: .5rem;
+      padding: .5rem .9rem;
+      margin-right: .75rem;
+      background-color: var(--bs-primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    input[type="file"]::-webkit-file-upload-button:hover{
+      filter: brightness(.95);
+    }
+    input[type="file"]::-webkit-file-upload-button:active{
+      filter: brightness(.9);
+    }
   </style>
 </head>
 <body>
@@ -152,19 +209,20 @@
       // Botones: tu código usa .btn. Los convertimos a Bootstrap .btn.btn-primary
       document.querySelectorAll('button.btn, a.btn').forEach(el => {
         el.classList.add('btn-primary');
-        // Padding y radios ya vienen de Bootstrap; no se tocan inline styles previos
       });
 
       // Tablas: aplicar tabla Bootstrap si no tienen clases
       document.querySelectorAll('table').forEach(tb => {
         tb.classList.add('table','table-sm','table-hover','table-striped','align-middle');
-        const wrapper = document.createElement('div');
-        wrapper.className = 'table-responsive';
-        tb.parentNode.insertBefore(wrapper, tb);
-        wrapper.appendChild(tb);
+        if (!tb.closest('.table-responsive')) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'table-responsive';
+          tb.parentNode.insertBefore(wrapper, tb);
+          wrapper.appendChild(tb);
+        }
       });
 
-      // Fieldsets simples en filtros (opcional): agranda separación
+      // Un poco de aire bajo el botón aplicar
       document.querySelectorAll('form .btn[type="submit"]').forEach(btn => {
         btn.classList.add('mt-1');
       });
