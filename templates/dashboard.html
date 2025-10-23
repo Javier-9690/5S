@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% block content %}
   <h1>Dashboard</h1>
  
@@ -66,8 +67,11 @@
         return {
           type: 'line',
           data: { labels, datasets: [{ label: lbl, data, tension: .25, pointRadius: 2 }] },
-          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}},
-                     scales:{ y:{ beginAtZero: true }, x:{ ticks:{ autoSkip:true, maxRotation:45 }}}}
+          options: {
+            responsive:true, maintainAspectRatio:false,
+            plugins:{legend:{position:'bottom'}},
+            scales:{ y:{ beginAtZero: true }, x:{ ticks:{ autoSkip:true, maxRotation:45 }}}
+          }
         }
       }
       new Chart(document.getElementById('c1'), cfg('Censo', s.censo));
@@ -79,5 +83,4 @@
     </script>
   {% endif %}
 {% endblock %}
-
 
