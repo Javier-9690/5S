@@ -1,6 +1,5 @@
-# app.py - SQLAlchemy puro + 5 módulos nuevos integrados
 import os
-import io   
+import io
 import csv
 import re
 from statistics import mean
@@ -8,12 +7,12 @@ from datetime import datetime, date, time, timedelta
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, send_file, jsonify, abort
+    flash, send_file, jsonify
 )
 
-# ---------- BD (SQLAlchemy puro) ----------
+# ---------- BD ----------
 from sqlalchemy import (
-    create_engine, Column, Integer, String, Date, DateTime, Time, Float, Text, LargeBinary
+    create_engine, Column, Integer, String, Date, DateTime, Time, Float, Text
 )
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
@@ -28,9 +27,10 @@ from openpyxl import Workbook, load_workbook
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
 
+
 def normalize_db_url(url: str) -> str:
-    """Heroku/Supabase devuelven postgres://; SQLAlchemy espera postgresql+psycopg2://.
-       Además, forzamos sslmode=require por defecto en entornos gestionados."""
+    """Render / Supabase suelen dar postgres://; SQLAlchemy espera postgresql+psycopg2://
+       y en entornos gestionados pedimos sslmode=require por defecto."""
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+psycopg2://", 1)
     elif url.startswith("postgresql://"):
@@ -38,6 +38,7 @@ def normalize_db_url(url: str) -> str:
     if "sslmode=" not in url:
         url += ("&" if "?" in url else "?") + "sslmode=require"
     return url
+
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if not DATABASE_URL:
@@ -114,6 +115,7 @@ def week_range(week_number: int):
     s, e = WEEK_MAP[week_number]
     return (date.fromisoformat(s), date.fromisoformat(e))
 
+
 # Tiempo mm:ss
 TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 def mmss_to_seconds(s: str) -> int:
@@ -128,7 +130,7 @@ def seconds_to_mmss(x: int) -> str:
 
 
 # -----------------------------------------------------------------------------
-# Modelos (tablas) - módulos originales
+# Modelos (tablas)
 # -----------------------------------------------------------------------------
 class CensusEntry(Base):
     __tablename__ = "census_entries"
@@ -157,13 +159,13 @@ class DuplicidadEntry(Base):
     id_interno = Column(String(100), nullable=True)
     empresa_contratista = Column(String(200), nullable=True)
     descripcion_problema = Column(Text, nullable=True)
-    tipo_riesgo = Column(String(200), nullable=True)  # Psicosocial
+    tipo_riesgo = Column(String(200), nullable=True)
     pabellon = Column(String(100), nullable=True)
     habitacion = Column(String(100), nullable=True)
     ingresar_contacto = Column(String(200), nullable=True)
     nombre_usuario = Column(String(200), nullable=True)
     responsable = Column(String(200), nullable=True)
-    estatus = Column(String(50), nullable=True)  # Cerrado/Abierto
+    estatus = Column(String(50), nullable=True)
     notificacion_usuario = Column(String(200), nullable=True)
     plan_accion = Column(Text, nullable=True)
     fecha_cierre = Column(Date, nullable=True)
@@ -196,7 +198,7 @@ class AtencionEntry(Base):
     cantidad = Column(Integer, nullable=False, default=0)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
-# --- Nuevos módulos que ya tenías ---
+# --- Módulos agregados previamente ---
 class RoboHurtoEntry(Base):
     __tablename__ = "robos_hurtos"
     id = Column(Integer, primary_key=True)
@@ -293,41 +295,28 @@ class ReclamoUsuarioEntry(Base):
     plan_accion = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
-
-# -----------------------------------------------------------------------------
-# NUEVOS 5 MÓDULOS (nuevos modelos)
-# -----------------------------------------------------------------------------
+# ---------------- NUEVOS 5 MÓDULOS ----------------
 class ActivacionAlarmaEntry(Base):
     __tablename__ = "activacion_alarma"
     id = Column(Integer, primary_key=True)
     modulo = Column(String(100), nullable=True)
-
-    # BD: n_habitacion  → Atributo Python: habitacion
-    habitacion = Column("n_habitacion", String(100), nullable=True)
-
+    n_habitacion = Column(String(100), nullable=True)
     nombre_recepcionista = Column(String(200), nullable=True)
     fecha = Column(Date, nullable=False)
     empresa = Column(String(200), nullable=True)
     id_interno = Column(String(100), nullable=True)
     co = Column(String(100), nullable=True)
-
-    # BD: aviso_mantencion       → Atributo Python: aviso_mantencion_horas
-    aviso_mantencion_horas = Column("aviso_mantencion_h", Float, nullable=True)
-    # BD: llegada_mantencion     → Atributo Python: llegada_mantencion_horas
-    llegada_mantencion_horas = Column("llegada_mantencion_h", Float, nullable=True)
-    # BD: aviso_lider            → Atributo Python: aviso_lider_horas
-    aviso_lider_horas = Column("aviso_lider_h", Float, nullable=True)
-    # BD: llegada_lider          → Atributo Python: llegada_lider_horas
-    llegada_lider_horas = Column("llegada_lider_h", Float, nullable=True)
-
+    aviso_mantencion_h = Column(Float, nullable=True)
+    llegada_mantencion_h = Column(Float, nullable=True)
+    aviso_lider_h = Column(Float, nullable=True)
+    llegada_lider_h = Column(Float, nullable=True)
     hora_reporte_salfa = Column(Time, nullable=True)
     tipo_evento = Column(String(200), nullable=True)
     tipo_actividad = Column(String(200), nullable=True)
     fecha_reporte = Column(Date, nullable=True)
-    turno_recepcion = Column(String(200), nullable=True)  # Turno Recepción / Ingresos
+    turno_recepcion_ingresos = Column(String(200), nullable=True)
     observaciones = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
-
 
 class ExtensionExcepcionEntry(Base):
     __tablename__ = "extension_excepcion"
@@ -345,17 +334,15 @@ class ExtensionExcepcionEntry(Base):
     observacion = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
-class RegistroOnboardingEntry(Base):
-    __tablename__ = "registro_onboarding"
+class OnboardingEntry(Base):
+    __tablename__ = "onboarding"
     id = Column(Integer, primary_key=True)
     fecha_hora = Column(DateTime, nullable=False)
     nombre = Column(String(200), nullable=True)
     rut = Column(String(50), nullable=True)
     empresa = Column(String(200), nullable=True)
     id_interno = Column(String(100), nullable=True)
-    archivo_nombre = Column(String(255), nullable=True)
-    archivo_mime = Column(String(100), nullable=True)
-    archivo_pdf = Column(LargeBinary, nullable=True)  # almacenamos el PDF en la BD
+    archivo_pdf = Column(String(300), nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 class AperturaHabitacionEntry(Base):
@@ -365,7 +352,7 @@ class AperturaHabitacionEntry(Base):
     habitacion = Column(String(100), nullable=True)
     hora = Column(Time, nullable=True)
     responsable = Column(String(200), nullable=True)
-    estado_chapa = Column(Text, nullable=True)  # motivo por el que no abre
+    estado_chapa = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 class CumplimientoEECCEntry(Base):
@@ -414,9 +401,9 @@ def home():
 # -----------------------------------------------------------------------------
 @app.route("/panel", methods=["GET", "POST"])
 def panel():
-    # Tabs disponibles (incluye los nuevos 5)
-    # censo | eventos | duplicidades | encuesta | atencion | robos | miscelaneo |
-    # desviaciones | solicitud_ot | reclamos | alarma | extension | onboarding | apertura | cumplimiento
+    # tabs: censo | eventos | duplicidades | encuesta | atencion |
+    #       robos | miscelaneo | desviaciones | solicitud_ot | reclamos |
+    #       alarmas | extensiones | onboarding | apertura | cumplimiento
     tab = request.args.get("tab", "censo")
     db = SessionLocal()
     try:
@@ -613,48 +600,41 @@ def panel():
                 )
                 db.add(rec); db.commit(); flash("Reclamo de usuario guardado.")
 
-            # ==================== NUEVOS 5 MÓDULOS ====================
-
-            # -- Activación de alarma
-            elif tab == "alarma":
-                def fnum(v):
+            # -------------------- ACTIVACIÓN DE ALARMA --------------------
+            elif tab == "alarmas":
+                fecha = date.fromisoformat(request.form["fecha"])
+                def f2t(v):
                     v = (v or "").strip()
+                    return datetime.strptime(v, "%H:%M").time() if v else None
+                def f2float(v):
                     try:
-                        return float(v) if v != "" else None
+                        return float(v) if (v is not None and str(v).strip()!="") else None
                     except:
                         return None
-                fecha = date.fromisoformat(request.form["fecha"])
-                hora_salfa = request.form.get("hora_reporte_salfa","")
-                hora_obj = datetime.strptime(hora_salfa, "%H:%M").time() if hora_salfa else None
                 rec = ActivacionAlarmaEntry(
                     modulo=request.form.get("modulo","").strip(),
-                    habitacion=request.form.get("habitacion","").strip(),
+                    n_habitacion=request.form.get("n_habitacion","").strip(),
                     nombre_recepcionista=request.form.get("nombre_recepcionista","").strip(),
                     fecha=fecha,
                     empresa=request.form.get("empresa","").strip(),
                     id_interno=request.form.get("id_interno","").strip(),
                     co=request.form.get("co","").strip(),
-                    aviso_mantencion_horas=fnum(request.form.get("aviso_mantencion_horas")),
-                    llegada_mantencion_horas=fnum(request.form.get("llegada_mantencion_horas")),
-                    aviso_lider_horas=fnum(request.form.get("aviso_lider_horas")),
-                    llegada_lider_horas=fnum(request.form.get("llegada_lider_horas")),
-                    hora_reporte_salfa=hora_obj,
+                    aviso_mantencion_h=f2float(request.form.get("aviso_mantencion_h")),
+                    llegada_mantencion_h=f2float(request.form.get("llegada_mantencion_h")),
+                    aviso_lider_h=f2float(request.form.get("aviso_lider_h")),
+                    llegada_lider_h=f2float(request.form.get("llegada_lider_h")),
+                    hora_reporte_salfa=f2t(request.form.get("hora_reporte_salfa")),
                     tipo_evento=request.form.get("tipo_evento","").strip(),
                     tipo_actividad=request.form.get("tipo_actividad","").strip(),
-                    fecha_reporte=(date.fromisoformat(request.form.get("fecha_reporte"))
+                    fecha_reporte=(date.fromisoformat(request.form["fecha_reporte"])
                                    if request.form.get("fecha_reporte") else None),
-                    turno_recepcion=request.form.get("turno_recepcion","").strip(),
+                    turno_recepcion_ingresos=request.form.get("turno_recepcion_ingresos","").strip(),
                     observaciones=request.form.get("observaciones","").strip(),
                 )
                 db.add(rec); db.commit(); flash("Activación de alarma guardada.")
 
-            # -- Extensión y excepción
-            elif tab == "extension":
-                def to_int(v):
-                    try:
-                        return int(v) if v not in (None,"") else None
-                    except:
-                        return None
+            # -------------------- EXTENSIÓN / EXCEPCIÓN --------------------
+            elif tab == "extensiones":
                 rec = ExtensionExcepcionEntry(
                     fecha_solicitud=date.fromisoformat(request.form["fecha_solicitud"]),
                     id_interno=request.form.get("id_interno","").strip(),
@@ -662,54 +642,43 @@ def panel():
                     co=request.form.get("co","").strip(),
                     gerencia=request.form.get("gerencia","").strip(),
                     proyecto=request.form.get("proyecto","").strip(),
-                    cant_clientes=to_int(request.form.get("cant_clientes")),
-                    desde=(date.fromisoformat(request.form.get("desde")) if request.form.get("desde") else None),
-                    hasta=(date.fromisoformat(request.form.get("hasta")) if request.form.get("hasta") else None),
+                    cant_clientes=(int(request.form.get("cant_clientes")) if request.form.get("cant_clientes") else None),
+                    desde=(date.fromisoformat(request.form["desde"]) if request.form.get("desde") else None),
+                    hasta=(date.fromisoformat(request.form["hasta"]) if request.form.get("hasta") else None),
                     aprobador=request.form.get("aprobador","").strip(),
                     observacion=request.form.get("observacion","").strip(),
                 )
                 db.add(rec); db.commit(); flash("Extensión/Excepción guardada.")
 
-            # -- Registro Onboarding (guarda PDF)
+            # -------------------- ONBOARDING --------------------
             elif tab == "onboarding":
                 fh_raw = request.form.get("fecha_hora")
-                fecha_hora = (datetime.fromisoformat(fh_raw) if "T" in fh_raw
-                              else datetime.fromisoformat(fh_raw.replace(" ", "T")))
-                file = request.files.get("archivo_pdf")
-                bin_data, fname, fmime = None, None, None
-                if file and file.filename:
-                    if not file.filename.lower().endswith(".pdf"):
-                        flash("El archivo debe ser PDF.")
-                        return redirect(url_for("panel", tab=tab))
-                    bin_data = file.read()
-                    fname = file.filename
-                    fmime = "application/pdf"
-                rec = RegistroOnboardingEntry(
+                fecha_hora = datetime.fromisoformat(fh_raw.replace(" ", "T")) if "T" not in fh_raw else datetime.fromisoformat(fh_raw)
+                rec = OnboardingEntry(
                     fecha_hora=fecha_hora,
                     nombre=request.form.get("nombre","").strip(),
                     rut=request.form.get("rut","").strip(),
                     empresa=request.form.get("empresa","").strip(),
                     id_interno=request.form.get("id_interno","").strip(),
-                    archivo_nombre=fname,
-                    archivo_mime=fmime,
-                    archivo_pdf=bin_data
+                    archivo_pdf=request.form.get("archivo_pdf","").strip(),
                 )
-                db.add(rec); db.commit(); flash("Registro de Onboarding guardado.")
+                db.add(rec); db.commit(); flash("Onboarding guardado.")
 
-            # -- Apertura de habitación
+            # -------------------- APERTURA DE HABITACIÓN --------------------
             elif tab == "apertura":
-                hora_raw = request.form.get("hora","")
-                hora_obj = datetime.strptime(hora_raw, "%H:%M").time() if hora_raw else None
+                def f2t(v):
+                    v = (v or "").strip()
+                    return datetime.strptime(v, "%H:%M").time() if v else None
                 rec = AperturaHabitacionEntry(
                     fecha=date.fromisoformat(request.form["fecha"]),
                     habitacion=request.form.get("habitacion","").strip(),
-                    hora=hora_obj,
+                    hora=f2t(request.form.get("hora")),
                     responsable=request.form.get("responsable","").strip(),
                     estado_chapa=request.form.get("estado_chapa","").strip(),
                 )
-                db.add(rec); db.commit(); flash("Registro de apertura de habitación guardado.")
+                db.add(rec); db.commit(); flash("Apertura de habitación guardada.")
 
-            # -- Cumplimiento de reportabilidad EECC
+            # -------------------- CUMPLIMIENTO EECC --------------------
             elif tab == "cumplimiento":
                 rec = CumplimientoEECCEntry(
                     empresa=request.form.get("empresa","").strip(),
@@ -746,7 +715,6 @@ def registros():
             if d_to:   q = q.filter(col <= d_to)
             return q
 
-        # Existentes
         census = between(db.query(CensusEntry), CensusEntry.fecha).order_by(CensusEntry.fecha.desc()).all()
         eventos = between(db.query(EventSeguridad), EventSeguridad.fecha).order_by(EventSeguridad.fecha.desc()).all()
         duplics = between(db.query(DuplicidadEntry), DuplicidadEntry.fecha).order_by(DuplicidadEntry.fecha.desc()).all()
@@ -777,7 +745,7 @@ def registros():
         if d_to:   reclamos = reclamos.filter(ReclamoUsuarioEntry.fecha <= d_to)
         reclamos = reclamos.order_by(ReclamoUsuarioEntry.fecha.desc()).all()
 
-        # Nuevos 5
+        # --------- NUEVOS 5 MÓDULOS ----------
         alarmas = db.query(ActivacionAlarmaEntry)
         if d_from: alarmas = alarmas.filter(ActivacionAlarmaEntry.fecha >= d_from)
         if d_to:   alarmas = alarmas.filter(ActivacionAlarmaEntry.fecha <= d_to)
@@ -788,17 +756,17 @@ def registros():
         if d_to:   extensiones = extensiones.filter(ExtensionExcepcionEntry.fecha_solicitud <= d_to)
         extensiones = extensiones.order_by(ExtensionExcepcionEntry.fecha_solicitud.desc()).all()
 
-        onboardings = db.query(RegistroOnboardingEntry)
-        if d_from: onboardings = onboardings.filter(RegistroOnboardingEntry.fecha_hora >= datetime.combine(d_from, time.min))
-        if d_to:   onboardings = onboardings.filter(RegistroOnboardingEntry.fecha_hora <= datetime.combine(d_to, time.max))
-        onboardings = onboardings.order_by(RegistroOnboardingEntry.fecha_hora.desc()).all()
+        onboarding = db.query(OnboardingEntry)
+        if d_from: onboarding = onboarding.filter(OnboardingEntry.fecha_hora >= datetime.combine(d_from, time.min))
+        if d_to:   onboarding = onboarding.filter(OnboardingEntry.fecha_hora <= datetime.combine(d_to, time.max))
+        onboarding = onboarding.order_by(OnboardingEntry.fecha_hora.desc()).all()
 
-        aperturas = db.query(AperturaHabitacionEntry)
-        if d_from: aperturas = aperturas.filter(AperturaHabitacionEntry.fecha >= d_from)
-        if d_to:   aperturas = aperturas.filter(AperturaHabitacionEntry.fecha <= d_to)
-        aperturas = aperturas.order_by(AperturaHabitacionEntry.fecha.desc()).all()
+        apertura = db.query(AperturaHabitacionEntry)
+        if d_from: apertura = apertura.filter(AperturaHabitacionEntry.fecha >= d_from)
+        if d_to:   apertura = apertura.filter(AperturaHabitacionEntry.fecha <= d_to)
+        apertura = apertura.order_by(AperturaHabitacionEntry.fecha.desc()).all()
 
-        cumplimientos = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.id.desc()).all()
+        cumplimiento = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.id.desc()).all()
 
         return render_template(
             "list.html",
@@ -807,9 +775,8 @@ def registros():
             encuestas=encuestas, atenciones=atenciones,
             robos=robos, miscelaneo=miscelaneo, desviaciones=desviaciones,
             solicitudes_ot=solicitudes_ot, reclamos=reclamos,
-            # nuevos:
-            alarmas=alarmas, extensiones=extensiones, onboardings=onboardings,
-            aperturas=aperturas, cumplimientos=cumplimientos,
+            alarmas=alarmas, extensiones=extensiones, onboarding=onboarding,
+            apertura=apertura, cumplimiento=cumplimiento,
             vista=vista,
             current_tab=None
         )
@@ -902,7 +869,7 @@ def download_entity(entity):
                 w.writerow({"fecha": r.fecha.isoformat(), "tiempo_promedio_mmss": seconds_to_mmss(r.tiempo_promedio_sec),
                             "cantidad": r.cantidad})
 
-        # ---------------- CSV nuevos módulos "anteriores" ----------------
+        # ---------------- CSV de módulos previos ----------------
         elif entity == "robos":
             q = db.query(RoboHurtoEntry)
             if d_from: q = q.filter(RoboHurtoEntry.fecha >= d_from)
@@ -1003,61 +970,64 @@ def download_entity(entity):
                     "plan_accion": r.plan_accion or "",
                 })
 
-        # ---------------- CSV de los 5 NUEVOS ----------------
-        elif entity == "alarma":
+        # --------- CSV NUEVOS 5 ----------
+        elif entity == "alarmas":
             q = db.query(ActivacionAlarmaEntry)
             if d_from: q = q.filter(ActivacionAlarmaEntry.fecha >= d_from)
             if d_to:   q = q.filter(ActivacionAlarmaEntry.fecha <= d_to)
             rows = q.order_by(ActivacionAlarmaEntry.fecha).all()
-            headers = ["modulo","habitacion","nombre_recepcionista","fecha","empresa","id_interno","co",
-                       "aviso_mantencion_horas","llegada_mantencion_horas","aviso_lider_horas","llegada_lider_horas",
-                       "hora_reporte_salfa","tipo_evento","tipo_actividad","fecha_reporte","turno_recepcion","observaciones"]
+            headers = ["MODULO","N_HABITACION","NOMBRE_RECEPCIONISTA","FECHA","EMPRESA","ID","CO",
+                       "AVISO_MANTENCION_H","LLEGADA_MANTENCION_H","AVISO_LIDER_H","LLEGADA_LIDER_H",
+                       "HORA_REPORTE_SALFA","TIPO_EVENTO","TIPO_ACTIVIDAD","FECHA_REPORTE",
+                       "TURNO_RECEPCION_INGRESOS","OBSERVACIONES"]
             w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
             for r in rows:
                 w.writerow({
-                    "modulo": r.modulo or "", "habitacion": r.habitacion or "",
-                    "nombre_recepcionista": r.nombre_recepcionista or "",
-                    "fecha": r.fecha.isoformat(), "empresa": r.empresa or "", "id_interno": r.id_interno or "",
-                    "co": r.co or "", "aviso_mantencion_horas": r.aviso_mantencion_horas or "",
-                    "llegada_mantencion_horas": r.llegada_mantencion_horas or "",
-                    "aviso_lider_horas": r.aviso_lider_horas or "",
-                    "llegada_lider_horas": r.llegada_lider_horas or "",
-                    "hora_reporte_salfa": r.hora_reporte_salfa.strftime("%H:%M") if r.hora_reporte_salfa else "",
-                    "tipo_evento": r.tipo_evento or "", "tipo_actividad": r.tipo_actividad or "",
-                    "fecha_reporte": r.fecha_reporte.isoformat() if r.fecha_reporte else "",
-                    "turno_recepcion": r.turno_recepcion or "", "observaciones": r.observaciones or "",
+                    "MODULO": r.modulo or "", "N_HABITACION": r.n_habitacion or "",
+                    "NOMBRE_RECEPCIONISTA": r.nombre_recepcionista or "",
+                    "FECHA": r.fecha.isoformat(), "EMPRESA": r.empresa or "",
+                    "ID": r.id_interno or "", "CO": r.co or "",
+                    "AVISO_MANTENCION_H": r.aviso_mantencion_h if r.aviso_mantencion_h is not None else "",
+                    "LLEGADA_MANTENCION_H": r.llegada_mantencion_h if r.llegada_mantencion_h is not None else "",
+                    "AVISO_LIDER_H": r.aviso_lider_h if r.aviso_lider_h is not None else "",
+                    "LLEGADA_LIDER_H": r.llegada_lider_h if r.llegada_lider_h is not None else "",
+                    "HORA_REPORTE_SALFA": r.hora_reporte_salfa.strftime("%H:%M") if r.hora_reporte_salfa else "",
+                    "TIPO_EVENTO": r.tipo_evento or "", "TIPO_ACTIVIDAD": r.tipo_actividad or "",
+                    "FECHA_REPORTE": r.fecha_reporte.isoformat() if r.fecha_reporte else "",
+                    "TURNO_RECEPCION_INGRESOS": r.turno_recepcion_ingresos or "",
+                    "OBSERVACIONES": r.observaciones or "",
                 })
 
-        elif entity == "extension":
+        elif entity == "extensiones":
             q = db.query(ExtensionExcepcionEntry)
             if d_from: q = q.filter(ExtensionExcepcionEntry.fecha_solicitud >= d_from)
             if d_to:   q = q.filter(ExtensionExcepcionEntry.fecha_solicitud <= d_to)
             rows = q.order_by(ExtensionExcepcionEntry.fecha_solicitud).all()
-            headers = ["fecha_solicitud","id_interno","empresa","co","gerencia","proyecto","cant_clientes",
-                       "desde","hasta","aprobador","observacion"]
+            headers = ["FECHA_SOLICITUD","ID","EMPRESA","CO","GERENCIA","PROYECTO","CANT_CLIENTES",
+                       "DESDE","HASTA","APROBADOR","OBSERVACION"]
             w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
             for r in rows:
                 w.writerow({
-                    "fecha_solicitud": r.fecha_solicitud.isoformat(), "id_interno": r.id_interno or "",
-                    "empresa": r.empresa or "", "co": r.co or "", "gerencia": r.gerencia or "",
-                    "proyecto": r.proyecto or "", "cant_clientes": r.cant_clientes or "",
-                    "desde": r.desde.isoformat() if r.desde else "",
-                    "hasta": r.hasta.isoformat() if r.hasta else "",
-                    "aprobador": r.aprobador or "", "observacion": r.observacion or "",
+                    "FECHA_SOLICITUD": r.fecha_solicitud.isoformat(), "ID": r.id_interno or "",
+                    "EMPRESA": r.empresa or "", "CO": r.co or "", "GERENCIA": r.gerencia or "",
+                    "PROYECTO": r.proyecto or "", "CANT_CLIENTES": r.cant_clientes if r.cant_clientes is not None else "",
+                    "DESDE": r.desde.isoformat() if r.desde else "",
+                    "HASTA": r.hasta.isoformat() if r.hasta else "",
+                    "APROBADOR": r.aprobador or "", "OBSERVACION": r.observacion or "",
                 })
 
         elif entity == "onboarding":
-            q = db.query(RegistroOnboardingEntry)
-            if d_from: q = q.filter(RegistroOnboardingEntry.fecha_hora >= datetime.combine(d_from, time.min))
-            if d_to:   q = q.filter(RegistroOnboardingEntry.fecha_hora <= datetime.combine(d_to, time.max))
-            rows = q.order_by(RegistroOnboardingEntry.fecha_hora).all()
-            headers = ["fecha_hora","nombre","rut","empresa","id_interno","archivo_nombre"]
+            q = db.query(OnboardingEntry)
+            if d_from: q = q.filter(OnboardingEntry.fecha_hora >= datetime.combine(d_from, time.min))
+            if d_to:   q = q.filter(OnboardingEntry.fecha_hora <= datetime.combine(d_to, time.max))
+            rows = q.order_by(OnboardingEntry.fecha_hora).all()
+            headers = ["FECHA_HORA","NOMBRE","RUT","EMPRESA","ID","ARCHIVO_PDF"]
             w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
             for r in rows:
                 w.writerow({
-                    "fecha_hora": r.fecha_hora.isoformat(timespec="minutes"),
-                    "nombre": r.nombre or "", "rut": r.rut or "", "empresa": r.empresa or "",
-                    "id_interno": r.id_interno or "", "archivo_nombre": r.archivo_nombre or "",
+                    "FECHA_HORA": r.fecha_hora.isoformat(timespec="minutes"),
+                    "NOMBRE": r.nombre or "", "RUT": r.rut or "", "EMPRESA": r.empresa or "",
+                    "ID": r.id_interno or "", "ARCHIVO_PDF": r.archivo_pdf or "",
                 })
 
         elif entity == "apertura":
@@ -1065,24 +1035,29 @@ def download_entity(entity):
             if d_from: q = q.filter(AperturaHabitacionEntry.fecha >= d_from)
             if d_to:   q = q.filter(AperturaHabitacionEntry.fecha <= d_to)
             rows = q.order_by(AperturaHabitacionEntry.fecha).all()
-            headers = ["fecha","habitacion","hora","responsable","estado_chapa"]
+            headers = ["FECHA","HABITACION","HORA","RESPONSABLE","ESTADO_CHAPA"]
             w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
             for r in rows:
                 w.writerow({
-                    "fecha": r.fecha.isoformat(), "habitacion": r.habitacion or "",
-                    "hora": r.hora.strftime("%H:%M") if r.hora else "",
-                    "responsable": r.responsable or "", "estado_chapa": r.estado_chapa or "",
+                    "FECHA": r.fecha.isoformat(),
+                    "HABITACION": r.habitacion or "",
+                    "HORA": r.hora.strftime("%H:%M") if r.hora else "",
+                    "RESPONSABLE": r.responsable or "",
+                    "ESTADO_CHAPA": r.estado_chapa or "",
                 })
 
         elif entity == "cumplimiento":
             rows = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.id).all()
-            headers = ["empresa","n_contrato","co","correo_electronico","id_interno","turno"]
+            headers = ["EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"]
             w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
             for r in rows:
                 w.writerow({
-                    "empresa": r.empresa or "", "n_contrato": r.n_contrato or "", "co": r.co or "",
-                    "correo_electronico": r.correo_electronico or "", "id_interno": r.id_interno or "",
-                    "turno": r.turno or "",
+                    "EMPRESA": r.empresa or "",
+                    "N_CONTRATO": r.n_contrato or "",
+                    "CO": r.co or "",
+                    "CORREO_ELECTRONICO": r.correo_electronico or "",
+                    "ID": r.id_interno or "",
+                    "TURNO": r.turno or "",
                 })
 
         else:
@@ -1097,27 +1072,7 @@ def download_entity(entity):
         )
     finally:
         db.close()
-
-
-# Descarga del PDF de Onboarding
-@app.get("/onboarding/<int:rid>/pdf")
-def onboarding_pdf(rid):
-    db = SessionLocal()
-    try:
-        r = db.get(RegistroOnboardingEntry, rid)
-        if not r or not r.archivo_pdf:
-            abort(404)
-        filename = r.archivo_nombre or f"onboarding_{rid}.pdf"
-        return send_file(
-            io.BytesIO(r.archivo_pdf),
-            mimetype=r.archivo_mime or "application/pdf",
-            as_attachment=True,
-            download_name=filename
-        )
-    finally:
-        db.close()
-
-
+        
 # --- Mapa entidad → Modelo para eliminar ---
 ENTITY_MODEL = {
     "censo": CensusEntry,
@@ -1130,17 +1085,18 @@ ENTITY_MODEL = {
     "desviaciones": DesviacionEntry,
     "solicitud_ot": SolicitudOTEntry,
     "reclamos": ReclamoUsuarioEntry,
-    # nuevos 5:
-    "alarma": ActivacionAlarmaEntry,
-    "extension": ExtensionExcepcionEntry,
-    "onboarding": RegistroOnboardingEntry,
+    # nuevos
+    "alarmas": ActivacionAlarmaEntry,
+    "extensiones": ExtensionExcepcionEntry,
+    "onboarding": OnboardingEntry,
     "apertura": AperturaHabitacionEntry,
     "cumplimiento": CumplimientoEECCEntry,
 }
 
 @app.post("/delete/<string:entity>/<int:rid>")
 def delete_record(entity, rid):
-    Model = ENTITY_MODEL.get(entity)
+    mapping = ENTITY_MODEL
+    Model = mapping.get(entity)
     if not Model:
         flash("Entidad inválida.")
         return redirect(url_for("registros"))
@@ -1163,7 +1119,6 @@ def delete_record(entity, rid):
     nxt = request.form.get("next")
     return redirect(nxt or url_for("registros"))
 
-
 # -----------------------------------------------------------------------------
 # PLANTILLAS EXCEL + IMPORTACIÓN POR MÓDULO
 # -----------------------------------------------------------------------------
@@ -1182,7 +1137,8 @@ TEMPLATES = {
         "Q4_RESPUESTA","Q4_PUNTAJE","Q5_RESPUESTA","Q5_PUNTAJE","TOTAL","PROMEDIO","COMENTARIOS"
     ],
     "atencion": ["FECHA","TIEMPO_PROMEDIO_MMSS","CANTIDAD"],
-    # previos
+
+    # agregados previos
     "robos": [
         "FECHA","HORA","MODULO","HABITACION","EMPRESA","NOMBRE_CLIENTE","RUT",
         "MEDIO_RECLAMO","ESPECIES","OBSERVACIONES","RECEPCIONA"
@@ -1205,26 +1161,21 @@ TEMPLATES = {
         "HABITACION","VIA_SOLICITUD","INGRESAR_CONTACTO","NOMBRE_USUARIO","RESPONSABLE","ESTATUS",
         "NOTIFICACION_USUARIO","PLAN_ACCION"
     ],
-    # === 5 NUEVOS ===
-    "alarma": [
-        "MODULO","HABITACION","NOMBRE_RECEPCIONISTA","FECHA","EMPRESA","ID_INTERNO","CO",
-        "AVISO_MANTENCION_HORAS","LLEGADA_MANTENCION_HORAS","AVISO_LIDER_HORAS","LLEGADA_LIDER_HORAS",
-        "HORA_REPORTE_SALFA","TIPO_EVENTO","TIPO_ACTIVIDAD","FECHA_REPORTE","TURNO_RECEPCION","OBSERVACIONES"
+
+    # --------- NUEVOS 5 ---------
+    "alarmas": [
+        "MODULO","N_HABITACION","NOMBRE_RECEPCIONISTA","FECHA","EMPRESA","ID","CO",
+        "AVISO_MANTENCION_H","LLEGADA_MANTENCION_H","AVISO_LIDER_H","LLEGADA_LIDER_H",
+        "HORA_REPORTE_SALFA","TIPO_EVENTO","TIPO_ACTIVIDAD","FECHA_REPORTE",
+        "TURNO_RECEPCION_INGRESOS","OBSERVACIONES"
     ],
-    "extension": [
+    "extensiones": [
         "FECHA_SOLICITUD","ID","EMPRESA","CO","GERENCIA","PROYECTO","CANT_CLIENTES",
         "DESDE","HASTA","APROBADOR","OBSERVACION"
     ],
-    # Para Onboarding, el PDF no puede viajar en Excel; incluimos metadatos.
-    "onboarding": [
-        "FECHA_HORA","NOMBRE","RUT","EMPRESA","ID_INTERNO","ARCHIVO_NOMBRE"
-    ],
-    "apertura": [
-        "FECHA","HABITACION","HORA","RESPONSABLE","ESTADO_CHAPA"
-    ],
-    "cumplimiento": [
-        "EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID_INTERNO","TURNO"
-    ],
+    "onboarding": ["FECHA_HORA","NOMBRE","RUT","EMPRESA","ID","ARCHIVO_PDF"],
+    "apertura": ["FECHA","HABITACION","HORA","RESPONSABLE","ESTADO_CHAPA"],
+    "cumplimiento": ["EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"],
 }
 
 @app.get("/template/<string:entity>.xlsx")
@@ -1273,22 +1224,22 @@ def import_xlsx(entity):
 
             def safe_time_hhmm(val):
                 s = ("" if val is None else str(val)).strip()
-                if not s: return None
+                if not s: return time(0, 0)
                 return datetime.strptime(s, "%H:%M").time()
 
-            def to_int(v, default=None):
+            def to_int(v, default=0):
                 try:
                     if v in (None, ""): return default
                     return int(v)
                 except:
                     return default
 
-            def to_float(v, default=None):
+            def to_float(v):
                 try:
-                    if v in (None, ""): return default
+                    if v in (None, ""): return None
                     return float(v)
                 except:
-                    return default
+                    return None
 
             for row in ws.iter_rows(min_row=2, values_only=True):
                 if all(cell is None or str(cell).strip()=="" for cell in row):
@@ -1297,9 +1248,9 @@ def import_xlsx(entity):
                 # ---------------- existentes ----------------
                 if entity == "censo":
                     fecha = date.fromisoformat(str(row[0]))
-                    cd = to_int(row[1], 0); cn = to_int(row[2], 0)
-                    total = to_int(row[3], (cd or 0)+(cn or 0))
-                    db.add(CensusEntry(fecha=fecha, censo_dia=cd or 0, censo_noche=cn or 0, total=total or 0))
+                    cd = to_int(row[1]); cn = to_int(row[2])
+                    total = to_int(row[3], cd+cn)
+                    db.add(CensusEntry(fecha=fecha, censo_dia=cd, censo_noche=cn, total=total))
 
                 elif entity == "eventos":
                     db.add(EventSeguridad(
@@ -1333,7 +1284,7 @@ def import_xlsx(entity):
                     fh_raw = str(row[0])
                     if "T" in fh_raw: fh = datetime.fromisoformat(fh_raw)
                     else: fh = datetime.fromisoformat(fh_raw.replace(" ", "T"))
-                    def t_int(v): 
+                    def t_int(v):
                         try: return int(v)
                         except: return None
                     db.add(EncuestaEntry(
@@ -1353,14 +1304,14 @@ def import_xlsx(entity):
                     mmss = str(row[1] or "").strip()
                     if mmss and not TIME_RE.match(mmss):
                         mmss = "00:00"
-                    cant = to_int(row[2], 0)
-                    db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=mmss_to_seconds(mmss), cantidad=cant or 0))
+                    cant = to_int(row[2])
+                    db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=mmss_to_seconds(mmss), cantidad=cant))
 
-                # ---------------- previos ----------------
+                # ---------------- agregados previos ----------------
                 elif entity == "robos":
                     db.add(RoboHurtoEntry(
                         fecha=date.fromisoformat(str(row[0])),
-                        hora=safe_time_hhmm(row[1]) or time(0,0),
+                        hora=safe_time_hhmm(row[1]),
                         modulo=str(row[2] or "").strip(),
                         habitacion=str(row[3] or "").strip(),
                         empresa=str(row[4] or "").strip(),
@@ -1450,29 +1401,37 @@ def import_xlsx(entity):
                         plan_accion=str(row[14] or "").strip(),
                     ))
 
-                # ========== Import de los 5 NUEVOS ==========
-                elif entity == "alarma":
+                # ---------------- NUEVOS 5 ----------------
+                elif entity == "alarmas":
+                    def hhmm(v):
+                        s = str(v or "").strip()
+                        return datetime.strptime(s, "%H:%M").time() if s else None
+                    def ffloat(v):
+                        try:
+                            return float(v) if (v not in (None, "") ) else None
+                        except:
+                            return None
                     db.add(ActivacionAlarmaEntry(
                         modulo=str(row[0] or "").strip(),
-                        habitacion=str(row[1] or "").strip(),
+                        n_habitacion=str(row[1] or "").strip(),
                         nombre_recepcionista=str(row[2] or "").strip(),
                         fecha=date.fromisoformat(str(row[3])),
                         empresa=str(row[4] or "").strip(),
                         id_interno=str(row[5] or "").strip(),
                         co=str(row[6] or "").strip(),
-                        aviso_mantencion_horas=to_float(row[7]),
-                        llegada_mantencion_horas=to_float(row[8]),
-                        aviso_lider_horas=to_float(row[9]),
-                        llegada_lider_horas=to_float(row[10]),
-                        hora_reporte_salfa=safe_time_hhmm(row[11]),
+                        aviso_mantencion_h=ffloat(row[7]),
+                        llegada_mantencion_h=ffloat(row[8]),
+                        aviso_lider_h=ffloat(row[9]),
+                        llegada_lider_h=ffloat(row[10]),
+                        hora_reporte_salfa=hhmm(row[11]),
                         tipo_evento=str(row[12] or "").strip(),
                         tipo_actividad=str(row[13] or "").strip(),
-                        fecha_reporte=safe_date(row[14]),
-                        turno_recepcion=str(row[15] or "").strip(),
+                        fecha_reporte=(date.fromisoformat(str(row[14])) if row[14] else None),
+                        turno_recepcion_ingresos=str(row[15] or "").strip(),
                         observaciones=str(row[16] or "").strip(),
                     ))
 
-                elif entity == "extension":
+                elif entity == "extensiones":
                     db.add(ExtensionExcepcionEntry(
                         fecha_solicitud=date.fromisoformat(str(row[0])),
                         id_interno=str(row[1] or "").strip(),
@@ -1480,26 +1439,23 @@ def import_xlsx(entity):
                         co=str(row[3] or "").strip(),
                         gerencia=str(row[4] or "").strip(),
                         proyecto=str(row[5] or "").strip(),
-                        cant_clientes=to_int(row[6]),
-                        desde=safe_date(row[7]),
-                        hasta=safe_date(row[8]),
+                        cant_clientes=to_int(row[6], None),
+                        desde=(date.fromisoformat(str(row[7])) if row[7] else None),
+                        hasta=(date.fromisoformat(str(row[8])) if row[8] else None),
                         aprobador=str(row[9] or "").strip(),
                         observacion=str(row[10] or "").strip(),
                     ))
 
                 elif entity == "onboarding":
-                    # El PDF no viaja en Excel; sólo metadatos.
                     fh_raw = str(row[0])
-                    fh = datetime.fromisoformat(fh_raw) if "T" in fh_raw else datetime.fromisoformat(fh_raw.replace(" ", "T"))
-                    db.add(RegistroOnboardingEntry(
+                    fh = datetime.fromisoformat(fh_raw if "T" in fh_raw else fh_raw.replace(" ", "T"))
+                    db.add(OnboardingEntry(
                         fecha_hora=fh,
                         nombre=str(row[1] or "").strip(),
                         rut=str(row[2] or "").strip(),
                         empresa=str(row[3] or "").strip(),
                         id_interno=str(row[4] or "").strip(),
-                        archivo_nombre=str(row[5] or "").strip() if row[5] else None,
-                        archivo_mime=None,
-                        archivo_pdf=None
+                        archivo_pdf=str(row[5] or "").strip(),
                     ))
 
                 elif entity == "apertura":
@@ -1539,7 +1495,7 @@ def import_xlsx(entity):
 
 
 # -----------------------------------------------------------------------------
-# DASHBOARD (igual que tu versión previa)
+# DASHBOARD (agrega los módulos base en gráficos y tarjetas)
 # -----------------------------------------------------------------------------
 @app.get("/dashboard")
 def dashboard():
