@@ -5,37 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{% block title %}Panel Operacional{% endblock %}</title>
 
-  <!-- Bootstrap 5 (CDN) -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
-    crossorigin="anonymous"
-  >
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+
+  <!-- Estilo fino y consistente -->
   <style>
-    body { padding-top: 4.5rem; }
-    .navbar-brand small { font-size: .75rem; opacity: .8; }
-    .table-sm th, .table-sm td { padding: .35rem .5rem; }
-    .sticky-actions { position: sticky; top: 0; background: #fff; z-index: 2; padding: .5rem 0; }
-    .required::after { content: " *"; color: #d00; }
-    .card-title small { font-weight: 400; color: #6c757d; }
-    .tab-badge { vertical-align: baseline; }
-    .form-hint { font-size: .85rem; color: #6c757d; }
-    .nowrap { white-space: nowrap; }
-    .w-110 { width: 110px; }
-    .w-140 { width: 140px; }
-    .w-180 { width: 180px; }
-    .w-220 { width: 220px; }
-    .w-260 { width: 260px; }
+    :root{
+      --brand:#0f172a;        /* azul/negro elegante */
+      --brand-2:#1e293b;      /* variante */
+      --acc:#0ea5e9;          /* acento */
+      --soft:#f8fafc;
+    }
+    body{ background: var(--soft); }
+    .navbar{ background: linear-gradient(90deg,var(--brand),var(--brand-2)); }
+    .navbar .navbar-brand{ font-weight:700; letter-spacing:.2px; }
+    .navbar-brand small{ font-size:.72rem; opacity:.8; }
+    main.container-fluid{ padding-top: 5.25rem; }
+    .card{ border:0; box-shadow:0 8px 24px rgba(15,23,42,.06); border-radius:16px; }
+    .card .card-title{ font-weight:700; }
+    .list-group-item-action.active{ background: var(--acc); border-color: var(--acc); }
+    .btn{ border-radius: 10px; }
+    .btn-outline-primary{ --bs-btn-color:var(--acc); --bs-btn-border-color:var(--acc); --bs-btn-hover-bg:var(--acc); --bs-btn-hover-border-color:var(--acc); }
+    .btn-primary, .btn-success{ box-shadow:0 6px 18px rgba(14,165,233,.25); }
+
+    /* Tablas */
+    table{ width:100%; border-collapse:separate; border-spacing:0; }
+    thead th{ position:sticky; top:0; z-index:1; background:#fff; border-bottom:2px solid #e2e8f0; }
+    tbody tr:hover{ background:#f1f5f9; }
+    th, td{ padding:.6rem .8rem; border-bottom:1px solid #e2e8f0; vertical-align:top; }
+    .toolbar{ display:flex; gap:.5rem; justify-content:flex-end; margin:.5rem 0 1rem; }
+    .required::after { content:" *"; color:#dc2626; }
+
+    /* Filtros topbar (en nav) */
+    .top-filters input,.top-filters select{ margin-right:.35rem; }
+
+    /* Branding header */
+    .brand-sep{ width:1px; height:28px; background:rgba(255,255,255,.25); margin:0 .75rem; }
+    .brand-logo{ height:28px; width:auto; display:block; }
+
+    footer .small a{ color:inherit; text-decoration:underline dotted; }
   </style>
+
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
   <div class="container-fluid">
-    <a class="navbar-brand" href="{{ url_for('panel') }}">
-      Operaciones <small>Flask</small>
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('panel') }}">
+      <img src="/static/logo_izq.png" alt="Logo" class="brand-logo">
+      <span>Operaciones <small>Flask</small></span>
+      <span class="brand-sep"></span>
+      <img src="/static/logo_der.png" alt="Cliente" class="brand-logo">
     </a>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Alternar navegación">
@@ -49,17 +70,16 @@
         <li class="nav-item"><a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a></li>
       </ul>
 
-      <form class="d-flex" role="search" method="get" action="{{ url_for('registros') }}">
-        <!-- Filtros rápidos en topbar -->
-        <input type="date" class="form-control form-control-sm me-2" name="from" value="{{ (d_from or None) and d_from.isoformat() or '' }}" title="Desde">
-        <input type="date" class="form-control form-control-sm me-2" name="to" value="{{ (d_to or None) and d_to.isoformat() or '' }}" title="Hasta">
-        <select name="semana" class="form-select form-select-sm me-2" title="Semana (anula fechas)">
+      <form class="d-flex top-filters" role="search" method="get" action="{{ url_for('registros') }}">
+        <input type="date" class="form-control form-control-sm" name="from" value="{{ (d_from or None) and d_from.isoformat() or '' }}" title="Desde">
+        <input type="date" class="form-control form-control-sm" name="to" value="{{ (d_to or None) and d_to.isoformat() or '' }}" title="Hasta">
+        <select name="semana" class="form-select form-select-sm" title="Semana (anula fechas)">
           <option value="">Semana…</option>
           {% for wk, rng in week_map.items() %}
             <option value="{{ wk }}" {% if semana_sel==wk %}selected{% endif %}>{{ wk }} ({{ rng[0] }} → {{ rng[1] }})</option>
           {% endfor %}
         </select>
-        <button class="btn btn-sm btn-outline-light" type="submit">Filtrar</button>
+        <button class="btn btn-sm btn-outline-light ms-1" type="submit">Filtrar</button>
       </form>
     </div>
   </div>
@@ -71,9 +91,7 @@
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
-          {% for m in messages %}
-            <div>{{ m }}</div>
-          {% endfor %}
+          {% for m in messages %}<div>{{ m }}</div>{% endfor %}
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
       {% endif %}
@@ -86,15 +104,13 @@
 <footer class="container mt-5 mb-4">
   <hr>
   <div class="text-muted small">
-    &copy; {{ (now or None) and now.year or 2025 }} · Sistema Operacional ·
-    <a href="{{ url_for('health') }}">/health</a>
+    &copy; {{ (now or None) and now.year or 2025 }} · Sistema Operacional · <a href="{{ url_for('health') }}">/health</a>
   </div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
-
 {% block extra_js %}{% endblock %}
 </body>
 </html>
