@@ -118,12 +118,83 @@ def week_range(week_number: int):
 
 
 # Tiempo mm:ss
-TIME_RE = re.compile(r"^\d{2}:\d{2}$")
+TIME_RE = re.compile(r"^\d{1,2}:\d{2}$")
+
 def mmss_to_seconds(s: str) -> int:
+    """Convierte formato mm:ss a segundos, maneja diferentes formatos."""
     if not s:
         return 0
-    m, ss = s.split(":")
-    return int(m) * 60 + int(ss)
+    
+    # Si es número (formato decimal de Excel)
+    if isinstance(s, (int, float)):
+        # Excel almacena el tiempo como fracción de día: 0.5 = 12 horas, 0.25 = 6 horas, etc.
+        total_seconds = s * 86400  # 86400 segundos en un día
+        return int(total_seconds)
+    
+    s = str(s).strip()
+    
+    # Si ya está en formato de segundos
+    if s.isdigit():
+        return int(s)
+    
+    # Formato mm:ss
+    if ":" in s:
+        parts = s.split(":")
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            return int(parts[0]) * 60 + int(parts[1])
+    
+    # Formato hh:mm:ss
+    if s.count(":") == 2:
+        parts = s.split(":")
+        if all(part.isdigit() for part in parts):
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+    
+    return 0
+
+def excel_time_to_seconds(excel_time):
+    """Convierte tiempo de Excel (decimal) a segundos."""
+    if excel_time is None:
+        return 0
+    try:
+        # Excel almacena tiempo como fracción de 24 horas
+        return int(float(excel_time) * 86400)  # 24 * 60 * 60 = 86400
+    except (ValueError, TypeError):
+        return 0
+
+def safe_convert_time(time_str):
+    """Convierte strings de tiempo a segundos, manejando múltiples formatos."""
+    if not time_str or str(time_str).strip() == "":
+        return 0
+    
+    # Si es un objeto time, convertirlo a segundos
+    if isinstance(time_str, time):
+        return time_str.hour * 3600 + time_str.minute * 60 + time_str.second
+    
+    time_str = str(time_str).strip()
+    
+    # Si es un número (formato Excel)
+    try:
+        if "." in time_str or ":" not in time_str:
+            return excel_time_to_seconds(time_str)
+    except:
+        pass
+    
+    # Formato mm:ss
+    if TIME_RE.match(time_str):
+        m, s = time_str.split(":")
+        return int(m) * 60 + int(s)
+    
+    # Formato hh:mm:ss
+    hhmmss_re = re.compile(r"^\d{1,2}:\d{2}:\d{2}$")
+    if hhmmss_re.match(time_str):
+        h, m, s = time_str.split(":")
+        return int(h) * 3600 + int(m) * 60 + int(s)
+    
+    # Intentar convertir como número de segundos
+    try:
+        return int(float(time_str))
+    except (ValueError, TypeError):
+        return 0
 
 def seconds_to_mmss(x: int) -> str:
     m, s = divmod(max(0, int(x)), 60)
@@ -579,12 +650,12 @@ def panel():
             # -------------------- ATENCIÓN --------------------
             elif tab == "atencion":
                 fecha = safe_convert_date(request.form["fecha"])
-                mmss = request.form.get("tiempo_promedio", "").strip()
-                if mmss and not TIME_RE.match(mmss):
-                    flash("Tiempo promedio debe ser mm:ss (ej: 03:54)")
-                    return redirect(url_for("panel", tab=tab))
+                tiempo_input = request.form.get("tiempo_promedio", "").strip()
+                
+                segundos = safe_convert_time(tiempo_input)
+                
                 cant = int(request.form.get("cantidad", 0) or 0)
-                db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=mmss_to_seconds(mmss), cantidad=cant))
+                db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=segundos, cantidad=cant))
                 db.commit(); flash("Atención guardada.")
 
             # -------------------- ROBOS / HURTOS --------------------
@@ -650,8 +721,7 @@ def panel():
             elif tab == "solicitud_ot":
                 def to_secs(v):
                     v = (v or "").strip()
-                    if v and TIME_RE.match(v): return mmss_to_seconds(v)
-                    return None
+                    return safe_convert_time(v)
                 rec = SolicitudOTEntry(
                     n_solicitud=request.form.get("n_solicitud","").strip(),
                     descripcion_problema=request.form.get("descripcion_problema","").strip(),
@@ -1383,11 +1453,13 @@ def import_xlsx(entity):
 
                 elif entity == "atencion":
                     fecha = safe_convert_date(row[0])
-                    mmss = str(row[1] or "").strip()
-                    if mmss and not TIME_RE.match(mmss):
-                        mmss = "00:00"
+                    
+                    # Manejar el tiempo de diferentes formatos
+                    tiempo_val = row[1]
+                    segundos = safe_convert_time(tiempo_val)
+                    
                     cant = to_int(row[2])
-                    db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=mmss_to_seconds(mmss), cantidad=cant))
+                    db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=segundos, cantidad=cant))
 
                 # ---------------- agregados previos ----------------
                 elif entity == "robos":
@@ -1447,8 +1519,9 @@ def import_xlsx(entity):
                     ))
 
                 elif entity == "solicitud_ot":
-                    mmss = (str(row[13] or "").strip())
-                    secs = mmss_to_seconds(mmss) if (mmss and TIME_RE.match(mmss)) else None
+                    tiempo_val = row[13]
+                    secs = safe_convert_time(tiempo_val) if tiempo_val not in (None, "") else None
+                    
                     db.add(SolicitudOTEntry(
                         n_solicitud=str(row[0] or "").strip(),
                         descripcion_problema=str(row[1] or "").strip(),
