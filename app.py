@@ -1496,7 +1496,7 @@ def import_xlsx(entity):
 
 
 # -----------------------------------------------------------------------------
-# DASHBOARD (agrega los módulos base en gráficos y tarjetas)
+# DASHBOARD (actualizado para mostrar estadísticas de todos los módulos)
 # -----------------------------------------------------------------------------
 @app.get("/dashboard")
 def dashboard():
@@ -1512,7 +1512,17 @@ def dashboard():
                 "duplicidades": 0,
                 "encuestas": 0,
                 "atencion_cant": 0,
-                "atencion_tiempos": []
+                "atencion_tiempos": [],
+                "robos": 0,
+                "miscelaneo": 0,
+                "desviaciones": 0,
+                "solicitudes_ot": 0,
+                "reclamos": 0,
+                "alarmas": 0,
+                "extensiones": 0,
+                "onboarding": 0,
+                "apertura": 0,
+                "cumplimiento": 0
             })
 
         # Censo
@@ -1553,31 +1563,141 @@ def dashboard():
             b["atencion_cant"] += r.cantidad
             b["atencion_tiempos"].append(r.tiempo_promedio_sec)
 
+        # Robos
+        q = db.query(RoboHurtoEntry)
+        if d_from: q = q.filter(RoboHurtoEntry.fecha >= d_from)
+        if d_to:   q = q.filter(RoboHurtoEntry.fecha <= d_to)
+        for r in q.all():
+            bucket(r.fecha.isoformat())["robos"] += 1
+
+        # Miscelaneo
+        q = db.query(MiscelaneoEntry)
+        if d_from: q = q.filter(MiscelaneoEntry.creado >= datetime.combine(d_from, time.min))
+        if d_to:   q = q.filter(MiscelaneoEntry.creado <= datetime.combine(d_to, time.max))
+        for r in q.all():
+            bucket(r.creado.date().isoformat())["miscelaneo"] += 1
+
+        # Desviaciones
+        q = db.query(DesviacionEntry)
+        if d_from: q = q.filter(DesviacionEntry.fecha >= d_from)
+        if d_to:   q = q.filter(DesviacionEntry.fecha <= d_to)
+        for r in q.all():
+            bucket(r.fecha.isoformat())["desviaciones"] += 1
+
+        # Solicitudes OT
+        q = db.query(SolicitudOTEntry)
+        if d_from: q = q.filter(SolicitudOTEntry.creado >= datetime.combine(d_from, time.min))
+        if d_to:   q = q.filter(SolicitudOTEntry.creado <= datetime.combine(d_to, time.max))
+        for r in q.all():
+            bucket(r.creado.date().isoformat())["solicitudes_ot"] += 1
+
+        # Reclamos
+        q = db.query(ReclamoUsuarioEntry)
+        if d_from: q = q.filter(ReclamoUsuarioEntry.fecha >= d_from)
+        if d_to:   q = q.filter(ReclamoUsuarioEntry.fecha <= d_to)
+        for r in q.all():
+            bucket(r.fecha.isoformat())["reclamos"] += 1
+
+        # Alarmas
+        q = db.query(ActivacionAlarmaEntry)
+        if d_from: q = q.filter(ActivacionAlarmaEntry.fecha >= d_from)
+        if d_to:   q = q.filter(ActivacionAlarmaEntry.fecha <= d_to)
+        for r in q.all():
+            bucket(r.fecha.isoformat())["alarmas"] += 1
+
+        # Extensiones
+        q = db.query(ExtensionExcepcionEntry)
+        if d_from: q = q.filter(ExtensionExcepcionEntry.fecha_solicitud >= d_from)
+        if d_to:   q = q.filter(ExtensionExcepcionEntry.fecha_solicitud <= d_to)
+        for r in q.all():
+            bucket(r.fecha_solicitud.isoformat())["extensiones"] += 1
+
+        # Onboarding
+        q = db.query(OnboardingEntry)
+        if d_from: q = q.filter(OnboardingEntry.fecha_hora >= datetime.combine(d_from, time.min))
+        if d_to:   q = q.filter(OnboardingEntry.fecha_hora <= datetime.combine(d_to, time.max))
+        for r in q.all():
+            bucket(r.fecha_hora.date().isoformat())["onboarding"] += 1
+
+        # Apertura
+        q = db.query(AperturaHabitacionEntry)
+        if d_from: q = q.filter(AperturaHabitacionEntry.fecha >= d_from)
+        if d_to:   q = q.filter(AperturaHabitacionEntry.fecha <= d_to)
+        for r in q.all():
+            bucket(r.fecha.isoformat())["apertura"] += 1
+
+        # Cumplimiento
+        q = db.query(CumplimientoEECCEntry)
+        if d_from: q = q.filter(CumplimientoEECCEntry.creado >= datetime.combine(d_from, time.min))
+        if d_to:   q = q.filter(CumplimientoEECCEntry.creado <= datetime.combine(d_to, time.max))
+        for r in q.all():
+            bucket(r.creado.date().isoformat())["cumplimiento"] += 1
+
         if not per_day:
             return render_template("dashboard.html", have_data=False, week_map=WEEK_MAP,
                                    d_from=d_from, d_to=d_to, semana_sel=semana_sel, current_tab=None)
 
         ordered_days = sorted(per_day.keys())
-        s_censo, s_eventos, s_dup, s_enc, s_att_cant, s_att_mm = [], [], [], [], [], []
+        series_data = {
+            "censo": [],
+            "eventos": [],
+            "duplicidades": [],
+            "encuestas": [],
+            "atencion_cant": [],
+            "atencion_min": [],
+            "robos": [],
+            "miscelaneo": [],
+            "desviaciones": [],
+            "solicitudes_ot": [],
+            "reclamos": [],
+            "alarmas": [],
+            "extensiones": [],
+            "onboarding": [],
+            "apertura": [],
+            "cumplimiento": []
+        }
+
         for k in ordered_days:
             g = per_day[k]
-            s_censo.append(g["censo"])
-            s_eventos.append(g["eventos"])
-            s_dup.append(g["duplicidades"])
-            s_enc.append(g["encuestas"])
-            s_att_cant.append(g["atencion_cant"])
+            series_data["censo"].append(g["censo"])
+            series_data["eventos"].append(g["eventos"])
+            series_data["duplicidades"].append(g["duplicidades"])
+            series_data["encuestas"].append(g["encuestas"])
+            series_data["atencion_cant"].append(g["atencion_cant"])
+            series_data["robos"].append(g["robos"])
+            series_data["miscelaneo"].append(g["miscelaneo"])
+            series_data["desviaciones"].append(g["desviaciones"])
+            series_data["solicitudes_ot"].append(g["solicitudes_ot"])
+            series_data["reclamos"].append(g["reclamos"])
+            series_data["alarmas"].append(g["alarmas"])
+            series_data["extensiones"].append(g["extensiones"])
+            series_data["onboarding"].append(g["onboarding"])
+            series_data["apertura"].append(g["apertura"])
+            series_data["cumplimiento"].append(g["cumplimiento"])
+            
             prom_s = int(mean(g["atencion_tiempos"])) if g["atencion_tiempos"] else 0
-            s_att_mm.append(round(prom_s/60.0, 2))
+            series_data["atencion_min"].append(round(prom_s/60.0, 2))
 
+        # Calcular totales para las tarjetas
         cards = {
-            "censo_total": sum(s_censo),
-            "eventos_total": sum(s_eventos),
-            "duplicidades_total": sum(s_dup),
-            "encuestas_total": sum(s_enc),
-            "atencion_cant_total": sum(s_att_cant),
+            "censo_total": sum(series_data["censo"]),
+            "eventos_total": sum(series_data["eventos"]),
+            "duplicidades_total": sum(series_data["duplicidades"]),
+            "encuestas_total": sum(series_data["encuestas"]),
+            "atencion_cant_total": sum(series_data["atencion_cant"]),
+            "robos_total": sum(series_data["robos"]),
+            "miscelaneo_total": sum(series_data["miscelaneo"]),
+            "desviaciones_total": sum(series_data["desviaciones"]),
+            "solicitudes_ot_total": sum(series_data["solicitudes_ot"]),
+            "reclamos_total": sum(series_data["reclamos"]),
+            "alarmas_total": sum(series_data["alarmas"]),
+            "extensiones_total": sum(series_data["extensiones"]),
+            "onboarding_total": sum(series_data["onboarding"]),
+            "apertura_total": sum(series_data["apertura"]),
+            "cumplimiento_total": sum(series_data["cumplimiento"]),
             "atencion_tiempo_prom_global": (
-                seconds_to_mmss(int(mean([int(x*60) for x in s_att_mm if x>0])))
-                if any(x>0 for x in s_att_mm) else "00:00"
+                seconds_to_mmss(int(mean([int(x*60) for x in series_data["atencion_min"] if x>0])))
+                if any(x>0 for x in series_data["atencion_min"]) else "00:00"
             ),
         }
 
@@ -1585,14 +1705,7 @@ def dashboard():
                                have_data=True,
                                week_map=WEEK_MAP,
                                labels=ordered_days,
-                               series={
-                                   "censo": s_censo,
-                                   "eventos": s_eventos,
-                                   "duplicidades": s_dup,
-                                   "encuestas": s_enc,
-                                   "atencion_cant": s_att_cant,
-                                   "atencion_min": s_att_mm
-                               },
+                               series=series_data,
                                cards=cards,
                                d_from=d_from, d_to=d_to, semana_sel=semana_sel,
                                current_tab=None)
