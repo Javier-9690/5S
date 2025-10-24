@@ -96,6 +96,7 @@
     .data-table {
       width: 100%;
       border-collapse: collapse;
+      font-size: 0.9rem;
     }
     
     .data-table th {
@@ -150,6 +151,7 @@
       background-color: var(--primary-color);
       color: white;
       font-weight: 600;
+      border: none;
     }
     
     .sidebar {
@@ -157,12 +159,16 @@
       border-radius: 8px;
       padding: 1.5rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      height: fit-content;
+      position: sticky;
+      top: 2rem;
     }
     
     .sidebar .list-group-item {
       border: none;
       border-left: 3px solid transparent;
       margin-bottom: 0.25rem;
+      padding: 0.75rem 1rem;
     }
     
     .sidebar .list-group-item.active {
@@ -174,6 +180,63 @@
     
     .sidebar .list-group-item:hover:not(.active) {
       background-color: rgba(0,0,0,0.03);
+    }
+    
+    .sidebar .list-group-item small {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+    
+    .badge-custom {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .required::after {
+      content: " *";
+      color: #dc3545;
+    }
+    
+    .form-section {
+      background-color: var(--light-bg);
+      border-radius: 6px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-section h6 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+    
+    .stats-card {
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card i {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    
+    .stats-card .number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stats-card .label {
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+    
+    .table-actions {
+      display: flex;
+      gap: 0.25rem;
     }
   </style>
   {% block extra_head %}{% endblock %}
@@ -229,7 +292,9 @@
             <option value="{{ wk }}" {% if semana_sel==wk %}selected{% endif %}>{{ wk }} ({{ rng[0] }} → {{ rng[1] }})</option>
           {% endfor %}
         </select>
-        <button class="btn btn-sm btn-outline-light" type="submit">Filtrar</button>
+        <button class="btn btn-sm btn-outline-light" type="submit">
+          <i class="fas fa-filter me-1"></i> Filtrar
+        </button>
       </form>
     </div>
   </div>
