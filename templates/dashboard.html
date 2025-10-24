@@ -3,6 +3,13 @@
 
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -49,127 +56,127 @@
   {% else %}
     <!-- Tarjetas de Resumen -->
     <div class="row mb-4">
-      <div class="col-md-2 col-6">
-        <div class="card text-center border-primary">
-          <div class="card-body">
-            <i class="fas fa-users fa-2x text-primary mb-2"></i>
-            <h3 class="card-title">{{ cards.censo_total }}</h3>
-            <p class="card-text small">Total Censo</p>
-          </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-primary">
+          <i class="fas fa-users text-primary"></i>
+          <div class="number text-primary">{{ cards.censo_total }}</div>
+          <div class="label">Total Censo</div>
         </div>
       </div>
-      <div class="col-md-2 col-6">
-        <div class="card text-center border-warning">
-          <div class="card-body">
-            <i class="fas fa-shield-alt fa-2x text-warning mb-2"></i>
-            <h3 class="card-title">{{ cards.eventos_total }}</h3>
-            <p class="card-text small">Eventos</p>
-          </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-warning">
+          <i class="fas fa-shield-alt text-warning"></i>
+          <div class="number text-warning">{{ cards.eventos_total }}</div>
+          <div class="label">Eventos</div>
         </div>
       </div>
-      <div class="col-md-2 col-6">
-        <div class="card text-center border-info">
-          <div class="card-body">
-            <i class="fas fa-copy fa-2x text-info mb-2"></i>
-            <h3 class="card-title">{{ cards.duplicidades_total }}</h3>
-            <p class="card-text small">Duplicidades</p>
-          </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-info">
+          <i class="fas fa-copy text-info"></i>
+          <div class="number text-info">{{ cards.duplicidades_total }}</div>
+          <div class="label">Duplicidades</div>
         </div>
       </div>
-      <div class="col-md-2 col-6">
-        <div class="card text-center border-success">
-          <div class="card-body">
-            <i class="fas fa-poll fa-2x text-success mb-2"></i>
-            <h3 class="card-title">{{ cards.encuestas_total }}</h3>
-            <p class="card-text small">Encuestas</p>
-          </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-success">
+          <i class="fas fa-poll text-success"></i>
+          <div class="number text-success">{{ cards.encuestas_total }}</div>
+          <div class="label">Encuestas</div>
         </div>
       </div>
-      <div class="col-md-2 col-6">
-        <div class="card text-center border-danger">
-          <div class="card-body">
-            <i class="fas fa-headset fa-2x text-danger mb-2"></i>
-            <h3 class="card-title">{{ cards.atencion_cant_total }}</h3>
-            <p class="card-text small">Atenciones</p>
-          </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-danger">
+          <i class="fas fa-headset text-danger"></i>
+          <div class="number text-danger">{{ cards.atencion_cant_total }}</div>
+          <div class="label">Atenciones</div>
         </div>
       </div>
-      <div class="col-md-2 col-6">
-        <div class="card text-center border-secondary">
-          <div class="card-body">
-            <i class="fas fa-clock fa-2x text-secondary mb-2"></i>
-            <h5 class="card-title">{{ cards.atencion_tiempo_prom_global }}</h5>
-            <p class="card-text small">Tiempo Promedio</p>
-          </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-secondary">
+          <i class="fas fa-clock text-secondary"></i>
+          <div class="number text-secondary">{{ cards.atencion_tiempo_prom_global }}</div>
+          <div class="label">Tiempo Promedio</div>
         </div>
       </div>
     </div>
 
     <!-- Gráficos -->
     <div class="row">
-      <div class="col-lg-6">
+      <div class="col-lg-6 mb-4">
         <div class="card">
           <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Evolución del Censo</h5>
           </div>
           <div class="card-body">
-            <canvas id="censoChart" height="250"></canvas>
+            <div class="chart-container">
+              <canvas id="censoChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-6 mb-4">
         <div class="card">
           <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Eventos de Seguridad</h5>
           </div>
           <div class="card-body">
-            <canvas id="eventosChart" height="250"></canvas>
+            <div class="chart-container">
+              <canvas id="eventosChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="row mt-4">
-      <div class="col-lg-6">
+    <div class="row">
+      <div class="col-lg-6 mb-4">
         <div class="card">
           <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Duplicidades por Día</h5>
           </div>
           <div class="card-body">
-            <canvas id="duplicidadesChart" height="250"></canvas>
+            <div class="chart-container">
+              <canvas id="duplicidadesChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-6 mb-4">
         <div class="card">
           <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Encuestas Realizadas</h5>
           </div>
           <div class="card-body">
-            <canvas id="encuestasChart" height="250"></canvas>
+            <div class="chart-container">
+              <canvas id="encuestasChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="row mt-4">
-      <div class="col-lg-6">
+    <div class="row">
+      <div class="col-lg-6 mb-4">
         <div class="card">
           <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-users me-2"></i>Atenciones al Público</h5>
           </div>
           <div class="card-body">
-            <canvas id="atencionesChart" height="250"></canvas>
+            <div class="chart-container">
+              <canvas id="atencionesChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-6 mb-4">
         <div class="card">
           <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Tiempo Promedio de Atención</h5>
           </div>
           <div class="card-body">
-            <canvas id="tiempoAtencionChart" height="250"></canvas>
+            <div class="chart-container">
+              <canvas id="tiempoAtencionChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
