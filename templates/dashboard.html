@@ -1,86 +1,299 @@
 {% extends "base.html" %}
+{% block title %}Sistema de Gestión 5400 - Dashboard{% endblock %}
 
-{% block content %}
-  <h1>Dashboard</h1>
- 
-  <form method="get" action="{{ url_for('dashboard') }}" style="margin-top:10px;">
-    <div style="display:grid; grid-template-columns: repeat(4, minmax(160px,1fr)); gap:12px;">
-      <div><label>Desde</label><input type="date" name="from" value="{{ d_from if d_from else '' }}"></div>
-      <div><label>Hasta</label><input type="date" name="to" value="{{ d_to if d_to else '' }}"></div>
-      <div>
-        <label>Semana</label>
-        <select name="semana">
-          <option value="">-- (opcional) --</option>
-          {% for num, r in week_map.items()|sort %}
-            <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>{{ num }} ({{ r[0] }} → {{ r[1] }})</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div style="align-self:end;"><button class="btn" type="submit">Aplicar filtros</button></div>
-    </div>
-  </form>
-
-  {% if not have_data %}
-    <p class="muted" style="margin-top:12px;">Sin datos en el rango/semana seleccionado.</p>
-  {% else %}
-    <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:12px; margin-top:12px;">
-      <div class="card"><strong>Censo total</strong><div>{{ cards.censo_total }}</div></div>
-      <div class="card"><strong>Eventos</strong><div>{{ cards.eventos_total }}</div></div>
-      <div class="card"><strong>Duplicidades</strong><div>{{ cards.duplicidades_total }}</div></div>
-      <div class="card"><strong>Encuestas</strong><div>{{ cards.encuestas_total }}</div></div>
-      <div class="card"><strong>Atenciones</strong><div>{{ cards.atencion_cant_total }}</div></div>
-      <div class="card"><strong>Tiempo atención prom.</strong><div>{{ cards.atencion_tiempo_prom_global }}</div></div>
-    </div>
-
-    <style>
-      .chart-box{width:100%; height:360px; margin:10px 0 24px;}
-      .chart-title{font-weight:800; font-size:18px; margin:14px 0 4px;}
-      .panel{background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px;}
-    </style>
-
-    <div class="panel" style="margin-top:12px;">
-      <div class="chart-title">Censo por día</div>
-      <div class="chart-box"><canvas id="c1"></canvas></div>
-
-      <div class="chart-title">Eventos de seguridad por día</div>
-      <div class="chart-box"><canvas id="c2"></canvas></div>
-
-      <div class="chart-title">Duplicidades por día</div>
-      <div class="chart-box"><canvas id="c3"></canvas></div>
-
-      <div class="chart-title">Encuestas por día</div>
-      <div class="chart-box"><canvas id="c4"></canvas></div>
-
-      <div class="chart-title">Atenciones por día</div>
-      <div class="chart-box"><canvas id="c5"></canvas></div>
-
-      <div class="chart-title">Tiempo promedio de atención (min) por día</div>
-      <div class="chart-box"><canvas id="c6"></canvas></div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-      const labels = {{ labels|tojson }};
-      const s = {{ series|tojson }};
-
-      function cfg(lbl, data){
-        return {
-          type: 'line',
-          data: { labels, datasets: [{ label: lbl, data, tension: .25, pointRadius: 2 }] },
-          options: {
-            responsive:true, maintainAspectRatio:false,
-            plugins:{legend:{position:'bottom'}},
-            scales:{ y:{ beginAtZero: true }, x:{ ticks:{ autoSkip:true, maxRotation:45 }}}
-          }
-        }
-      }
-      new Chart(document.getElementById('c1'), cfg('Censo', s.censo));
-      new Chart(document.getElementById('c2'), cfg('Eventos', s.eventos));
-      new Chart(document.getElementById('c3'), cfg('Duplicidades', s.duplicidades));
-      new Chart(document.getElementById('c4'), cfg('Encuestas', s.encuestas));
-      new Chart(document.getElementById('c5'), cfg('Atenciones', s.atencion_cant));
-      new Chart(document.getElementById('c6'), cfg('Tiempo atención (min)', s.atencion_min));
-    </script>
-  {% endif %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
+{% block content %}
+<div class="content-container">
+  <h1 class="page-title">Dashboard de Operaciones</h1>
+
+  <!-- Filtros -->
+  <div class="filter-card">
+    <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filtros del Dashboard</h5>
+    <form method="get" action="{{ url_for('dashboard') }}">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Fecha Desde</label>
+          <input type="date" name="from" class="form-control" value="{{ d_from if d_from else '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha Hasta</label>
+          <input type="date" name="to" class="form-control" value="{{ d_to if d_to else '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Semana Específica</label>
+          <select name="semana" class="form-select">
+            <option value="">-- Todas las semanas --</option>
+            {% for num, r in week_map.items()|sort %}
+              <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>{{ num }} ({{ r[0] }} → {{ r[1] }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-primary-custom w-100" type="submit">
+            <i class="fas fa-chart-line me-1"></i> Actualizar Dashboard
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  {% if not have_data %}
+    <div class="alert alert-warning text-center py-4">
+      <i class="fas fa-chart-bar fa-2x mb-3"></i>
+      <h4>No hay datos disponibles</h4>
+      <p class="mb-0">No se encontraron datos para el rango o semana seleccionada.</p>
+    </div>
+  {% else %}
+    <!-- Tarjetas de Resumen -->
+    <div class="row mb-4">
+      <div class="col-md-2 col-6">
+        <div class="card text-center border-primary">
+          <div class="card-body">
+            <i class="fas fa-users fa-2x text-primary mb-2"></i>
+            <h3 class="card-title">{{ cards.censo_total }}</h3>
+            <p class="card-text small">Total Censo</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="card text-center border-warning">
+          <div class="card-body">
+            <i class="fas fa-shield-alt fa-2x text-warning mb-2"></i>
+            <h3 class="card-title">{{ cards.eventos_total }}</h3>
+            <p class="card-text small">Eventos</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="card text-center border-info">
+          <div class="card-body">
+            <i class="fas fa-copy fa-2x text-info mb-2"></i>
+            <h3 class="card-title">{{ cards.duplicidades_total }}</h3>
+            <p class="card-text small">Duplicidades</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="card text-center border-success">
+          <div class="card-body">
+            <i class="fas fa-poll fa-2x text-success mb-2"></i>
+            <h3 class="card-title">{{ cards.encuestas_total }}</h3>
+            <p class="card-text small">Encuestas</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="card text-center border-danger">
+          <div class="card-body">
+            <i class="fas fa-headset fa-2x text-danger mb-2"></i>
+            <h3 class="card-title">{{ cards.atencion_cant_total }}</h3>
+            <p class="card-text small">Atenciones</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6">
+        <div class="card text-center border-secondary">
+          <div class="card-body">
+            <i class="fas fa-clock fa-2x text-secondary mb-2"></i>
+            <h5 class="card-title">{{ cards.atencion_tiempo_prom_global }}</h5>
+            <p class="card-text small">Tiempo Promedio</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Evolución del Censo</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="censoChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Eventos de Seguridad</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="eventosChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Duplicidades por Día</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="duplicidadesChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Encuestas Realizadas</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="encuestasChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-4">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-users me-2"></i>Atenciones al Público</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="atencionesChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Tiempo Promedio de Atención</h5>
+          </div>
+          <div class="card-body">
+            <canvas id="tiempoAtencionChart" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Configuración de gráficos
+      const labels = {{ labels|tojson }};
+      const series = {{ series|tojson }};
+
+      const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      };
+
+      // Gráfico de Censo
+      new Chart(document.getElementById('censoChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Censo Total',
+            data: series.censo,
+            borderColor: '#2c5aa0',
+            backgroundColor: 'rgba(44, 90, 160, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Eventos
+      new Chart(document.getElementById('eventosChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Eventos de Seguridad',
+            data: series.eventos,
+            backgroundColor: 'rgba(255, 193, 7, 0.8)',
+            borderColor: 'rgba(255, 193, 7, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Duplicidades
+      new Chart(document.getElementById('duplicidadesChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Duplicidades',
+            data: series.duplicidades,
+            backgroundColor: 'rgba(23, 162, 184, 0.8)',
+            borderColor: 'rgba(23, 162, 184, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Encuestas
+      new Chart(document.getElementById('encuestasChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Encuestas Realizadas',
+            data: series.encuestas,
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Atenciones
+      new Chart(document.getElementById('atencionesChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Atenciones Realizadas',
+            data: series.atencion_cant,
+            backgroundColor: 'rgba(220, 53, 69, 0.8)',
+            borderColor: 'rgba(220, 53, 69, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Tiempo de Atención
+      new Chart(document.getElementById('tiempoAtencionChart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Tiempo Promedio (min)',
+            data: series.atencion_min,
+            borderColor: '#6c757d',
+            backgroundColor: 'rgba(108, 117, 125, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: chartOptions
+      });
+    </script>
+  {% endif %}
+</div>
+{% endblock %}
