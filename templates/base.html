@@ -48,6 +48,12 @@
       object-fit: contain;
     }
     
+    .system-logo-escondida {
+      height: 80px;  /* Logo Escondida más grande */
+      max-width: 220px;
+      object-fit: contain;
+    }
+    
     .system-title {
       text-align: center;
       flex-grow: 1;
@@ -247,7 +253,7 @@
 <header class="system-header">
   <div class="container">
     <div class="logo-container">
-      <img src="{{ url_for('static', filename='Escondida.png') }}" alt="Escondida" class="system-logo">
+      <img src="{{ url_for('static', filename='Escondida.png') }}" alt="Escondida" class="system-logo system-logo-escondida">
       <div class="system-title">
         <h1>Sistema de Gestión 5400</h1>
         <p>Plataforma Integral de Operaciones</p>
@@ -332,5 +338,4 @@
 {% block extra_js %}{% endblock %}
 </body>
 </html>
-
 
