@@ -12,7 +12,6 @@
         <h5 class="mb-3"><i class="fas fa-th-large me-2"></i>Módulos del Sistema</h5>
         
         <div class="list-group">
-          <div class="list-group-item fw-bold text-muted small">MÓDULOS PRINCIPALES</div>
           <a href="{{ url_for('panel', tab='censo') }}" class="list-group-item list-group-item-action {% if tab=='censo' %}active{% endif %}">
             <i class="fas fa-users me-2"></i>Censo
           </a>
@@ -28,8 +27,6 @@
           <a href="{{ url_for('panel', tab='atencion') }}" class="list-group-item list-group-item-action {% if tab=='atencion' %}active{% endif %}">
             <i class="fas fa-headset me-2"></i>Atención al Público
           </a>
-          
-          <div class="list-group-item fw-bold text-muted small mt-3">MÓDULOS OPERACIONALES</div>
           <a href="{{ url_for('panel', tab='robos') }}" class="list-group-item list-group-item-action {% if tab=='robos' %}active{% endif %}">
             <i class="fas fa-exclamation-triangle me-2"></i>Robos y Hurtos
           </a>
@@ -45,8 +42,6 @@
           <a href="{{ url_for('panel', tab='reclamos') }}" class="list-group-item list-group-item-action {% if tab=='reclamos' %}active{% endif %}">
             <i class="fas fa-comments me-2"></i>Reclamos
           </a>
-          
-          <div class="list-group-item fw-bold text-muted small mt-3">MÓDULOS ESPECIALES</div>
           <a href="{{ url_for('panel', tab='alarmas') }}" class="list-group-item list-group-item-action {% if tab=='alarmas' %}active{% endif %}">
             <i class="fas fa-bell me-2"></i>Activación de Alarmas
           </a>
