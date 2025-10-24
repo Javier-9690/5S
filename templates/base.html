@@ -1,113 +1,102 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>Sistema de Gestión, Campamento 5400</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-      :root{
-        --brand-blue:#0d6efd;
-      }
-      .app-title{
-        font-weight:800; font-size:1.6rem; letter-spacing:.2px; color:#0f172a;
-      }
-      .page-wrap{max-width:1500px; margin:20px auto; padding:0 12px;}
-      .sidebar .list-group-item.active{background:var(--brand-blue); border-color:var(--brand-blue);}
-      /* Títulos más discretos */
-      h1.h1-tight{font-size:1.35rem; font-weight:800; margin-bottom:.35rem;}
-      h2.h2-tight{font-size:1.05rem; font-weight:700; margin:.75rem 0 .35rem;}
-      /* File input con estilo azul */
-      .btn-file {
-        position: relative; overflow: hidden;
-      }
-      .btn-file input[type=file]{
-        position:absolute; top:0; right:0; min-width:100%; min-height:100%;
-        font-size:100px; text-align:right; filter:alpha(opacity=0);
-        opacity:0; outline:none; background:white; cursor:inherit; display:block;
-      }
-      .file-chosen{font-size:.875rem; color:#6c757d; margin-left:.5rem;}
-      .table thead th{white-space:nowrap;}
-      .logo-escondida{height:36px; object-fit:contain;}
-      .logo-aramark{height:58px; object-fit:contain;}
-    </style>
-  </head>
-  <body class="bg-light">
-    <header class="bg-white border-bottom sticky-top">
-      <div class="container-fluid py-2">
-        <div class="d-grid" style="grid-template-columns:1fr auto 1fr; align-items:center;">
-          <div class="text-start">
-            <img src="{{ url_for('static', filename='Escondida.png') }}" class="logo-escondida" alt="Escondida">
-          </div>
-          <div class="text-center">
-            <div class="app-title">Sistema de Gestión, Campamento 5400</div>
-          </div>
-          <div class="text-end">
-            <img src="{{ url_for('static', filename='Aramark.png') }}" class="logo-aramark" alt="Aramark">
-          </div>
-        </div>
-      </div>
-    </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Panel Operacional{% endblock %}</title>
 
-    <div class="page-wrap">
-      <div class="row g-3">
-        <aside class="col-12 col-md-3 col-lg-3">
-          <div class="card sidebar">
-            <div class="card-body">
-              <div class="fw-bold mb-2">Panel</div>
-              <div class="list-group">
-                <!-- Módulos base -->
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='censo' }}" href="{{ url_for('panel', tab='censo') }}">Censo</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='eventos' }}" href="{{ url_for('panel', tab='eventos') }}">Eventos de seguridad</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='duplicidades' }}" href="{{ url_for('panel', tab='duplicidades') }}">Duplicidades</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='encuesta' }}" href="{{ url_for('panel', tab='encuesta') }}">Encuesta de satisfacción</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='atencion' }}" href="{{ url_for('panel', tab='atencion') }}">Atención al público</a>
-                <!-- Módulos previos -->
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='robos' }}" href="{{ url_for('panel', tab='robos') }}">Robos y hurtos</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='miscelaneo' }}" href="{{ url_for('panel', tab='miscelaneo') }}">Misceláneo</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='desviaciones' }}" href="{{ url_for('panel', tab='desviaciones') }}">Desviaciones</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='solicitud_ot' }}" href="{{ url_for('panel', tab='solicitud_ot') }}">Solicitud y OT de usuario</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='reclamos' }}" href="{{ url_for('panel', tab='reclamos') }}">Reclamos de usuarios</a>
-                <!-- CINCO NUEVOS -->
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='activacion_alarma' }}" href="{{ url_for('panel', tab='activacion_alarma') }}">Activación de alarma</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='extension_excepcion' }}" href="{{ url_for('panel', tab='extension_excepcion') }}">Extensión y excepción</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='onboarding' }}" href="{{ url_for('panel', tab='onboarding') }}">Registro Onboarding</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='apertura_habitacion' }}" href="{{ url_for('panel', tab='apertura_habitacion') }}">Apertura de habitación</a>
-                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='eecc' }}" href="{{ url_for('panel', tab='eecc') }}">Cumplimiento EECC</a>
-                <!-- Navegación -->
-                <a class="list-group-item list-group-item-action" href="{{ url_for('registros') }}">Registros</a>
-                <a class="list-group-item list-group-item-action" href="{{ url_for('dashboard') }}">Dashboard</a>
-              </div>
-            </div>
-          </div>
-        </aside>
+  <!-- Bootstrap 5 (CDN) -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+    crossorigin="anonymous"
+  >
+  <style>
+    body { padding-top: 4.5rem; }
+    .navbar-brand small { font-size: .75rem; opacity: .8; }
+    .table-sm th, .table-sm td { padding: .35rem .5rem; }
+    .sticky-actions { position: sticky; top: 0; background: #fff; z-index: 2; padding: .5rem 0; }
+    .required::after { content: " *"; color: #d00; }
+    .card-title small { font-weight: 400; color: #6c757d; }
+    .tab-badge { vertical-align: baseline; }
+    .form-hint { font-size: .85rem; color: #6c757d; }
+    .nowrap { white-space: nowrap; }
+    .w-110 { width: 110px; }
+    .w-140 { width: 140px; }
+    .w-180 { width: 180px; }
+    .w-220 { width: 220px; }
+    .w-260 { width: 260px; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
 
-        <main class="col-12 col-md-9 col-lg-9">
-          {% with messages = get_flashed_messages() %}
-            {% if messages %}
-              {% for m in messages %}
-                <div class="alert alert-warning">{{ m }}</div>
-              {% endfor %}
-            {% endif %}
-          {% endwith %}
-          {% block content %}{% endblock %}
-        </main>
-      </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('panel') }}">
+      Operaciones <small>Flask</small>
+    </a>
 
-      <footer class="text-center text-muted small mt-3">Diseñado por Javier Rivera</footer>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Alternar navegación">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="topNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='panel' %}active{% endif %}" href="{{ url_for('panel') }}">Panel</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='registros' %}active{% endif %}" href="{{ url_for('registros') }}">Registros</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+      </ul>
+
+      <form class="d-flex" role="search" method="get" action="{{ url_for('registros') }}">
+        <!-- Filtros rápidos en topbar -->
+        <input type="date" class="form-control form-control-sm me-2" name="from" value="{{ (d_from or None) and d_from.isoformat() or '' }}" title="Desde">
+        <input type="date" class="form-control form-control-sm me-2" name="to" value="{{ (d_to or None) and d_to.isoformat() or '' }}" title="Hasta">
+        <select name="semana" class="form-select form-select-sm me-2" title="Semana (anula fechas)">
+          <option value="">Semana…</option>
+          {% for wk, rng in week_map.items() %}
+            <option value="{{ wk }}" {% if semana_sel==wk %}selected{% endif %}>{{ wk }} ({{ rng[0] }} → {{ rng[1] }})</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-light" type="submit">Filtrar</button>
+      </form>
     </div>
+  </div>
+</nav>
 
-    <script>
-      // Mostrar nombre del archivo elegido junto al botón azul
-      document.addEventListener('change', e=>{
-        if(e.target.matches('input[type=file]')){
-          const span = e.target.closest('.btn-file')?.parentElement?.querySelector('.file-chosen');
-          if(span) span.textContent = e.target.files?.[0]?.name || '';
-        }
-      });
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+<main class="container-fluid">
+  <!-- Mensajes flash -->
+  <div class="position-relative" style="min-height: 0">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
+          {% for m in messages %}
+            <div>{{ m }}</div>
+          {% endfor %}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="container mt-5 mb-4">
+  <hr>
+  <div class="text-muted small">
+    &copy; {{ (now or None) and now.year or 2025 }} · Sistema Operacional ·
+    <a href="{{ url_for('health') }}">/health</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+{% block extra_js %}{% endblock %}
+</body>
 </html>
 
 
