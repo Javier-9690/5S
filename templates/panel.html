@@ -2,85 +2,72 @@
 {% block title %}Panel de ingreso{% endblock %}
 
 {% block content %}
-<div class="row g-4">
-  <!-- Sidebar -->
+<div class="row">
   <div class="col-lg-3">
-    <div class="card sticky-top" style="top:6rem">
-      <div class="card-body p-2">
-        <div class="nav nav-pills flex-column gap-1">
-          <!-- Base -->
-          <div class="px-3 pt-2 text-muted small">Módulos base</div>
-          <a class="nav-link {% if tab=='censo' %}active{% endif %}" href="{{ url_for('panel', tab='censo') }}">Censo</a>
-          <a class="nav-link {% if tab=='eventos' %}active{% endif %}" href="{{ url_for('panel', tab='eventos') }}">Eventos de seguridad</a>
-          <a class="nav-link {% if tab=='duplicidades' %}active{% endif %}" href="{{ url_for('panel', tab='duplicidades') }}">Duplicidades</a>
-          <a class="nav-link {% if tab=='encuesta' %}active{% endif %}" href="{{ url_for('panel', tab='encuesta') }}">Encuesta de satisfacción</a>
-          <a class="nav-link {% if tab=='atencion' %}active{% endif %}" href="{{ url_for('panel', tab='atencion') }}">Atención al público</a>
+    <div class="list-group sticky-top" style="top:5rem;">
+      <!-- Módulos base -->
+      <a href="{{ url_for('panel', tab='censo') }}" class="list-group-item list-group-item-action {% if tab=='censo' %}active{% endif %}">Censo</a>
+      <a href="{{ url_for('panel', tab='eventos') }}" class="list-group-item list-group-item-action {% if tab=='eventos' %}active{% endif %}">Eventos de seguridad</a>
+      <a href="{{ url_for('panel', tab='duplicidades') }}" class="list-group-item list-group-item-action {% if tab=='duplicidades' %}active{% endif %}">Duplicidades</a>
+      <a href="{{ url_for('panel', tab='encuesta') }}" class="list-group-item list-group-item-action {% if tab=='encuesta' %}active{% endif %}">Encuesta de satisfacción</a>
+      <a href="{{ url_for('panel', tab='atencion') }}" class="list-group-item list-group-item-action {% if tab=='atencion' %}active{% endif %}">Atención al público</a>
 
-          <!-- Extra -->
-          <div class="px-3 pt-3 text-muted small">Módulos extra</div>
-          <a class="nav-link {% if tab=='robos' %}active{% endif %}" href="{{ url_for('panel', tab='robos') }}">Robos y hurtos</a>
-          <a class="nav-link {% if tab=='miscelaneo' %}active{% endif %}" href="{{ url_for('panel', tab='miscelaneo') }}">Misceláneo</a>
-          <a class="nav-link {% if tab=='desviaciones' %}active{% endif %}" href="{{ url_for('panel', tab='desviaciones') }}">Desviaciones</a>
-          <a class="nav-link {% if tab=='solicitud_ot' %}active{% endif %}" href="{{ url_for('panel', tab='solicitud_ot') }}">Solicitud y OT</a>
-          <a class="nav-link {% if tab=='reclamos' %}active{% endif %}" href="{{ url_for('panel', tab='reclamos') }}">Reclamos de usuarios</a>
+      <div class="list-group-item fw-bold text-muted">Módulos extra</div>
+      <a href="{{ url_for('panel', tab='robos') }}" class="list-group-item list-group-item-action {% if tab=='robos' %}active{% endif %}">Robos y hurtos</a>
+      <a href="{{ url_for('panel', tab='miscelaneo') }}" class="list-group-item list-group-item-action {% if tab=='miscelaneo' %}active{% endif %}">Misceláneo</a>
+      <a href="{{ url_for('panel', tab='desviaciones') }}" class="list-group-item list-group-item-action {% if tab=='desviaciones' %}active{% endif %}">Desviaciones</a>
+      <a href="{{ url_for('panel', tab='solicitud_ot') }}" class="list-group-item list-group-item-action {% if tab=='solicitud_ot' %}active{% endif %}">Solicitud y OT de usuario</a>
+      <a href="{{ url_for('panel', tab='reclamos') }}" class="list-group-item list-group-item-action {% if tab=='reclamos' %}active{% endif %}">Reclamos de usuarios</a>
 
-          <!-- Nuevos -->
-          <div class="px-3 pt-3 text-muted small">Nuevos</div>
-          <a class="nav-link {% if tab=='alarmas' %}active{% endif %}" href="{{ url_for('panel', tab='alarmas') }}">Activación de alarma</a>
-          <a class="nav-link {% if tab=='extensiones' %}active{% endif %}" href="{{ url_for('panel', tab='extensiones') }}">Extensión / Excepción</a>
-          <a class="nav-link {% if tab=='onboarding' %}active{% endif %}" href="{{ url_for('panel', tab='onboarding') }}">Registro onboarding</a>
-          <a class="nav-link {% if tab=='apertura' %}active{% endif %}" href="{{ url_for('panel', tab='apertura') }}">Apertura de habitación</a>
-          <a class="nav-link {% if tab=='cumplimiento' %}active{% endif %}" href="{{ url_for('panel', tab='cumplimiento') }}">Cumplimiento EECC</a>
+      <div class="list-group-item fw-bold text-muted">Nuevos (solicitados)</div>
+      <a href="{{ url_for('panel', tab='alarmas') }}" class="list-group-item list-group-item-action {% if tab=='alarmas' %}active{% endif %}">Activación de alarma</a>
+      <a href="{{ url_for('panel', tab='extensiones') }}" class="list-group-item list-group-item-action {% if tab=='extensiones' %}active{% endif %}">Extensión y excepción</a>
+      <a href="{{ url_for('panel', tab='onboarding') }}" class="list-group-item list-group-item-action {% if tab=='onboarding' %}active{% endif %}">Registro onboarding</a>
+      <a href="{{ url_for('panel', tab='apertura') }}" class="list-group-item list-group-item-action {% if tab=='apertura' %}active{% endif %}">Apertura de habitación</a>
+      <a href="{{ url_for('panel', tab='cumplimiento') }}" class="list-group-item list-group-item-action {% if tab=='cumplimiento' %}active{% endif %}">Cumplimiento EECC</a>
 
-          <!-- Navegación -->
-          <div class="px-3 pt-3 text-muted small">Navegación</div>
-          <a class="nav-link" href="{{ url_for('registros') }}">Registros</a>
-          <a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a>
-        </div>
-      </div>
+      <div class="list-group-item fw-bold text-muted">Navegación</div>
+      <a href="{{ url_for('registros') }}" class="list-group-item list-group-item-action">Registros</a>
+      <a href="{{ url_for('dashboard') }}" class="list-group-item list-group-item-action">Dashboard</a>
     </div>
   </div>
 
-  <!-- Main -->
   <div class="col-lg-9">
-
-    {# Helper: bloque de acciones por módulo (plantilla + import) #}
-    {% macro acciones(entity) -%}
-      <div class="d-flex flex-wrap gap-2 mb-3">
-        <a class="btn btn-soft btn-sm" href="{{ url_for('template_xlsx', entity=entity) }}">Descargar plantilla</a>
-        <form method="post" action="{{ url_for('import_xlsx', entity=entity) }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
-          <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
-          <button class="btn btn-primary btn-sm" type="submit">Importar</button>
-        </form>
-      </div>
-    {%- endmacro %}
 
     {# ========================= CENSO ========================= #}
     {% if tab=='censo' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Censo</h5>
-        {{ acciones('censo') }}
+        <h5 class="card-title">Censo</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='censo') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='censo') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='censo') }}">
           <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label">Fecha</label>
+            <div class="col-md-4">
+              <label class="form-label required">Fecha</label>
               <input type="date" name="fecha" class="form-control" required>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
               <label class="form-label">Censo día</label>
               <input type="number" name="censo_dia" class="form-control" min="0" placeholder="0">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
               <label class="form-label">Censo noche</label>
               <input type="number" name="censo_noche" class="form-control" min="0" placeholder="0">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
               <label class="form-label">Total (opcional)</label>
               <input type="number" name="total" class="form-control" min="0" placeholder="(auto)">
             </div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -90,24 +77,30 @@
     {% if tab=='eventos' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Eventos de seguridad</h5>
-        {{ acciones('eventos') }}
+        <h5 class="card-title">Eventos de seguridad</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='eventos') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='eventos') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='eventos') }}">
           <div class="row g-3">
             <div class="col-md-3">
-              <label class="form-label">Fecha</label>
+              <label class="form-label required">Fecha</label>
               <input type="date" name="fecha" class="form-control" required>
             </div>
             <div class="col-md-3">
-              <label class="form-label">Horario</label>
-              <input type="text" name="horario" class="form-control" placeholder="Mañana/Tarde/Noche o HH:MM" required>
+              <label class="form-label required">Horario</label>
+              <input type="text" name="horario" class="form-control" required placeholder="Mañana/Tarde/Noche o HH:MM">
             </div>
             <div class="col-md-6">
               <label class="form-label">Nombre del afectado</label>
               <input type="text" name="nombre_afectado" class="form-control">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Qué ocurrió</label>
+              <label class="form-label required">Qué ocurrió</label>
               <textarea name="que_ocurrio" class="form-control" required></textarea>
             </div>
             <div class="col-md-6">
@@ -115,7 +108,9 @@
               <textarea name="accion" class="form-control"></textarea>
             </div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -125,12 +120,18 @@
     {% if tab=='duplicidades' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Duplicidades</h5>
-        {{ acciones('duplicidades') }}
+        <h5 class="card-title">Duplicidades</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='duplicidades') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='duplicidades') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='duplicidades') }}">
           <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label">Semana</label>
+            <div class="col-md-4">
+              <label class="form-label required">Semana</label>
               <select name="semana" class="form-select" required>
                 <option value="">-- Elegir --</option>
                 {% for num, r in week_map.items()|sort %}
@@ -138,35 +139,72 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="col-md-3">
-              <label class="form-label">Fecha</label>
+            <div class="col-md-4">
+              <label class="form-label required">Fecha</label>
               <input type="date" name="fecha" class="form-control" required>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
               <label class="form-label">ID</label>
               <input type="text" name="id" class="form-control">
             </div>
-            <div class="col-md-3">
+
+            <div class="col-md-6">
               <label class="form-label">Empresa contratista</label>
               <input type="text" name="empresa_contratista" class="form-control">
             </div>
+            <div class="col-md-6">
+              <label class="form-label">TIPO DE RIESGO</label>
+              <input type="text" name="tipo_riesgo" class="form-control" placeholder="Psicosocial, etc.">
+            </div>
 
-            <div class="col-md-6"><label class="form-label">Descripción Problema</label><textarea name="descripcion_problema" class="form-control"></textarea></div>
-            <div class="col-md-3"><label class="form-label">Tipo de riesgo</label><input type="text" name="tipo_riesgo" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Pabellón</label><input type="text" name="pabellon" class="form-control"></div>
+            <div class="col-md-4">
+              <label class="form-label">PABELLON</label>
+              <input type="text" name="pabellon" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Habitación</label>
+              <input type="text" name="habitacion" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Ingresar Contacto</label>
+              <input type="text" name="ingresar_contacto" class="form-control">
+            </div>
 
-            <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Ingresar contacto</label><input type="text" name="ingresar_contacto" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Nombre usuario</label><input type="text" name="nombre_usuario" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Responsable</label><input type="text" name="responsable" class="form-control"></div>
+            <div class="col-md-4">
+              <label class="form-label">Nombre usuario</label>
+              <input type="text" name="nombre_usuario" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Responsable (Toma Requerimiento)</label>
+              <input type="text" name="responsable" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Estatus</label>
+              <input type="text" name="estatus" class="form-control" placeholder="Abierto/Cerrado">
+            </div>
 
-            <div class="col-md-3"><label class="form-label">Estatus</label><input type="text" name="estatus" class="form-control" placeholder="Abierto/Cerrado"></div>
-            <div class="col-md-3"><label class="form-label">Notificación usuario</label><input type="text" name="notificacion_usuario" class="form-control"></div>
-            <div class="col-md-6"><label class="form-label">Plan de acción</label><input type="text" name="plan_accion" class="form-control"></div>
+            <div class="col-md-6">
+              <label class="form-label">Notificación Usuario</label>
+              <input type="text" name="notificacion_usuario" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha de Cierre</label>
+              <input type="date" name="fecha_cierre" class="form-control">
+            </div>
 
-            <div class="col-md-3"><label class="form-label">Fecha cierre</label><input type="date" name="fecha_cierre" class="form-control"></div>
+            <div class="col-12">
+              <label class="form-label">Descripción Problema</label>
+              <textarea name="descripcion_problema" class="form-control"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Plan de Acción</label>
+              <textarea name="plan_accion" class="form-control"></textarea>
+            </div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -176,32 +214,43 @@
     {% if tab=='encuesta' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Encuesta de satisfacción</h5>
-        {{ acciones('encuesta') }}
+        <h5 class="card-title">Encuesta de satisfacción</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='encuesta') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='encuesta') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='encuesta') }}">
           <div class="row g-3">
             <div class="col-md-4">
-              <label class="form-label">Fecha y hora</label>
+              <label class="form-label required">FECHA_HORA</label>
               <input type="datetime-local" name="fecha_hora" class="form-control" required>
             </div>
           </div>
+
           <div class="row g-3 mt-1">
             {% for i in range(1,6) %}
             <div class="col-md-6">
-              <label class="form-label">Q{{ i }}_RESPUESTA</label>
-              <input type="text" name="q{{ i }}_respuesta" class="form-control">
+              <label class="form-label">Q{{i}}_RESPUESTA</label>
+              <input type="text" name="q{{i}}_respuesta" class="form-control">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Q{{ i }}_PUNTAJE</label>
-              <input type="number" name="q{{ i }}_puntaje" class="form-control" min="0" max="10">
+              <label class="form-label">Q{{i}}_PUNTAJE</label>
+              <input type="number" name="q{{i}}_puntaje" class="form-control" min="0" max="10">
             </div>
             {% endfor %}
           </div>
+
           <div class="mt-3">
-            <label class="form-label">Comentarios</label>
+            <label class="form-label">COMENTARIOS</label>
             <textarea name="comentarios" class="form-control"></textarea>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -211,15 +260,32 @@
     {% if tab=='atencion' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Atención al público</h5>
-        {{ acciones('atencion') }}
+        <h5 class="card-title">Atención al público</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='atencion') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='atencion') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='atencion') }}">
           <div class="row g-3">
-            <div class="col-md-4"><label class="form-label">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
-            <div class="col-md-4"><label class="form-label">Tiempo promedio (mm:ss)</label><input type="text" name="tiempo_promedio" class="form-control" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}"></div>
-            <div class="col-md-4"><label class="form-label">Cantidad</label><input type="number" name="cantidad" class="form-control" min="0"></div>
+            <div class="col-md-4">
+              <label class="form-label required">FECHA</label>
+              <input type="date" name="fecha" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">TIEMPO PROMEDIO (mm:ss)</label>
+              <input type="text" name="tiempo_promedio" class="form-control" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}" title="mm:ss, ej: 03:54">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">CANTIDAD</label>
+              <input type="number" name="cantidad" class="form-control" min="0" placeholder="0">
+            </div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -229,26 +295,64 @@
     {% if tab=='robos' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Robos y hurtos</h5>
-        {{ acciones('robos') }}
+        <h5 class="card-title">Robos y hurtos</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='robos') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='robos') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='robos') }}">
           <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
-            <div class="col-md-3"><label class="form-label">Hora</label><input type="time" name="hora" class="form-control" required></div>
-            <div class="col-md-3"><label class="form-label">Módulo</label><input type="text" name="modulo" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
-
-            <div class="col-md-4"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control"></div>
-            <div class="col-md-4"><label class="form-label">Nombre cliente</label><input type="text" name="nombre_cliente" class="form-control"></div>
-            <div class="col-md-4"><label class="form-label">RUT</label><input type="text" name="rut" class="form-control"></div>
-
-            <div class="col-md-6"><label class="form-label">Medio del reclamo</label><input type="text" name="medio_reclamo" class="form-control"></div>
-            <div class="col-md-6"><label class="form-label">Recepciona</label><input type="text" name="recepciona" class="form-control"></div>
-
-            <div class="col-12"><label class="form-label">Especies</label><textarea name="especies" class="form-control"></textarea></div>
-            <div class="col-12"><label class="form-label">Observaciones</label><textarea name="observaciones" class="form-control"></textarea></div>
+            <div class="col-md-3">
+              <label class="form-label required">Fecha</label>
+              <input type="date" name="fecha" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label required">Hora</label>
+              <input type="time" name="hora" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Módulo</label>
+              <input type="text" name="modulo" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Habitación</label>
+              <input type="text" name="habitacion" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Empresa</label>
+              <input type="text" name="empresa" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Nombre cliente</label>
+              <input type="text" name="nombre_cliente" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Rut</label>
+              <input type="text" name="rut" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Medio del Reclamo</label>
+              <input type="text" name="medio_reclamo" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nombre de quien recepciona</label>
+              <input type="text" name="recepciona" class="form-control">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Especies</label>
+              <textarea name="especies" class="form-control"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observaciones</label>
+              <textarea name="observaciones" class="form-control"></textarea>
+            </div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -258,8 +362,14 @@
     {% if tab=='miscelaneo' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Misceláneo</h5>
-        {{ acciones('miscelaneo') }}
+        <h5 class="card-title">Misceláneo</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='miscelaneo') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='miscelaneo') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='miscelaneo') }}">
           <div class="row g-3">
             <div class="col-md-3"><label class="form-label">OT</label><input type="text" name="ot" class="form-control"></div>
@@ -279,9 +389,11 @@
 
             <div class="col-md-3"><label class="form-label">Fecha aprobación</label><input type="date" name="fecha_aprobacion" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Estado</label><input type="text" name="estado" class="form-control"></div>
-            <div class="col-12"><label class="form-label">Comentario</label><textarea name="comentario" class="form-control"></textarea></div>
+            <div class="col-md-12"><label class="form-label">Comentario</label><textarea name="comentario" class="form-control"></textarea></div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -291,28 +403,36 @@
     {% if tab=='desviaciones' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Desviaciones</h5>
-        {{ acciones('desviaciones') }}
+        <h5 class="card-title">Desviaciones</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='desviaciones') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='desviaciones') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='desviaciones') }}">
           <div class="row g-3">
             <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label required">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
             <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Empresa contratista</label><input type="text" name="empresa_contratista" class="form-control"></div>
 
-            <div class="col-md-6"><label class="form-label">Descripción problema</label><textarea name="descripcion_problema" class="form-control"></textarea></div>
-            <div class="col-md-3"><label class="form-label">Tipo de riesgo</label><input type="text" name="tipo_riesgo" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Tipo de solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Descripción Problema</label><textarea name="descripcion_problema" class="form-control"></textarea></div>
+            <div class="col-md-3"><label class="form-label">TIPO DE RIESGO</label><input type="text" name="tipo_riesgo" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
 
-            <div class="col-md-3"><label class="form-label">Pabellón</label><input type="text" name="pabellon" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">PABELLON</label><input type="text" name="pabellon" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Vía solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Quién informa</label><input type="text" name="quien_informa" class="form-control"></div>
 
-            <div class="col-md-3"><label class="form-label">Riesgo material</label><input type="text" name="riesgo_material" class="form-control"></div>
-            <div class="col-md-9"><label class="form-label">Correo destino</label><input type="text" name="correo_destino" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Riesgo Material</label><input type="text" name="riesgo_material" class="form-control"></div>
+            <div class="col-md-8"><label class="form-label">Correo Destino</label><input type="text" name="correo_destino" class="form-control"></div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -322,33 +442,41 @@
     {% if tab=='solicitud_ot' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Solicitud y OT de usuario</h5>
-        {{ acciones('solicitud_ot') }}
+        <h5 class="card-title">Solicitud y OT de usuario</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='solicitud_ot') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='solicitud_ot') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='solicitud_ot') }}">
           <div class="row g-3">
             <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Descripción problema</label><input type="text" name="descripcion_problema" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Tipo de solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Descripción Problema</label><input type="text" name="descripcion_problema" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Módulo</label><input type="text" name="modulo" class="form-control"></div>
 
             <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Tipo turno</label><input type="text" name="tipo_turno" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Tipo de turno</label><input type="text" name="tipo_turno" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Jornada</label><input type="text" name="jornada" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Vía solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
 
-            <div class="col-md-4"><label class="form-label">Correo usuario</label><input type="text" name="correo_usuario" class="form-control"></div>
-            <div class="col-md-4"><label class="form-label">Tipo tarea</label><input type="text" name="tipo_tarea" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Correo Usuario (solo reclamo)</label><input type="text" name="correo_usuario" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Tipo Tarea</label><input type="text" name="tipo_tarea" class="form-control"></div>
             <div class="col-md-2"><label class="form-label">OT</label><input type="text" name="ot" class="form-control"></div>
-            <div class="col-md-2"><label class="form-label">Fecha inicio</label><input type="date" name="fecha_inicio" class="form-control"></div>
+            <div class="col-md-2"><label class="form-label">Fecha Inicio</label><input type="date" name="fecha_inicio" class="form-control"></div>
 
             <div class="col-md-3"><label class="form-label">Estado</label><input type="text" name="estado" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Tiempo respuesta (mm:ss)</label><input type="text" name="tiempo_respuesta" class="form-control" pattern="[0-9]{2}:[0-9]{2}"></div>
-            <div class="col-md-3"><label class="form-label">Satisfacción reclamo</label><input type="text" name="satisfaccion_reclamo" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Tiempo de Respuesta (mm:ss)</label><input type="text" name="tiempo_respuesta" class="form-control" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}"></div>
+            <div class="col-md-3"><label class="form-label">Satisfacción Reclamo</label><input type="text" name="satisfaccion_reclamo" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Motivo</label><input type="text" name="motivo" class="form-control"></div>
 
-            <div class="col-12"><label class="form-label">Observación</label><textarea name="observacion" class="form-control"></textarea></div>
+            <div class="col-md-12"><label class="form-label">Observación</label><textarea name="observacion" class="form-control"></textarea></div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
@@ -358,137 +486,175 @@
     {% if tab=='reclamos' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Reclamos de usuarios</h5>
-        {{ acciones('reclamos') }}
+        <h5 class="card-title">Reclamos de usuarios</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='reclamos') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='reclamos') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
         <form method="post" action="{{ url_for('panel', tab='reclamos') }}">
           <div class="row g-3">
             <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label required">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
             <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Empresa contratista</label><input type="text" name="empresa_contratista" class="form-control"></div>
 
-            <div class="col-md-6"><label class="form-label">Descripción problema</label><textarea name="descripcion_problema" class="form-control"></textarea></div>
-            <div class="col-md-3"><label class="form-label">Tipo de solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Pabellón</label><input type="text" name="pabellon" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Descripción Problema</label><textarea name="descripcion_problema" class="form-control"></textarea></div>
+            <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">PABELLON</label><input type="text" name="pabellon" class="form-control"></div>
 
             <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Vía solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Ingresar contacto</label><input type="text" name="ingresar_contacto" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Ingresar Contacto</label><input type="text" name="ingresar_contacto" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Nombre usuario</label><input type="text" name="nombre_usuario" class="form-control"></div>
 
             <div class="col-md-3"><label class="form-label">Responsable</label><input type="text" name="responsable" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Estatus</label><input type="text" name="estatus" class="form-control" placeholder="Abierto/Cerrado"></div>
-            <div class="col-md-3"><label class="form-label">Notificación usuario</label><input type="text" name="notificacion_usuario" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Plan de acción</label><input type="text" name="plan_accion" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Notificación Usuario</label><input type="text" name="notificacion_usuario" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Plan de Acción</label><input type="text" name="plan_accion" class="form-control"></div>
           </div>
-          <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
+          <div class="mt-3">
+            <button class="btn btn-success" type="submit">Guardar</button>
+          </div>
         </form>
       </div>
     </div>
     {% endif %}
 
-    {# ========================= NUEVOS ========================= #}
+    {# ========================= NUEVOS MÓDULOS ========================= #}
 
-    {# ---- Activación de alarma ---- #}
+    {# ---- 1) Activación de alarma ---- #}
     {% if tab=='alarmas' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Activación de alarma</h5>
-        {{ acciones('activacion_alarma') }}
+        <h5 class="card-title">Activación de alarma</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='alarmas') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='alarmas') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
+
         <form method="post" action="{{ url_for('panel', tab='alarmas') }}">
           <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">Módulo</label><input type="text" name="modulo" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">N° Habitación</label><input type="text" name="n_habitacion" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Nombre recepcionista</label><input type="text" name="nombre_recepcionista" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label">MÓDULO</label><input type="text" name="modulo" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">N° HABITACION</label><input type="text" name="n_habitacion" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Nombre Recepcionista</label><input type="text" name="nombre_recepcionista" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label required">FECHA</label><input type="date" name="fecha" class="form-control" required></div>
 
-            <div class="col-md-3"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">C.O.</label><input type="text" name="co" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">Hora Reporte SALFA</label><input type="time" name="hora_reporte_salfa" class="form-control"></div>
 
-            <div class="col-md-3"><label class="form-label">Aviso mantención (h)</label><input type="number" step="0.01" name="aviso_mantencion_h" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Llegada mantención (h)</label><input type="number" step="0.01" name="llegada_mantencion_h" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Aviso líder (h)</label><input type="number" step="0.01" name="aviso_lider_h" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Llegada líder (h)</label><input type="number" step="0.01" name="llegada_lider_h" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Aviso a mantención (horas)</label><input type="number" step="0.01" name="aviso_mantencion_h" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Llegada mantención (horas)</label><input type="number" step="0.01" name="llegada_mantencion_h" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Aviso Líder emergencias (horas)</label><input type="number" step="0.01" name="aviso_lider_h" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Llegada Líder (horas)</label><input type="number" step="0.01" name="llegada_lider_h" class="form-control"></div>
 
-            <div class="col-md-4"><label class="form-label">Tipo evento</label><input type="text" name="tipo_evento" class="form-control"></div>
-            <div class="col-md-4"><label class="form-label">Tipo actividad</label><input type="text" name="tipo_actividad" class="form-control"></div>
-            <div class="col-md-4"><label class="form-label">Fecha reporte</label><input type="date" name="fecha_reporte" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Tipo Evento</label><input type="text" name="tipo_evento" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Tipo Actividad</label><input type="text" name="tipo_actividad" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Turno Recepción / Ingresos</label><input type="text" name="turno_recepcion_ingresos" class="form-control"></div>
 
-            <div class="col-md-6"><label class="form-label">Turno recepción / ingresos</label><input type="text" name="turno_recepcion_ingresos" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Fecha Reporte</label><input type="date" name="fecha_reporte" class="form-control"></div>
             <div class="col-12"><label class="form-label">Observaciones</label><textarea name="observaciones" class="form-control"></textarea></div>
           </div>
+
           <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
         </form>
       </div>
     </div>
     {% endif %}
 
-    {# ---- Extensión / Excepción ---- #}
+    {# ---- 2) Extensión y excepción ---- #}
     {% if tab=='extensiones' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Extensión / Excepción</h5>
-        {{ acciones('extension_excepcion') }}
+        <h5 class="card-title">Extensión y excepción</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='extensiones') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='extensiones') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
+
         <form method="post" action="{{ url_for('panel', tab='extensiones') }}">
           <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">Fecha solicitud</label><input type="date" name="fecha_solicitud" class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label required">FECHA DE SOLICITUD</label><input type="date" name="fecha_solicitud" class="form-control" required></div>
             <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control"></div>
             <div class="col-md-3"><label class="form-label">CO</label><input type="text" name="co" class="form-control"></div>
 
-            <div class="col-md-3"><label class="form-label">Gerencia</label><input type="text" name="gerencia" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Proyecto</label><input type="text" name="proyecto" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Cant. clientes</label><input type="number" name="cant_clientes" class="form-control" min="0"></div>
-            <div class="col-md-3"><label class="form-label">Aprobador</label><input type="text" name="aprobador" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">GERENCIA</label><input type="text" name="gerencia" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">PROYECTO</label><input type="text" name="proyecto" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">CANT. CLIENTES</label><input type="number" name="cant_clientes" class="form-control" min="0"></div>
+            <div class="col-md-3"><label class="form-label">APROBADOR</label><input type="text" name="aprobador" class="form-control"></div>
 
-            <div class="col-md-3"><label class="form-label">Desde</label><input type="date" name="desde" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Hasta</label><input type="date" name="hasta" class="form-control"></div>
-            <div class="col-12"><label class="form-label">Observación</label><textarea name="observacion" class="form-control"></textarea></div>
+            <div class="col-md-3"><label class="form-label">DESDE</label><input type="date" name="desde" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">HASTA</label><input type="date" name="hasta" class="form-control"></div>
+            <div class="col-md-12"><label class="form-label">OBSERVACION</label><textarea name="observacion" class="form-control"></textarea></div>
           </div>
+
           <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
         </form>
       </div>
     </div>
     {% endif %}
 
-    {# ---- Onboarding ---- #}
+    {# ---- 3) Registro onboarding ---- #}
     {% if tab=='onboarding' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Registro onboarding</h5>
-        {{ acciones('onboarding') }}
-        <form method="post" action="{{ url_for('panel', tab='onboarding') }}">
+        <h5 class="card-title">Registro onboarding</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='onboarding') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='onboarding') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
+
+        <form method="post" action="{{ url_for('panel', tab='onboarding') }}" enctype="multipart/form-data">
           <div class="row g-3">
-            <div class="col-md-4"><label class="form-label">Fecha/Hora</label><input type="datetime-local" name="fecha_hora" class="form-control" required></div>
-            <div class="col-md-4"><label class="form-label">Nombre</label><input type="text" name="nombre" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label required">FECHA_HORA</label><input type="datetime-local" name="fecha_hora" class="form-control" required></div>
+            <div class="col-md-4"><label class="form-label">NOMBRE</label><input type="text" name="nombre" class="form-control"></div>
             <div class="col-md-4"><label class="form-label">RUT</label><input type="text" name="rut" class="form-control"></div>
 
-            <div class="col-md-4"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control"></div>
             <div class="col-md-4"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control"></div>
-            <div class="col-md-4"><label class="form-label">Archivo PDF (URL o ruta)</label><input type="text" name="archivo_pdf" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">ARCHIVO_PDF</label><input type="file" name="archivo_pdf" class="form-control" accept="application/pdf"></div>
           </div>
+
           <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
         </form>
       </div>
     </div>
     {% endif %}
 
-    {# ---- Apertura habitación ---- #}
+    {# ---- 4) Registro de apertura de habitación ---- #}
     {% if tab=='apertura' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Apertura de habitación</h5>
-        {{ acciones('apertura_habitacion') }}
+        <h5 class="card-title">Registro de apertura de habitación</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='apertura') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='apertura') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
+
         <form method="post" action="{{ url_for('panel', tab='apertura') }}">
           <div class="row g-3">
-            <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
-            <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Hora</label><input type="time" name="hora" class="form-control"></div>
-            <div class="col-md-3"><label class="form-label">Responsable</label><input type="text" name="responsable" class="form-control"></div>
-
-            <div class="col-12"><label class="form-label">Estado de la chapa (motivo)</label><textarea name="estado_chapa" class="form-control"></textarea></div>
+            <div class="col-md-3"><label class="form-label required">FECHA</label><input type="date" name="fecha" class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label">HABITACIÓN</label><input type="text" name="habitacion" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">HORA</label><input type="time" name="hora" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">RESPONSABLE</label><input type="text" name="responsable" class="form-control"></div>
+            <div class="col-md-12"><label class="form-label">ESTADO DE LA CHAPA DETALLADO (MOTIVO)</label><textarea name="estado_chapa" class="form-control"></textarea></div>
           </div>
           <div class="mt-3"><button class="btn btn-success" type="submit">Guardar</button></div>
         </form>
@@ -496,19 +662,26 @@
     </div>
     {% endif %}
 
-    {# ---- Cumplimiento EECC ---- #}
+    {# ---- 5) Cumplimiento de reportabilidad de EECC ---- #}
     {% if tab=='cumplimiento' %}
     <div class="card">
       <div class="card-body">
-        <h5 class="card-title mb-3">Cumplimiento EECC</h5>
-        {{ acciones('cumplimiento') }}
+        <h5 class="card-title">Cumplimiento de reportabilidad de EECC</h5>
+        <div class="d-flex gap-2 flex-wrap mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('template_xlsx', entity='cumplimiento') }}">Descargar plantilla</a>
+          <form method="post" action="{{ url_for('import_xlsx', entity='cumplimiento') }}" enctype="multipart/form-data" class="d-inline-flex gap-2">
+            <input type="file" class="form-control form-control-sm" name="file" accept=".xlsx" required>
+            <button class="btn btn-sm btn-primary" type="submit">Importar</button>
+          </form>
+        </div>
+
         <form method="post" action="{{ url_for('panel', tab='cumplimiento') }}">
           <div class="row g-3">
             <div class="col-md-4"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control"></div>
             <div class="col-md-4"><label class="form-label">N° Contrato</label><input type="text" name="n_contrato" class="form-control"></div>
             <div class="col-md-4"><label class="form-label">C.O.</label><input type="text" name="co" class="form-control"></div>
 
-            <div class="col-md-4"><label class="form-label">Correo electrónico</label><input type="email" name="correo_electronico" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Correo Electrónico</label><input type="email" name="correo_electronico" class="form-control"></div>
             <div class="col-md-4"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control"></div>
             <div class="col-md-4"><label class="form-label">Turno</label><input type="text" name="turno" class="form-control"></div>
           </div>
@@ -521,4 +694,3 @@
   </div>
 </div>
 {% endblock %}
-
