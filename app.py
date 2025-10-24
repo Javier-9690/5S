@@ -1,6 +1,6 @@
 # app.py - SQLAlchemy puro + 5 módulos nuevos integrados
 import os
-import io    llegada_lider_horas = Column("lle
+import io   
 import csv
 import re
 from statistics import mean
