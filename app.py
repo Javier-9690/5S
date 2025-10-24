@@ -14,7 +14,6 @@ from flask import (
 from sqlalchemy import (
     create_engine, Column, Integer, String, Date, DateTime, Time, Float, Text
 )
-    # (float/int conversions + order_by/filters)
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -110,6 +109,7 @@ WEEK_MAP = {
     95: ("2026-10-19", "2026-10-25"),
     96: ("2026-10-26", "2026-11-01"),
 }
+
 def week_range(week_number: int):
     if week_number not in WEEK_MAP:
         return (None, None)
@@ -404,7 +404,7 @@ def home():
 def panel():
     # tabs: censo | eventos | duplicidades | encuesta | atencion |
     #       robos | miscelaneo | desviaciones | solicitud_ot | reclamos |
-    #       activacion_alarma | extension_excepcion | onboarding | apertura_habitacion | eecc_cumplimiento
+    #       alarmas | extensiones | onboarding | apertura | cumplimiento
     tab = request.args.get("tab", "censo")
     db = SessionLocal()
     try:
@@ -602,7 +602,7 @@ def panel():
                 db.add(rec); db.commit(); flash("Reclamo de usuario guardado.")
 
             # -------------------- ACTIVACIÓN DE ALARMA --------------------
-            elif tab == "activacion_alarma":
+            elif tab == "alarmas":
                 fecha = date.fromisoformat(request.form["fecha"])
                 def f2t(v):
                     v = (v or "").strip()
@@ -635,7 +635,7 @@ def panel():
                 db.add(rec); db.commit(); flash("Activación de alarma guardada.")
 
             # -------------------- EXTENSIÓN / EXCEPCIÓN --------------------
-            elif tab == "extension_excepcion":
+            elif tab == "extensiones":
                 rec = ExtensionExcepcionEntry(
                     fecha_solicitud=date.fromisoformat(request.form["fecha_solicitud"]),
                     id_interno=request.form.get("id_interno","").strip(),
@@ -661,12 +661,12 @@ def panel():
                     rut=request.form.get("rut","").strip(),
                     empresa=request.form.get("empresa","").strip(),
                     id_interno=request.form.get("id_interno","").strip(),
-                    archivo_pdf=request.form.get("archivo_pdf","").strip(),  # ruta/URL (texto)
+                    archivo_pdf=request.form.get("archivo_pdf","").strip(),
                 )
                 db.add(rec); db.commit(); flash("Onboarding guardado.")
 
             # -------------------- APERTURA DE HABITACIÓN --------------------
-            elif tab == "apertura_habitacion":
+            elif tab == "apertura":
                 def f2t(v):
                     v = (v or "").strip()
                     return datetime.strptime(v, "%H:%M").time() if v else None
@@ -680,7 +680,7 @@ def panel():
                 db.add(rec); db.commit(); flash("Apertura de habitación guardada.")
 
             # -------------------- CUMPLIMIENTO EECC --------------------
-            elif tab == "eecc_cumplimiento":
+            elif tab == "cumplimiento":
                 rec = CumplimientoEECCEntry(
                     empresa=request.form.get("empresa","").strip(),
                     n_contrato=request.form.get("n_contrato","").strip(),
@@ -1605,5 +1605,4 @@ def dashboard():
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
 
