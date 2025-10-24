@@ -298,6 +298,54 @@ def safe_convert_datetime(datetime_str):
     
     raise ValueError(f"No se pudo convertir la fecha/hora: {datetime_str}")
 
+def safe_time_hhmm(val):
+    """Convierte string de tiempo a objeto time, manejando múltiples formatos de hora"""
+    s = ("" if val is None else str(val)).strip()
+    if not s: 
+        return time(0, 0)
+    
+    # Si ya es un objeto time, retornarlo
+    if isinstance(val, time):
+        return val
+    
+    # Intentar diferentes formatos de hora
+    formats_to_try = [
+        "%H:%M:%S",    # 22:40:00
+        "%H:%M",       # 22:40
+        "%I:%M:%S %p", # 10:40:00 PM (formato 12h)
+        "%I:%M %p",    # 10:40 PM
+        "%I:%M:%S%p",  # 10:40:00PM (sin espacio)
+        "%I:%M%p",     # 10:40PM
+    ]
+    
+    for fmt in formats_to_try:
+        try:
+            return datetime.strptime(s, fmt).time()
+        except ValueError:
+            continue
+    
+    # Si ninguno de los formatos estándar funciona, intentar analizar manualmente
+    if ":" in s:
+        parts = s.split(":")
+        # Limpiar cada parte
+        parts = [p.strip() for p in parts]
+        
+        # Tener entre 2 y 3 partes (HH:MM o HH:MM:SS)
+        if 2 <= len(parts) <= 3:
+            try:
+                hour = int(parts[0])
+                minute = int(parts[1])
+                second = int(parts[2]) if len(parts) > 2 else 0
+                
+                # Validar rangos
+                if 0 <= hour <= 23 and 0 <= minute <= 59 and 0 <= second <= 59:
+                    return time(hour, minute, second)
+            except (ValueError, IndexError):
+                pass
+    
+    # Si todo falla, retornar hora por defecto
+    return time(0, 0)
+
 
 # -----------------------------------------------------------------------------
 # Modelos (tablas)
@@ -662,7 +710,7 @@ def panel():
             elif tab == "robos":
                 fecha = safe_convert_date(request.form["fecha"])
                 hora = request.form.get("hora", "00:00")
-                hora_obj = datetime.strptime(hora, "%H:%M").time()
+                hora_obj = safe_time_hhmm(hora)  # Usamos la nueva función robusta
                 rec = RoboHurtoEntry(
                     fecha=fecha, hora=hora_obj,
                     modulo=request.form.get("modulo","").strip(),
@@ -769,7 +817,7 @@ def panel():
                 fecha = safe_convert_date(request.form["fecha"])
                 def f2t(v):
                     v = (v or "").strip()
-                    return datetime.strptime(v, "%H:%M").time() if v else None
+                    return safe_time_hhmm(v)  # Usamos la nueva función robusta
                 def f2float(v):
                     try:
                         return float(v) if (v is not None and str(v).strip()!="") else None
@@ -831,7 +879,7 @@ def panel():
             elif tab == "apertura":
                 def f2t(v):
                     v = (v or "").strip()
-                    return datetime.strptime(v, "%H:%M").time() if v else None
+                    return safe_time_hhmm(v)  # Usamos la nueva función robusta
                 rec = AperturaHabitacionEntry(
                     fecha=safe_convert_date(request.form["fecha"]),
                     habitacion=request.form.get("habitacion","").strip(),
@@ -1463,14 +1511,13 @@ def import_xlsx(entity):
 
                 # ---------------- agregados previos ----------------
                 elif entity == "robos":
-                    def safe_time_hhmm(val):
-                        s = ("" if val is None else str(val)).strip()
-                        if not s: return time(0, 0)
-                        return datetime.strptime(s, "%H:%M").time()
+                    # Usamos la función safe_time_hhmm robusta
+                    hora_str = str(row[1] or "").strip() if row[1] is not None else ""
+                    hora_obj = safe_time_hhmm(hora_str)
                     
                     db.add(RoboHurtoEntry(
                         fecha=safe_convert_date(row[0]),
-                        hora=safe_time_hhmm(row[1]),
+                        hora=hora_obj,
                         modulo=str(row[2] or "").strip(),
                         habitacion=str(row[3] or "").strip(),
                         empresa=str(row[4] or "").strip(),
@@ -1563,9 +1610,6 @@ def import_xlsx(entity):
 
                 # ---------------- NUEVOS 5 ----------------
                 elif entity == "alarmas":
-                    def hhmm(v):
-                        s = str(v or "").strip()
-                        return datetime.strptime(s, "%H:%M").time() if s else None
                     def ffloat(v):
                         try:
                             return float(v) if (v not in (None, "") ) else None
@@ -1583,7 +1627,7 @@ def import_xlsx(entity):
                         llegada_mantencion_h=ffloat(row[8]),
                         aviso_lider_h=ffloat(row[9]),
                         llegada_lider_h=ffloat(row[10]),
-                        hora_reporte_salfa=hhmm(row[11]),
+                        hora_reporte_salfa=safe_time_hhmm(row[11]),
                         tipo_evento=str(row[12] or "").strip(),
                         tipo_actividad=str(row[13] or "").strip(),
                         fecha_reporte=safe_convert_date(row[14]),
@@ -1618,11 +1662,6 @@ def import_xlsx(entity):
                     ))
 
                 elif entity == "apertura":
-                    def safe_time_hhmm(val):
-                        s = ("" if val is None else str(val)).strip()
-                        if not s: return time(0, 0)
-                        return datetime.strptime(s, "%H:%M").time()
-                    
                     db.add(AperturaHabitacionEntry(
                         fecha=safe_convert_date(row[0]),
                         habitacion=str(row[1] or "").strip(),
