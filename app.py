@@ -14,6 +14,7 @@ from flask import (
 from sqlalchemy import (
     create_engine, Column, Integer, String, Date, DateTime, Time, Float, Text
 )
+    # (float/int conversions + order_by/filters)
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -403,7 +404,7 @@ def home():
 def panel():
     # tabs: censo | eventos | duplicidades | encuesta | atencion |
     #       robos | miscelaneo | desviaciones | solicitud_ot | reclamos |
-    #       alarmas | extensiones | onboarding | apertura | cumplimiento
+    #       activacion_alarma | extension_excepcion | onboarding | apertura_habitacion | eecc_cumplimiento
     tab = request.args.get("tab", "censo")
     db = SessionLocal()
     try:
@@ -601,7 +602,7 @@ def panel():
                 db.add(rec); db.commit(); flash("Reclamo de usuario guardado.")
 
             # -------------------- ACTIVACIÓN DE ALARMA --------------------
-            elif tab == "alarmas":
+            elif tab == "activacion_alarma":
                 fecha = date.fromisoformat(request.form["fecha"])
                 def f2t(v):
                     v = (v or "").strip()
@@ -634,7 +635,7 @@ def panel():
                 db.add(rec); db.commit(); flash("Activación de alarma guardada.")
 
             # -------------------- EXTENSIÓN / EXCEPCIÓN --------------------
-            elif tab == "extensiones":
+            elif tab == "extension_excepcion":
                 rec = ExtensionExcepcionEntry(
                     fecha_solicitud=date.fromisoformat(request.form["fecha_solicitud"]),
                     id_interno=request.form.get("id_interno","").strip(),
@@ -660,12 +661,12 @@ def panel():
                     rut=request.form.get("rut","").strip(),
                     empresa=request.form.get("empresa","").strip(),
                     id_interno=request.form.get("id_interno","").strip(),
-                    archivo_pdf=request.form.get("archivo_pdf","").strip(),
+                    archivo_pdf=request.form.get("archivo_pdf","").strip(),  # ruta/URL (texto)
                 )
                 db.add(rec); db.commit(); flash("Onboarding guardado.")
 
             # -------------------- APERTURA DE HABITACIÓN --------------------
-            elif tab == "apertura":
+            elif tab == "apertura_habitacion":
                 def f2t(v):
                     v = (v or "").strip()
                     return datetime.strptime(v, "%H:%M").time() if v else None
@@ -679,7 +680,7 @@ def panel():
                 db.add(rec); db.commit(); flash("Apertura de habitación guardada.")
 
             # -------------------- CUMPLIMIENTO EECC --------------------
-            elif tab == "cumplimiento":
+            elif tab == "eecc_cumplimiento":
                 rec = CumplimientoEECCEntry(
                     empresa=request.form.get("empresa","").strip(),
                     n_contrato=request.form.get("n_contrato","").strip(),
