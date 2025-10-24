@@ -137,7 +137,7 @@ def mmss_to_seconds(s: str) -> int:
     if s.isdigit():
         return int(s)
     
-    # Formato mm:ss
+    # **CORRECCIÓN: Formato mm:ss donde mm puede ser > 59**
     if ":" in s:
         parts = s.split(":")
         if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
@@ -179,16 +179,22 @@ def safe_convert_time(time_str):
     except:
         pass
     
-    # Formato mm:ss
-    if TIME_RE.match(time_str):
-        m, s = time_str.split(":")
-        return int(m) * 60 + int(s)
-    
-    # Formato hh:mm:ss
-    hhmmss_re = re.compile(r"^\d{1,2}:\d{2}:\d{2}$")
-    if hhmmss_re.match(time_str):
-        h, m, s = time_str.split(":")
-        return int(h) * 3600 + int(m) * 60 + int(s)
+    # **CORRECCIÓN PRINCIPAL: Formato minutos:segundos donde minutos puede ser > 59**
+    if ":" in time_str:
+        parts = time_str.split(":")
+        
+        # Si hay exactamente 2 partes y ambas son números
+        if len(parts) == 2 and all(part.strip().isdigit() for part in parts):
+            minutes = int(parts[0])
+            seconds = int(parts[1])
+            return minutes * 60 + seconds
+        
+        # Formato hh:mm:ss
+        elif len(parts) == 3 and all(part.strip().isdigit() for part in parts):
+            hours = int(parts[0])
+            minutes = int(parts[1])
+            seconds = int(parts[2])
+            return hours * 3600 + minutes * 60 + seconds
     
     # Intentar convertir como número de segundos
     try:
@@ -202,8 +208,30 @@ def seconds_to_mmss(x: int) -> str:
 
 
 # -----------------------------------------------------------------------------
-# FUNCIONES ROBUSTAS PARA MANEJO DE FECHAS
+# FUNCIONES ROBUSTAS PARA MANEJO DE FECHAS Y NORMALIZACIÓN
 # -----------------------------------------------------------------------------
+def normalize_header(header):
+    """Normaliza encabezados removiendo tildes, espacios extra y caracteres especiales"""
+    if header is None:
+        return ""
+    header = str(header).strip().upper()
+    # Reemplazar caracteres con tildes
+    replacements = {
+        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U',
+        'À': 'A', 'È': 'E', 'Ì': 'I', 'Ò': 'O', 'Ù': 'U',
+        'Ä': 'A', 'Ë': 'E', 'Ï': 'I', 'Ö': 'O', 'Ü': 'U',
+        'Ñ': 'N'
+    }
+    for old, new in replacements.items():
+        header = header.replace(old, new)
+    # Remover espacios extra y caracteres no ASCII
+    header = ''.join(char for char in header if ord(char) < 128)
+    header = header.replace(' ', '_').replace('-', '_')
+    # Remover múltiples guiones bajos consecutivos
+    while '__' in header:
+        header = header.replace('__', '_')
+    return header
+
 def safe_convert_date(date_str):
     """
     Convierte strings de fecha en objetos date, manejando múltiples formatos.
@@ -1359,7 +1387,7 @@ TEMPLATES = {
         "FECHA_CREACION","FECHA_INICIO","FECHA_TERMINO","FECHA_APROBACION","ESTADO","COMENTARIO"
     ],
     "desviaciones": [
-        "N_SOLICITUD","FECHA","ID","EMPRESA_CONTRATISTA","DESCRIPCIÓN_PROBLEMA","TIPO_RIESGO",
+        "N_SOLICITUD","FECHA","ID","EMPRESA_CONTRATISTA","DESCRIPCION_PROBLEMA","TIPO_RIESGO",
         "TIPO_SOLICITUD","PABELLON","HABITACION","VIA_SOLICITUD","QUIEN_INFORMA","RIESGO_MATERIAL","CORREO_DESTINO"
     ],
     "solicitud_ot": [
@@ -1420,10 +1448,13 @@ def import_xlsx(entity):
     try:
         wb = load_workbook(filename=io.BytesIO(f.read()), data_only=True)
         ws = wb.active
-        headers = [str(c.value).strip().upper() if c.value is not None else "" for c in next(ws.iter_rows(min_row=1, max_row=1))]
-        expected = TEMPLATES[entity]
+        
+        # **CORRECCIÓN: Normalizar encabezados para manejar tildes y caracteres especiales**
+        headers = [normalize_header(c.value) for c in next(ws.iter_rows(min_row=1, max_row=1))]
+        expected = [normalize_header(h) for h in TEMPLATES[entity]]
+        
         if headers != expected:
-            flash(f"Encabezados inválidos. Esperado: {', '.join(expected)}")
+            flash(f"Encabezados inválidos. Esperado: {', '.join(TEMPLATES[entity])}")
             return redirect(url_for("panel", tab=entity if entity != "eventos" else "eventos"))
 
         inserted = 0
