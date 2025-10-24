@@ -1,9 +1,11 @@
 Flask==3.0.3
-gunicorn==22.0.0
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.36
+gunicorn==21.2.0
 
-# BD
-SQLAlchemy==2.0.34
-psycopg2-binary==2.9.11
-greenlet==3.2.4
-typing-extensions>=4.8.0
-openpyxl==3.1.5
+# Para importación Excel (usadas por /import y /template-xlsx)
+pandas==2.2.2
+openpyxl==3.1.2
+
+# Opcional pero útil
+python-dotenv==1.0.1
