@@ -54,7 +54,7 @@
       <p class="mb-0">No se encontraron datos para el rango o semana seleccionada.</p>
     </div>
   {% else %}
-    <!-- Tarjetas de Resumen -->
+    <!-- Tarjetas de Resumen - TODOS LOS MÓDULOS -->
     <div class="row mb-4">
       <div class="col-md-2 col-6 mb-3">
         <div class="stats-card border-primary">
@@ -96,6 +96,84 @@
           <i class="fas fa-clock text-secondary"></i>
           <div class="number text-secondary">{{ cards.atencion_tiempo_prom_global }}</div>
           <div class="label">Tiempo Promedio</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Segunda fila de tarjetas -->
+    <div class="row mb-4">
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-primary">
+          <i class="fas fa-exclamation-triangle text-primary"></i>
+          <div class="number text-primary">{{ cards.robos_total }}</div>
+          <div class="label">Robos/Hurtos</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-warning">
+          <i class="fas fa-tools text-warning"></i>
+          <div class="number text-warning">{{ cards.miscelaneo_total }}</div>
+          <div class="label">Misceláneo</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-info">
+          <i class="fas fa-random text-info"></i>
+          <div class="number text-info">{{ cards.desviaciones_total }}</div>
+          <div class="label">Desviaciones</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-success">
+          <i class="fas fa-clipboard-list text-success"></i>
+          <div class="number text-success">{{ cards.solicitudes_ot_total }}</div>
+          <div class="label">Solicitudes OT</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-danger">
+          <i class="fas fa-comments text-danger"></i>
+          <div class="number text-danger">{{ cards.reclamos_total }}</div>
+          <div class="label">Reclamos</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-secondary">
+          <i class="fas fa-bell text-secondary"></i>
+          <div class="number text-secondary">{{ cards.alarmas_total }}</div>
+          <div class="label">Alarmas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tercera fila de tarjetas -->
+    <div class="row mb-4">
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-primary">
+          <i class="fas fa-calendar-plus text-primary"></i>
+          <div class="number text-primary">{{ cards.extensiones_total }}</div>
+          <div class="label">Extensiones</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-warning">
+          <i class="fas fa-user-plus text-warning"></i>
+          <div class="number text-warning">{{ cards.onboarding_total }}</div>
+          <div class="label">Onboarding</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-info">
+          <i class="fas fa-door-open text-info"></i>
+          <div class="number text-info">{{ cards.apertura_total }}</div>
+          <div class="label">Aperturas</div>
+        </div>
+      </div>
+      <div class="col-md-2 col-6 mb-3">
+        <div class="stats-card border-success">
+          <i class="fas fa-check-circle text-success"></i>
+          <div class="number text-success">{{ cards.cumplimiento_total }}</div>
+          <div class="label">Cumplimiento</div>
         </div>
       </div>
     </div>
@@ -176,6 +254,34 @@
           <div class="card-body">
             <div class="chart-container">
               <canvas id="tiempoAtencionChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos adicionales para los nuevos módulos -->
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Robos y Hurtos</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="robosChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Activaciones de Alarma</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="alarmasChart"></canvas>
             </div>
           </div>
         </div>
@@ -296,6 +402,38 @@
             backgroundColor: 'rgba(108, 117, 125, 0.1)',
             tension: 0.4,
             fill: true
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Robos y Hurtos
+      new Chart(document.getElementById('robosChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Robos y Hurtos',
+            data: series.robos,
+            backgroundColor: 'rgba(253, 126, 20, 0.8)',
+            borderColor: 'rgba(253, 126, 20, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Alarmas
+      new Chart(document.getElementById('alarmasChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Activaciones de Alarma',
+            data: series.alarmas,
+            backgroundColor: 'rgba(111, 66, 193, 0.8)',
+            borderColor: 'rgba(111, 66, 193, 1)',
+            borderWidth: 1
           }]
         },
         options: chartOptions
