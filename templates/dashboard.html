@@ -178,7 +178,7 @@
       </div>
     </div>
 
-    <!-- Gráficos -->
+    <!-- Primera fila de gráficos -->
     <div class="row">
       <div class="col-lg-6 mb-4">
         <div class="card">
@@ -206,6 +206,7 @@
       </div>
     </div>
 
+    <!-- Segunda fila de gráficos -->
     <div class="row">
       <div class="col-lg-6 mb-4">
         <div class="card">
@@ -233,6 +234,7 @@
       </div>
     </div>
 
+    <!-- Tercera fila de gráficos -->
     <div class="row">
       <div class="col-lg-6 mb-4">
         <div class="card">
@@ -260,7 +262,7 @@
       </div>
     </div>
 
-    <!-- Gráficos adicionales para los nuevos módulos -->
+    <!-- Cuarta fila de gráficos -->
     <div class="row">
       <div class="col-lg-6 mb-4">
         <div class="card">
@@ -277,11 +279,123 @@
       <div class="col-lg-6 mb-4">
         <div class="card">
           <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Registros Misceláneos</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="miscelaneoChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quinta fila de gráficos -->
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-random me-2"></i>Desviaciones</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="desviacionesChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Solicitudes OT</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="solicitudesOtChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sexta fila de gráficos -->
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Reclamos de Usuarios</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="reclamosChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
             <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Activaciones de Alarma</h5>
           </div>
           <div class="card-body">
             <div class="chart-container">
               <canvas id="alarmasChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Séptima fila de gráficos -->
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Extensiones y Excepciones</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="extensionesChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Registros Onboarding</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="onboardingChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Octava fila de gráficos -->
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-door-open me-2"></i>Aperturas de Habitación</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="aperturaChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Cumplimiento EECC</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="cumplimientoChart"></canvas>
             </div>
           </div>
         </div>
@@ -423,6 +537,70 @@
         options: chartOptions
       });
 
+      // Gráfico de Misceláneo
+      new Chart(document.getElementById('miscelaneoChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Registros Misceláneos',
+            data: series.miscelaneo,
+            backgroundColor: 'rgba(108, 117, 125, 0.8)',
+            borderColor: 'rgba(108, 117, 125, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Desviaciones
+      new Chart(document.getElementById('desviacionesChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Desviaciones',
+            data: series.desviaciones,
+            backgroundColor: 'rgba(40, 167, 69, 0.8)',
+            borderColor: 'rgba(40, 167, 69, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Solicitudes OT
+      new Chart(document.getElementById('solicitudesOtChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Solicitudes OT',
+            data: series.solicitudes_ot,
+            backgroundColor: 'rgba(0, 123, 255, 0.8)',
+            borderColor: 'rgba(0, 123, 255, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Reclamos
+      new Chart(document.getElementById('reclamosChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Reclamos de Usuarios',
+            data: series.reclamos,
+            backgroundColor: 'rgba(220, 53, 69, 0.8)',
+            borderColor: 'rgba(220, 53, 69, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
       // Gráfico de Alarmas
       new Chart(document.getElementById('alarmasChart'), {
         type: 'bar',
@@ -433,6 +611,70 @@
             data: series.alarmas,
             backgroundColor: 'rgba(111, 66, 193, 0.8)',
             borderColor: 'rgba(111, 66, 193, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Extensiones
+      new Chart(document.getElementById('extensionesChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Extensiones y Excepciones',
+            data: series.extensiones,
+            backgroundColor: 'rgba(255, 193, 7, 0.8)',
+            borderColor: 'rgba(255, 193, 7, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Onboarding
+      new Chart(document.getElementById('onboardingChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Registros Onboarding',
+            data: series.onboarding,
+            backgroundColor: 'rgba(23, 162, 184, 0.8)',
+            borderColor: 'rgba(23, 162, 184, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Apertura
+      new Chart(document.getElementById('aperturaChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Aperturas de Habitación',
+            data: series.apertura,
+            backgroundColor: 'rgba(111, 66, 193, 0.8)',
+            borderColor: 'rgba(111, 66, 193, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: chartOptions
+      });
+
+      // Gráfico de Cumplimiento
+      new Chart(document.getElementById('cumplimientoChart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Cumplimiento EECC',
+            data: series.cumplimiento,
+            backgroundColor: 'rgba(253, 126, 20, 0.8)',
+            borderColor: 'rgba(253, 126, 20, 1)',
             borderWidth: 1
           }]
         },
