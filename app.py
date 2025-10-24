@@ -301,7 +301,8 @@ class ActivacionAlarmaEntry(Base):
     __tablename__ = "activacion_alarma"
     id = Column(Integer, primary_key=True)
     modulo = Column(String(100), nullable=True)
-    habitacion = Column(String(100), nullable=True)
+    # 👇 mapear a la columna existente n_habitacion
+    habitacion = Column("n_habitacion", String(100), nullable=True)
     nombre_recepcionista = Column(String(200), nullable=True)
     fecha = Column(Date, nullable=False)
     empresa = Column(String(200), nullable=True)
@@ -315,7 +316,7 @@ class ActivacionAlarmaEntry(Base):
     tipo_evento = Column(String(200), nullable=True)
     tipo_actividad = Column(String(200), nullable=True)
     fecha_reporte = Column(Date, nullable=True)
-    turno_recepcion = Column(String(200), nullable=True)  # Turno Recepción / Ingresos
+    turno_recepcion = Column(String(200), nullable=True)
     observaciones = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
