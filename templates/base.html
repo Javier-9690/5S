@@ -1,235 +1,115 @@
 <!doctype html>
-<html lang="es" data-bs-theme="light">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sistema de Gestión, Campamento 5400</title>
-
-  <!-- Bootstrap 5.3 -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-    crossorigin="anonymous"
-  />
-
-  <style>
-    :root{
-      --border-color:#e5e7eb;
-    }
-    body{ background-color:#f7f7f8; }
-
-    /* Header con logos + título principal (se mantiene) */
-    .app-header{
-      position: sticky; top:0; z-index:1030;
-      background:#ffffff; border-bottom:1px solid var(--border-color);
-    }
-    .brand-strip{
-      display:grid; grid-template-columns: 1fr auto 1fr; align-items:center;
-      gap:12px; padding:10px 18px; max-width:1500px; margin:0 auto;
-    }
-    .brand-left{ justify-self:start; }
-    .brand-center{ justify-self:center; }
-    .brand-right{ justify-self:end; }
-    .logo-escondida{height:36px; object-fit:contain;}
-    .logo-aramark{height:58px; object-fit:contain;}
-    .app-title{
-      font-weight:800; font-size:28px; letter-spacing:0.2px; text-align:center; margin:0; color:#0f172a;
-    }
-
-    /* Layout con sidebar */
-    .app-shell{
-      max-width:1500px; margin:20px auto; padding:0 12px;
-      display:grid; grid-template-columns: 280px 1fr; gap:16px;
-    }
-    @media (max-width: 992px){
-      .app-shell{ grid-template-columns: 1fr; }
-    }
-
-    .sidebar {
-      position: sticky; top:92px; align-self:start;
-    }
-
-    .content-card{
-      background:#fff; border:1px solid var(--border-color); border-radius:.75rem;
-      box-shadow:0 2px 10px rgba(0,0,0,.06);
-    }
-
-    .muted{ color:#6b7280; font-size:.95rem; }
-    footer{ text-align:center; color:#9ca3af; padding:16px; font-size:12px; margin-top:16px; }
-
-    /* ==== Ajuste de tamaños de títulos internos ==== */
-    /* Títulos de páginas dentro del contenido (p.ej. "Panel de ingreso") */
-    .content-card h1{
-      font-size: 1.5rem;           /* antes ~2rem */
-      line-height: 1.2;
-      margin-bottom: .75rem;
-      font-weight: 700;
-    }
-    /* Subtítulos/secciones (p.ej. "Atención al público") */
-    .content-card h2{
-      font-size: 1.1rem;           /* antes ~1.375rem */
-      line-height: 1.3;
-      margin-top: .25rem;
-      margin-bottom: .75rem;
-      font-weight: 700;
-      color: #334155;              /* Slate-700 */
-    }
-
-    /* ==== Estilo azul para el botón "Elegir archivo" de inputs type="file" ==== */
-    input[type="file"]{
-      /* Mantén ancho completo como el resto de controles */
-      width: 100%;
-    }
-    /* Navegadores modernos */
-    input[type="file"]::file-selector-button{
-      border: none;
-      border-radius: .5rem;
-      padding: .5rem .9rem;
-      margin-right: .75rem;
-      background-color: var(--bs-primary);
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    input[type="file"]::file-selector-button:hover{
-      filter: brightness(.95);
-    }
-    input[type="file"]::file-selector-button:active{
-      filter: brightness(.9);
-    }
-    input[type="file"]:focus-visible{
-      outline: none;
-      box-shadow: 0 0 0 .25rem rgba(13,110,253,.25); /* foco estilo Bootstrap */
-      border-radius: .5rem;
-    }
-    /* Fallback WebKit (Safari/antiguos) */
-    input[type="file"]::-webkit-file-upload-button{
-      border: none;
-      border-radius: .5rem;
-      padding: .5rem .9rem;
-      margin-right: .75rem;
-      background-color: var(--bs-primary);
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    input[type="file"]::-webkit-file-upload-button:hover{
-      filter: brightness(.95);
-    }
-    input[type="file"]::-webkit-file-upload-button:active{
-      filter: brightness(.9);
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Header -->
-  <header class="app-header">
-    <div class="brand-strip">
-      <div class="brand-left">
-        <img src="{{ url_for('static', filename='Escondida.png') }}" alt="Escondida" class="logo-escondida" />
-      </div>
-      <div class="brand-center">
-        <h1 class="app-title">Sistema de Gestión, Campamento 5400</h1>
-      </div>
-      <div class="brand-right">
-        <img src="{{ url_for('static', filename='Aramark.png') }}" alt="Aramark" class="logo-aramark" />
-      </div>
-    </div>
-  </header>
-
-  <!-- Layout -->
-  <div class="app-shell">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="card">
-        <div class="card-body pb-2">
-          <h6 class="card-title mb-3">Panel</h6>
-          <div class="list-group">
-            <!-- Módulos base -->
-            <a href="{{ url_for('panel', tab='censo') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='censo' }}">Censo</a>
-            <a href="{{ url_for('panel', tab='eventos') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='eventos' }}">Eventos de seguridad</a>
-            <a href="{{ url_for('panel', tab='duplicidades') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='duplicidades' }}">Duplicidades</a>
-            <a href="{{ url_for('panel', tab='encuesta') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='encuesta' }}">Encuesta de satisfacción</a>
-            <a href="{{ url_for('panel', tab='atencion') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='atencion' }}">Atención al público</a>
-
-            <!-- Nuevos módulos existentes en tu app -->
-            <div class="mt-2 border-top"></div>
-            <a href="{{ url_for('panel', tab='robos') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='robos' }}">Robos y hurtos</a>
-            <a href="{{ url_for('panel', tab='miscelaneo') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='miscelaneo' }}">Misceláneo</a>
-            <a href="{{ url_for('panel', tab='desviaciones') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='desviaciones' }}">Desviaciones</a>
-            <a href="{{ url_for('panel', tab='solicitud_ot') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='solicitud_ot' }}">Solicitud y OT de usuario</a>
-            <a href="{{ url_for('panel', tab='reclamos') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='reclamos' }}">Reclamos de usuarios</a>
-
-            <!-- Navegación -->
-            <div class="mt-2 border-top"></div>
-            <a href="{{ url_for('registros') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='registros' }}">Registros</a>
-            <a href="{{ url_for('dashboard') }}" class="list-group-item list-group-item-action {{ 'active' if current_tab=='dashboard' }}">Dashboard</a>
+<html lang="es">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Sistema de Gestión, Campamento 5400</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      :root{
+        --brand-blue:#0d6efd;
+      }
+      .app-title{
+        font-weight:800; font-size:1.6rem; letter-spacing:.2px; color:#0f172a;
+      }
+      .page-wrap{max-width:1500px; margin:20px auto; padding:0 12px;}
+      .sidebar .list-group-item.active{background:var(--brand-blue); border-color:var(--brand-blue);}
+      /* Títulos más discretos */
+      h1.h1-tight{font-size:1.35rem; font-weight:800; margin-bottom:.35rem;}
+      h2.h2-tight{font-size:1.05rem; font-weight:700; margin:.75rem 0 .35rem;}
+      /* File input con estilo azul */
+      .btn-file {
+        position: relative; overflow: hidden;
+      }
+      .btn-file input[type=file]{
+        position:absolute; top:0; right:0; min-width:100%; min-height:100%;
+        font-size:100px; text-align:right; filter:alpha(opacity=0);
+        opacity:0; outline:none; background:white; cursor:inherit; display:block;
+      }
+      .file-chosen{font-size:.875rem; color:#6c757d; margin-left:.5rem;}
+      .table thead th{white-space:nowrap;}
+      .logo-escondida{height:36px; object-fit:contain;}
+      .logo-aramark{height:58px; object-fit:contain;}
+    </style>
+  </head>
+  <body class="bg-light">
+    <header class="bg-white border-bottom sticky-top">
+      <div class="container-fluid py-2">
+        <div class="d-grid" style="grid-template-columns:1fr auto 1fr; align-items:center;">
+          <div class="text-start">
+            <img src="{{ url_for('static', filename='Escondida.png') }}" class="logo-escondida" alt="Escondida">
+          </div>
+          <div class="text-center">
+            <div class="app-title">Sistema de Gestión, Campamento 5400</div>
+          </div>
+          <div class="text-end">
+            <img src="{{ url_for('static', filename='Aramark.png') }}" class="logo-aramark" alt="Aramark">
           </div>
         </div>
       </div>
-    </aside>
+    </header>
 
-    <!-- Main content -->
-    <main>
-      <div class="content-card p-3 p-lg-4">
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            {% for m in messages %}
-              <div class="alert alert-warning d-flex align-items-center" role="alert">
-                <div>{{ m }}</div>
+    <div class="page-wrap">
+      <div class="row g-3">
+        <aside class="col-12 col-md-3 col-lg-3">
+          <div class="card sidebar">
+            <div class="card-body">
+              <div class="fw-bold mb-2">Panel</div>
+              <div class="list-group">
+                <!-- Módulos base -->
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='censo' }}" href="{{ url_for('panel', tab='censo') }}">Censo</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='eventos' }}" href="{{ url_for('panel', tab='eventos') }}">Eventos de seguridad</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='duplicidades' }}" href="{{ url_for('panel', tab='duplicidades') }}">Duplicidades</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='encuesta' }}" href="{{ url_for('panel', tab='encuesta') }}">Encuesta de satisfacción</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='atencion' }}" href="{{ url_for('panel', tab='atencion') }}">Atención al público</a>
+                <!-- Módulos previos -->
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='robos' }}" href="{{ url_for('panel', tab='robos') }}">Robos y hurtos</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='miscelaneo' }}" href="{{ url_for('panel', tab='miscelaneo') }}">Misceláneo</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='desviaciones' }}" href="{{ url_for('panel', tab='desviaciones') }}">Desviaciones</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='solicitud_ot' }}" href="{{ url_for('panel', tab='solicitud_ot') }}">Solicitud y OT de usuario</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='reclamos' }}" href="{{ url_for('panel', tab='reclamos') }}">Reclamos de usuarios</a>
+                <!-- CINCO NUEVOS -->
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='activacion_alarma' }}" href="{{ url_for('panel', tab='activacion_alarma') }}">Activación de alarma</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='extension_excepcion' }}" href="{{ url_for('panel', tab='extension_excepcion') }}">Extensión y excepción</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='onboarding' }}" href="{{ url_for('panel', tab='onboarding') }}">Registro Onboarding</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='apertura_habitacion' }}" href="{{ url_for('panel', tab='apertura_habitacion') }}">Apertura de habitación</a>
+                <a class="list-group-item list-group-item-action {{ 'active' if current_tab=='eecc' }}" href="{{ url_for('panel', tab='eecc') }}">Cumplimiento EECC</a>
+                <!-- Navegación -->
+                <a class="list-group-item list-group-item-action" href="{{ url_for('registros') }}">Registros</a>
+                <a class="list-group-item list-group-item-action" href="{{ url_for('dashboard') }}">Dashboard</a>
               </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+            </div>
+          </div>
+        </aside>
 
-        {% block content %}{% endblock %}
+        <main class="col-12 col-md-9 col-lg-9">
+          {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              {% for m in messages %}
+                <div class="alert alert-warning">{{ m }}</div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+          {% block content %}{% endblock %}
+        </main>
       </div>
-    </main>
-  </div>
 
-  <footer>Diseñado por Javier Rivera</footer>
+      <footer class="text-center text-muted small mt-3">Diseñado por Javier Rivera</footer>
+    </div>
 
-  <!-- Bootstrap JS -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-9NDLpmYxwY8f5m7wI0l4q7C3m8V0a2d0E0m0GQJf7M6mD2Jd0qgkqkXlC8ZK6j5M"
-    crossorigin="anonymous"></script>
-
-  <!-- Auto-mejora: aplica estilos Bootstrap a formularios, tablas y botones ya existentes sin tocar tus plantillas -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Inputs / selects / textareas -> form-control
-      document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], input[type="time"], input[type="datetime-local"], select, textarea')
-        .forEach(el => {
-          if (!el.classList.contains('form-control')) el.classList.add('form-control');
-        });
-
-      // Botones: tu código usa .btn. Los convertimos a Bootstrap .btn.btn-primary
-      document.querySelectorAll('button.btn, a.btn').forEach(el => {
-        el.classList.add('btn-primary');
-      });
-
-      // Tablas: aplicar tabla Bootstrap si no tienen clases
-      document.querySelectorAll('table').forEach(tb => {
-        tb.classList.add('table','table-sm','table-hover','table-striped','align-middle');
-        if (!tb.closest('.table-responsive')) {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'table-responsive';
-          tb.parentNode.insertBefore(wrapper, tb);
-          wrapper.appendChild(tb);
+    <script>
+      // Mostrar nombre del archivo elegido junto al botón azul
+      document.addEventListener('change', e=>{
+        if(e.target.matches('input[type=file]')){
+          const span = e.target.closest('.btn-file')?.parentElement?.querySelector('.file-chosen');
+          if(span) span.textContent = e.target.files?.[0]?.name || '';
         }
       });
-
-      // Un poco de aire bajo el botón aplicar
-      document.querySelectorAll('form .btn[type="submit"]').forEach(btn => {
-        btn.classList.add('mt-1');
-      });
-    });
-  </script>
-</body>
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>
+
 
 
 
