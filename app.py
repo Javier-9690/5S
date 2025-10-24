@@ -312,13 +312,13 @@ class ActivacionAlarmaEntry(Base):
     co = Column(String(100), nullable=True)
 
     # BD: aviso_mantencion       → Atributo Python: aviso_mantencion_horas
-    aviso_mantencion_horas = Column("aviso_mantencion", Float, nullable=True)
+    aviso_mantencion_horas = Column("aviso_mantencion_h", Float, nullable=True)
     # BD: llegada_mantencion     → Atributo Python: llegada_mantencion_horas
-    llegada_mantencion_horas = Column("llegada_mantencion", Float, nullable=True)
+    llegada_mantencion_horas = Column("llegada_mantencion_h", Float, nullable=True)
     # BD: aviso_lider            → Atributo Python: aviso_lider_horas
-    aviso_lider_horas = Column("aviso_lider", Float, nullable=True)
+    aviso_lider_horas = Column("aviso_lider_h", Float, nullable=True)
     # BD: llegada_lider          → Atributo Python: llegada_lider_horas
-    llegada_lider_horas = Column("llegada_lider", Float, nullable=True)
+    llegada_lider_horas = Column("llegada_lider_h", Float, nullable=True)
 
     hora_reporte_salfa = Column(Time, nullable=True)
     tipo_evento = Column(String(200), nullable=True)
