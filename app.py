@@ -1402,11 +1402,11 @@ TEMPLATES = {
     ],
 
     # --------- NUEVOS 5 ---------
-    "alarmas": [
-        "MODULO","N_HABITACION","NOMBRE_RECEPCIONISTA","FECHA","EMPRESA","ID","CO",
-        "AVISO_MANTENCION_H","LLEGADA_MANTENCION_H","AVISO_LIDER_H","LLEGADA_LIDER_H",
-        "HORA_REPORTE_SALFA","TIPO_EVENTO","TIPO_ACTIVIDAD","FECHA_REPORTE",
-        "TURNO_RECEPCION_INGRESOS","OBSERVACIONES"
+   "alarmas": [
+    "MODULO", "N_HABITACION", "NOMBRE_RECEPCIONISTA", "FECHA", "EMPRESA", "ID", "CO",
+    "AVISO_MANTENCION_H", "LLEGADA_MANTENCION_H", "AVISO_LIDER_H", "LLEGADA_LIDER_H",
+    "HORA_REPORTE_SALFA", "TIPO_EVENTO", "TIPO_ACTIVIDAD", "FECHA_REPORTE",
+    "TURNO_RECEPCION_INGRESOS", "OBSERVACIONES"  # <-- Asegúrate de que OBSERVACIONES esté aquí
     ],
     "extensiones": [
         "FECHA_SOLICITUD","ID","EMPRESA","CO","GERENCIA","PROYECTO","CANT_CLIENTES",
@@ -1423,15 +1423,55 @@ def template_xlsx(entity):
     if entity not in TEMPLATES:
         flash("Entidad no válida para plantilla.")
         return redirect(url_for("panel", tab="censo"))
+    
     wb = Workbook()
     ws = wb.active
     ws.title = "Plantilla"
-    ws.append(TEMPLATES[entity])
+    
+    # Obtener los encabezados exactos para esta entidad
+    headers = TEMPLATES[entity]
+    
+    # **CORRECCIÓN: Asegurar que la columna OBSERVACIONES esté presente para alarmas**
+    if entity == "alarmas" and "OBSERVACIONES" not in headers:
+        headers.append("OBSERVACIONES")
+    
+    # Escribir los encabezados
+    ws.append(headers)
+    
+    # **CORRECCIÓN: Para alarmas, agregar una fila de ejemplo con el formato correcto**
+    if entity == "alarmas":
+        # Fila de ejemplo con datos de muestra
+        example_row = [
+            "5",                    # MODULO
+            "Hall central",         # N_HABITACION  
+            "Marta Montenegro",     # NOMBRE_RECEPCIONISTA
+            "2025-10-15",           # FECHA (formato YYYY-MM-DD)
+            "Empresa Ejemplo",      # EMPRESA
+            "GC123456",             # ID
+            "CO123",                # CO
+            0.5,                    # AVISO_MANTENCION_H (formato decimal Excel)
+            0.75,                   # LLEGADA_MANTENCION_H (formato decimal Excel)
+            0.5,                    # AVISO_LIDER_H (formato decimal Excel)
+            0.75,                   # LLEGADA_LIDER_H (formato decimal Excel)
+            "15:30",                # HORA_REPORTE_SALFA (formato HH:MM)
+            "Polvo",                # TIPO_EVENTO
+            "Silenciar",            # TIPO_ACTIVIDAD
+            "2025-10-15",           # FECHA_REPORTE (formato YYYY-MM-DD)
+            "DIA",                  # TURNO_RECEPCION_INGRESOS
+            "Observación de ejemplo" # OBSERVACIONES
+        ]
+        ws.append(example_row)
+    
     out = io.BytesIO()
-    wb.save(out); out.seek(0)
-    return send_file(out, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                     as_attachment=True, download_name=f"plantilla_{entity}.xlsx")
-
+    wb.save(out)
+    out.seek(0)
+    
+    return send_file(
+        out, 
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True, 
+        download_name=f"plantilla_{entity}.xlsx"
+    )
 
 @app.post("/import/<string:entity>")
 def import_xlsx(entity):
