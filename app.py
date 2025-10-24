@@ -131,6 +131,104 @@ def seconds_to_mmss(x: int) -> str:
 
 
 # -----------------------------------------------------------------------------
+# FUNCIONES ROBUSTAS PARA MANEJO DE FECHAS
+# -----------------------------------------------------------------------------
+def safe_convert_date(date_str):
+    """
+    Convierte strings de fecha en objetos date, manejando múltiples formatos.
+    """
+    if not date_str or str(date_str).strip() == "":
+        return None
+    
+    date_str = str(date_str).strip()
+    
+    # Si ya es un objeto date, retornarlo
+    if isinstance(date_str, date):
+        return date_str
+    
+    # Si es un objeto datetime, extraer la fecha
+    if isinstance(date_str, datetime):
+        return date_str.date()
+    
+    # Lista de formatos a probar
+    formats = [
+        '%Y-%m-%d',          # 2025-10-01
+        '%d/%m/%Y',          # 01/10/2025
+        '%d-%m-%Y',          # 01-10-2025
+        '%Y/%m/%d',          # 2025/10/01
+        '%Y-%m-%d %H:%M:%S', # 2025-10-01 00:00:00
+        '%d/%m/%Y %H:%M:%S', # 01/10/2025 00:00:00
+        '%d-%m-%Y %H:%M:%S', # 01-10-2025 00:00:00
+        '%Y/%m/%d %H:%M:%S', # 2025/10/01 00:00:00
+        '%Y-%m-%d %H:%M',    # 2025-10-01 00:00
+        '%d/%m/%Y %H:%M',    # 01/10/2025 00:00
+        '%d-%m-%Y %H:%M',    # 01-10-2025 00:00
+        '%Y/%m/%d %H:%M',    # 2025/10/01 00:00
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
+    
+    # Si ninguno funciona, intentar con fromisoformat para formatos estándar
+    try:
+        return date.fromisoformat(date_str.split(' ')[0])  # Tomar solo la parte de la fecha
+    except ValueError:
+        pass
+    
+    raise ValueError(f"No se pudo convertir la fecha: {date_str}")
+
+def safe_convert_datetime(datetime_str):
+    """
+    Convierte strings de fecha/hora en objetos datetime, manejando múltiples formatos.
+    """
+    if not datetime_str or str(datetime_str).strip() == "":
+        return None
+    
+    datetime_str = str(datetime_str).strip()
+    
+    # Si ya es un objeto datetime, retornarlo
+    if isinstance(datetime_str, datetime):
+        return datetime_str
+    
+    # Lista de formatos a probar
+    formats = [
+        '%Y-%m-%d %H:%M:%S',    # 2025-10-01 14:30:00
+        '%d/%m/%Y %H:%M:%S',    # 01/10/2025 14:30:00
+        '%d-%m-%Y %H:%M:%S',    # 01-10-2025 14:30:00
+        '%Y/%m/%d %H:%M:%S',    # 2025/10/01 14:30:00
+        '%Y-%m-%d %H:%M',       # 2025-10-01 14:30
+        '%d/%m/%Y %H:%M',       # 01/10/2025 14:30
+        '%d-%m-%Y %H:%M',       # 01-10-2025 14:30
+        '%Y/%m/%d %H:%M',       # 2025/10/01 14:30
+        '%Y-%m-%d',             # 2025-10-01 (hora 00:00:00)
+        '%d/%m/%Y',             # 01/10/2025 (hora 00:00:00)
+        '%d-%m-%Y',             # 01-10-2025 (hora 00:00:00)
+        '%Y/%m/%d',             # 2025/10/01 (hora 00:00:00)
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.strptime(datetime_str, fmt)
+        except ValueError:
+            continue
+    
+    # Si ninguno funciona, intentar con fromisoformat
+    try:
+        if 'T' in datetime_str:
+            return datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
+        else:
+            # Intentar agregar hora si solo es fecha
+            return datetime.strptime(datetime_str + ' 00:00:00', '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        pass
+    
+    raise ValueError(f"No se pudo convertir la fecha/hora: {datetime_str}")
+
+
+# -----------------------------------------------------------------------------
 # Modelos (tablas)
 # -----------------------------------------------------------------------------
 class CensusEntry(Base):
@@ -411,7 +509,7 @@ def panel():
         if request.method == "POST":
             # -------------------- CENSO --------------------
             if tab == "censo":
-                fecha = date.fromisoformat(request.form["fecha"])
+                fecha = safe_convert_date(request.form["fecha"])
                 cd = int(request.form.get("censo_dia", 0) or 0)
                 cn = int(request.form.get("censo_noche", 0) or 0)
                 total = int(request.form.get("total", cd + cn) or (cd + cn))
@@ -420,7 +518,7 @@ def panel():
 
             # -------------------- EVENTOS --------------------
             elif tab == "eventos":
-                fecha = date.fromisoformat(request.form["fecha"])
+                fecha = safe_convert_date(request.form["fecha"])
                 horario = request.form.get("horario", "").strip()
                 que = request.form.get("que_ocurrio", "").strip()
                 nom = request.form.get("nombre_afectado", "").strip()
@@ -432,7 +530,7 @@ def panel():
             # -------------------- DUPLICIDADES --------------------
             elif tab == "duplicidades":
                 semana = int(request.form["semana"])
-                fecha = date.fromisoformat(request.form["fecha"])
+                fecha = safe_convert_date(request.form["fecha"])
                 rec = DuplicidadEntry(
                     semana=semana,
                     fecha=fecha,
@@ -448,16 +546,14 @@ def panel():
                     estatus=request.form.get("estatus", "").strip(),
                     notificacion_usuario=request.form.get("notificacion_usuario", "").strip(),
                     plan_accion=request.form.get("plan_accion", "").strip(),
-                    fecha_cierre=(date.fromisoformat(request.form["fecha_cierre"])
-                                  if request.form.get("fecha_cierre") else None),
+                    fecha_cierre=safe_convert_date(request.form.get("fecha_cierre")),
                 )
                 db.add(rec); db.commit(); flash("Duplicidad guardada.")
 
             # -------------------- ENCUESTA --------------------
             elif tab == "encuesta":
                 fh_raw = request.form.get("fecha_hora")
-                if "T" in fh_raw: fecha_hora = datetime.fromisoformat(fh_raw)
-                else: fecha_hora = datetime.fromisoformat(fh_raw.replace(" ", "T"))
+                fecha_hora = safe_convert_datetime(fh_raw)
                 vals = {}
                 total = 0; n = 0
                 for i in range(1,6):
@@ -482,7 +578,7 @@ def panel():
 
             # -------------------- ATENCIÓN --------------------
             elif tab == "atencion":
-                fecha = date.fromisoformat(request.form["fecha"])
+                fecha = safe_convert_date(request.form["fecha"])
                 mmss = request.form.get("tiempo_promedio", "").strip()
                 if mmss and not TIME_RE.match(mmss):
                     flash("Tiempo promedio debe ser mm:ss (ej: 03:54)")
@@ -493,7 +589,7 @@ def panel():
 
             # -------------------- ROBOS / HURTOS --------------------
             elif tab == "robos":
-                fecha = date.fromisoformat(request.form["fecha"])
+                fecha = safe_convert_date(request.form["fecha"])
                 hora = request.form.get("hora", "00:00")
                 hora_obj = datetime.strptime(hora, "%H:%M").time()
                 rec = RoboHurtoEntry(
@@ -512,8 +608,6 @@ def panel():
 
             # -------------------- MISCELÁNEO --------------------
             elif tab == "miscelaneo":
-                def dparse(v):
-                    return date.fromisoformat(v) if v else None
                 rec = MiscelaneoEntry(
                     ot=request.form.get("ot","").strip(),
                     division=request.form.get("division","").strip(),
@@ -524,10 +618,10 @@ def panel():
                     especialidad=request.form.get("especialidad","").strip(),
                     falla=request.form.get("falla","").strip(),
                     empresa=request.form.get("empresa","").strip(),
-                    fecha_creacion=dparse(request.form.get("fecha_creacion")),
-                    fecha_inicio=dparse(request.form.get("fecha_inicio")),
-                    fecha_termino=dparse(request.form.get("fecha_termino")),
-                    fecha_aprobacion=dparse(request.form.get("fecha_aprobacion")),
+                    fecha_creacion=safe_convert_date(request.form.get("fecha_creacion")),
+                    fecha_inicio=safe_convert_date(request.form.get("fecha_inicio")),
+                    fecha_termino=safe_convert_date(request.form.get("fecha_termino")),
+                    fecha_aprobacion=safe_convert_date(request.form.get("fecha_aprobacion")),
                     estado=request.form.get("estado","").strip(),
                     comentario=request.form.get("comentario","").strip(),
                 )
@@ -537,7 +631,7 @@ def panel():
             elif tab == "desviaciones":
                 rec = DesviacionEntry(
                     n_solicitud=request.form.get("n_solicitud","").strip(),
-                    fecha=date.fromisoformat(request.form["fecha"]),
+                    fecha=safe_convert_date(request.form["fecha"]),
                     id_interno=request.form.get("id","").strip(),
                     empresa_contratista=request.form.get("empresa_contratista","").strip(),
                     descripcion_problema=request.form.get("descripcion_problema","").strip(),
@@ -570,8 +664,7 @@ def panel():
                     correo_usuario=request.form.get("correo_usuario","").strip(),
                     tipo_tarea=request.form.get("tipo_tarea","").strip(),
                     ot=request.form.get("ot","").strip(),
-                    fecha_inicio=(date.fromisoformat(request.form.get("fecha_inicio"))
-                                  if request.form.get("fecha_inicio") else None),
+                    fecha_inicio=safe_convert_date(request.form.get("fecha_inicio")),
                     estado=request.form.get("estado","").strip(),
                     tiempo_respuesta_sec=to_secs(request.form.get("tiempo_respuesta")),
                     satisfaccion_reclamo=request.form.get("satisfaccion_reclamo","").strip(),
@@ -584,7 +677,7 @@ def panel():
             elif tab == "reclamos":
                 rec = ReclamoUsuarioEntry(
                     n_solicitud=request.form.get("n_solicitud","").strip(),
-                    fecha=date.fromisoformat(request.form["fecha"]),
+                    fecha=safe_convert_date(request.form["fecha"]),
                     id_interno=request.form.get("id","").strip(),
                     empresa_contratista=request.form.get("empresa_contratista","").strip(),
                     descripcion_problema=request.form.get("descripcion_problema","").strip(),
@@ -603,7 +696,7 @@ def panel():
 
             # -------------------- ACTIVACIÓN DE ALARMA --------------------
             elif tab == "alarmas":
-                fecha = date.fromisoformat(request.form["fecha"])
+                fecha = safe_convert_date(request.form["fecha"])
                 def f2t(v):
                     v = (v or "").strip()
                     return datetime.strptime(v, "%H:%M").time() if v else None
@@ -627,8 +720,7 @@ def panel():
                     hora_reporte_salfa=f2t(request.form.get("hora_reporte_salfa")),
                     tipo_evento=request.form.get("tipo_evento","").strip(),
                     tipo_actividad=request.form.get("tipo_actividad","").strip(),
-                    fecha_reporte=(date.fromisoformat(request.form["fecha_reporte"])
-                                   if request.form.get("fecha_reporte") else None),
+                    fecha_reporte=safe_convert_date(request.form.get("fecha_reporte")),
                     turno_recepcion_ingresos=request.form.get("turno_recepcion_ingresos","").strip(),
                     observaciones=request.form.get("observaciones","").strip(),
                 )
@@ -637,15 +729,15 @@ def panel():
             # -------------------- EXTENSIÓN / EXCEPCIÓN --------------------
             elif tab == "extensiones":
                 rec = ExtensionExcepcionEntry(
-                    fecha_solicitud=date.fromisoformat(request.form["fecha_solicitud"]),
+                    fecha_solicitud=safe_convert_date(request.form["fecha_solicitud"]),
                     id_interno=request.form.get("id_interno","").strip(),
                     empresa=request.form.get("empresa","").strip(),
                     co=request.form.get("co","").strip(),
                     gerencia=request.form.get("gerencia","").strip(),
                     proyecto=request.form.get("proyecto","").strip(),
                     cant_clientes=(int(request.form.get("cant_clientes")) if request.form.get("cant_clientes") else None),
-                    desde=(date.fromisoformat(request.form["desde"]) if request.form.get("desde") else None),
-                    hasta=(date.fromisoformat(request.form["hasta"]) if request.form.get("hasta") else None),
+                    desde=safe_convert_date(request.form.get("desde")),
+                    hasta=safe_convert_date(request.form.get("hasta")),
                     aprobador=request.form.get("aprobador","").strip(),
                     observacion=request.form.get("observacion","").strip(),
                 )
@@ -654,7 +746,7 @@ def panel():
             # -------------------- ONBOARDING --------------------
             elif tab == "onboarding":
                 fh_raw = request.form.get("fecha_hora")
-                fecha_hora = datetime.fromisoformat(fh_raw.replace(" ", "T")) if "T" not in fh_raw else datetime.fromisoformat(fh_raw)
+                fecha_hora = safe_convert_datetime(fh_raw)
                 rec = OnboardingEntry(
                     fecha_hora=fecha_hora,
                     nombre=request.form.get("nombre","").strip(),
@@ -671,7 +763,7 @@ def panel():
                     v = (v or "").strip()
                     return datetime.strptime(v, "%H:%M").time() if v else None
                 rec = AperturaHabitacionEntry(
-                    fecha=date.fromisoformat(request.form["fecha"]),
+                    fecha=safe_convert_date(request.form["fecha"]),
                     habitacion=request.form.get("habitacion","").strip(),
                     hora=f2t(request.form.get("hora")),
                     responsable=request.form.get("responsable","").strip(),
@@ -1219,15 +1311,6 @@ def import_xlsx(entity):
         inserted = 0
         db = SessionLocal()
         try:
-            def safe_date(val):
-                if val in (None, ""): return None
-                return date.fromisoformat(str(val))
-
-            def safe_time_hhmm(val):
-                s = ("" if val is None else str(val)).strip()
-                if not s: return time(0, 0)
-                return datetime.strptime(s, "%H:%M").time()
-
             def to_int(v, default=0):
                 try:
                     if v in (None, ""): return default
@@ -1248,14 +1331,14 @@ def import_xlsx(entity):
 
                 # ---------------- existentes ----------------
                 if entity == "censo":
-                    fecha = date.fromisoformat(str(row[0]))
+                    fecha = safe_convert_date(row[0])
                     cd = to_int(row[1]); cn = to_int(row[2])
                     total = to_int(row[3], cd+cn)
                     db.add(CensusEntry(fecha=fecha, censo_dia=cd, censo_noche=cn, total=total))
 
                 elif entity == "eventos":
                     db.add(EventSeguridad(
-                        fecha=date.fromisoformat(str(row[0])),
+                        fecha=safe_convert_date(row[0]),
                         horario=str(row[1] or "").strip(),
                         que_ocurrio=str(row[2] or "").strip(),
                         nombre_afectado=str(row[3] or "").strip(),
@@ -1265,7 +1348,7 @@ def import_xlsx(entity):
                 elif entity == "duplicidades":
                     db.add(DuplicidadEntry(
                         semana=to_int(row[0], 0),
-                        fecha=date.fromisoformat(str(row[1])),
+                        fecha=safe_convert_date(row[1]),
                         id_interno=str(row[2] or "").strip(),
                         empresa_contratista=str(row[3] or "").strip(),
                         descripcion_problema=str(row[4] or "").strip(),
@@ -1278,18 +1361,16 @@ def import_xlsx(entity):
                         estatus=str(row[11] or "").strip(),
                         notificacion_usuario=str(row[12] or "").strip(),
                         plan_accion=str(row[13] or "").strip(),
-                        fecha_cierre=(date.fromisoformat(str(row[14])) if row[14] else None),
+                        fecha_cierre=safe_convert_date(row[14]),
                     ))
 
                 elif entity == "encuesta":
-                    fh_raw = str(row[0])
-                    if "T" in fh_raw: fh = datetime.fromisoformat(fh_raw)
-                    else: fh = datetime.fromisoformat(fh_raw.replace(" ", "T"))
+                    fh_raw = safe_convert_datetime(row[0])
                     def t_int(v):
                         try: return int(v)
                         except: return None
                     db.add(EncuestaEntry(
-                        fecha_hora=fh,
+                        fecha_hora=fh_raw,
                         q1_respuesta=str(row[1] or ""), q1_puntaje=t_int(row[2]),
                         q2_respuesta=str(row[3] or ""), q2_puntaje=t_int(row[4]),
                         q3_respuesta=str(row[5] or ""), q3_puntaje=t_int(row[6]),
@@ -1301,7 +1382,7 @@ def import_xlsx(entity):
                     ))
 
                 elif entity == "atencion":
-                    fecha = date.fromisoformat(str(row[0]))
+                    fecha = safe_convert_date(row[0])
                     mmss = str(row[1] or "").strip()
                     if mmss and not TIME_RE.match(mmss):
                         mmss = "00:00"
@@ -1310,8 +1391,13 @@ def import_xlsx(entity):
 
                 # ---------------- agregados previos ----------------
                 elif entity == "robos":
+                    def safe_time_hhmm(val):
+                        s = ("" if val is None else str(val)).strip()
+                        if not s: return time(0, 0)
+                        return datetime.strptime(s, "%H:%M").time()
+                    
                     db.add(RoboHurtoEntry(
-                        fecha=date.fromisoformat(str(row[0])),
+                        fecha=safe_convert_date(row[0]),
                         hora=safe_time_hhmm(row[1]),
                         modulo=str(row[2] or "").strip(),
                         habitacion=str(row[3] or "").strip(),
@@ -1335,10 +1421,10 @@ def import_xlsx(entity):
                         especialidad=str(row[6] or "").strip(),
                         falla=str(row[7] or "").strip(),
                         empresa=str(row[8] or "").strip(),
-                        fecha_creacion=safe_date(row[9]),
-                        fecha_inicio=safe_date(row[10]),
-                        fecha_termino=safe_date(row[11]),
-                        fecha_aprobacion=safe_date(row[12]),
+                        fecha_creacion=safe_convert_date(row[9]),
+                        fecha_inicio=safe_convert_date(row[10]),
+                        fecha_termino=safe_convert_date(row[11]),
+                        fecha_aprobacion=safe_convert_date(row[12]),
                         estado=str(row[13] or "").strip(),
                         comentario=str(row[14] or "").strip(),
                     ))
@@ -1346,7 +1432,7 @@ def import_xlsx(entity):
                 elif entity == "desviaciones":
                     db.add(DesviacionEntry(
                         n_solicitud=str(row[0] or "").strip(),
-                        fecha=date.fromisoformat(str(row[1])),
+                        fecha=safe_convert_date(row[1]),
                         id_interno=str(row[2] or "").strip(),
                         empresa_contratista=str(row[3] or "").strip(),
                         descripcion_problema=str(row[4] or "").strip(),
@@ -1375,7 +1461,7 @@ def import_xlsx(entity):
                         correo_usuario=str(row[8] or "").strip(),
                         tipo_tarea=str(row[9] or "").strip(),
                         ot=str(row[10] or "").strip(),
-                        fecha_inicio=(date.fromisoformat(str(row[11])) if row[11] else None),
+                        fecha_inicio=safe_convert_date(row[11]),
                         estado=str(row[12] or "").strip(),
                         tiempo_respuesta_sec=secs,
                         satisfaccion_reclamo=str(row[14] or "").strip(),
@@ -1386,7 +1472,7 @@ def import_xlsx(entity):
                 elif entity == "reclamos":
                     db.add(ReclamoUsuarioEntry(
                         n_solicitud=str(row[0] or "").strip(),
-                        fecha=date.fromisoformat(str(row[1])),
+                        fecha=safe_convert_date(row[1]),
                         id_interno=str(row[2] or "").strip(),
                         empresa_contratista=str(row[3] or "").strip(),
                         descripcion_problema=str(row[4] or "").strip(),
@@ -1416,7 +1502,7 @@ def import_xlsx(entity):
                         modulo=str(row[0] or "").strip(),
                         n_habitacion=str(row[1] or "").strip(),
                         nombre_recepcionista=str(row[2] or "").strip(),
-                        fecha=date.fromisoformat(str(row[3])),
+                        fecha=safe_convert_date(row[3]),
                         empresa=str(row[4] or "").strip(),
                         id_interno=str(row[5] or "").strip(),
                         co=str(row[6] or "").strip(),
@@ -1427,31 +1513,30 @@ def import_xlsx(entity):
                         hora_reporte_salfa=hhmm(row[11]),
                         tipo_evento=str(row[12] or "").strip(),
                         tipo_actividad=str(row[13] or "").strip(),
-                        fecha_reporte=(date.fromisoformat(str(row[14])) if row[14] else None),
+                        fecha_reporte=safe_convert_date(row[14]),
                         turno_recepcion_ingresos=str(row[15] or "").strip(),
                         observaciones=str(row[16] or "").strip(),
                     ))
 
                 elif entity == "extensiones":
                     db.add(ExtensionExcepcionEntry(
-                        fecha_solicitud=date.fromisoformat(str(row[0])),
+                        fecha_solicitud=safe_convert_date(row[0]),
                         id_interno=str(row[1] or "").strip(),
                         empresa=str(row[2] or "").strip(),
                         co=str(row[3] or "").strip(),
                         gerencia=str(row[4] or "").strip(),
                         proyecto=str(row[5] or "").strip(),
                         cant_clientes=to_int(row[6], None),
-                        desde=(date.fromisoformat(str(row[7])) if row[7] else None),
-                        hasta=(date.fromisoformat(str(row[8])) if row[8] else None),
+                        desde=safe_convert_date(row[7]),
+                        hasta=safe_convert_date(row[8]),
                         aprobador=str(row[9] or "").strip(),
                         observacion=str(row[10] or "").strip(),
                     ))
 
                 elif entity == "onboarding":
-                    fh_raw = str(row[0])
-                    fh = datetime.fromisoformat(fh_raw if "T" in fh_raw else fh_raw.replace(" ", "T"))
+                    fh_raw = safe_convert_datetime(row[0])
                     db.add(OnboardingEntry(
-                        fecha_hora=fh,
+                        fecha_hora=fh_raw,
                         nombre=str(row[1] or "").strip(),
                         rut=str(row[2] or "").strip(),
                         empresa=str(row[3] or "").strip(),
@@ -1460,8 +1545,13 @@ def import_xlsx(entity):
                     ))
 
                 elif entity == "apertura":
+                    def safe_time_hhmm(val):
+                        s = ("" if val is None else str(val)).strip()
+                        if not s: return time(0, 0)
+                        return datetime.strptime(s, "%H:%M").time()
+                    
                     db.add(AperturaHabitacionEntry(
-                        fecha=date.fromisoformat(str(row[0])),
+                        fecha=safe_convert_date(row[0]),
                         habitacion=str(row[1] or "").strip(),
                         hora=safe_time_hhmm(row[2]),
                         responsable=str(row[3] or "").strip(),
@@ -1718,4 +1808,3 @@ def dashboard():
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
