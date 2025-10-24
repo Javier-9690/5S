@@ -3,95 +3,99 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{% block title %}Panel de Gestión{% endblock %}</title>
+  <title>{% block title %}Panel Operacional{% endblock %}</title>
 
   <!-- Bootstrap 5 (CDN) -->
   <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
     rel="stylesheet"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
     crossorigin="anonymous"
-  />
+  >
   <style>
-    body { background: #f7f7fb; }
-    .navbar-brand { font-weight: 700; letter-spacing: .2px; }
-    .card { border: 0; box-shadow: 0 6px 18px rgba(0,0,0,.06); }
-    .table thead th { background:#f1f3f5; }
-    .form-section-title{ font-weight:600; margin-top:1rem; color:#495057; }
-    .sticky-top-shadow { box-shadow: 0 2px 10px rgba(0,0,0,.05); }
-    .btn-soft { background:#eef2ff; color:#3b5bdb; }
-    .btn-soft:hover{ background:#e3e9ff; color:#364fc7; }
-    .nav-pills .nav-link.active {
-      background: linear-gradient(135deg, #4c6ef5, #15aabf);
-    }
+    body { padding-top: 4.5rem; }
+    .navbar-brand small { font-size: .75rem; opacity: .8; }
+    .table-sm th, .table-sm td { padding: .35rem .5rem; }
+    .sticky-actions { position: sticky; top: 0; background: #fff; z-index: 2; padding: .5rem 0; }
+    .required::after { content: " *"; color: #d00; }
+    .card-title small { font-weight: 400; color: #6c757d; }
+    .tab-badge { vertical-align: baseline; }
+    .form-hint { font-size: .85rem; color: #6c757d; }
+    .nowrap { white-space: nowrap; }
+    .w-110 { width: 110px; }
+    .w-140 { width: 140px; }
+    .w-180 { width: 180px; }
+    .w-220 { width: 220px; }
+    .w-260 { width: 260px; }
   </style>
-  {% block head %}{% endblock %}
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <!-- NAV -->
-  <nav class="navbar navbar-expand-lg bg-white sticky-top sticky-top-shadow">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="{{ url_for('home') }}">🔧 Gestión Operacional</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topnav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div id="topnav" class="collapse navbar-collapse">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link {% if request.endpoint=='panel' %}active{% endif %}" href="{{ url_for('panel') }}">Panel</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint=='registros' %}active{% endif %}" href="{{ url_for('registros') }}">Registros</a></li>
-          <li class="nav-item"><a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-        </ul>
-        <div class="d-flex gap-2">
-          <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('health') }}">Health</a>
-          <a class="btn btn-primary btn-sm" href="{{ url_for('panel', tab='censo') }}">+ Nuevo</a>
-        </div>
-      </div>
-    </div>
-  </nav>
 
-  <!-- FLASH -->
-  <div class="container my-3">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('panel') }}">
+      Operaciones <small>Flask</small>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Alternar navegación">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="topNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='panel' %}active{% endif %}" href="{{ url_for('panel') }}">Panel</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='registros' %}active{% endif %}" href="{{ url_for('registros') }}">Registros</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+      </ul>
+
+      <form class="d-flex" role="search" method="get" action="{{ url_for('registros') }}">
+        <!-- Filtros rápidos en topbar -->
+        <input type="date" class="form-control form-control-sm me-2" name="from" value="{{ (d_from or None) and d_from.isoformat() or '' }}" title="Desde">
+        <input type="date" class="form-control form-control-sm me-2" name="to" value="{{ (d_to or None) and d_to.isoformat() or '' }}" title="Hasta">
+        <select name="semana" class="form-select form-select-sm me-2" title="Semana (anula fechas)">
+          <option value="">Semana…</option>
+          {% for wk, rng in week_map.items() %}
+            <option value="{{ wk }}" {% if semana_sel==wk %}selected{% endif %}>{{ wk }} ({{ rng[0] }} → {{ rng[1] }})</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-outline-light" type="submit">Filtrar</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<main class="container-fluid">
+  <!-- Mensajes flash -->
+  <div class="position-relative" style="min-height: 0">
     {% with messages = get_flashed_messages() %}
       {% if messages %}
-        <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div class="alert alert-info alert-dismissible fade show mt-2" role="alert">
           {% for m in messages %}
-            <div class="toast show align-items-center text-bg-success border-0" role="alert">
-              <div class="d-flex">
-                <div class="toast-body">{{ m }}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-              </div>
-            </div>
+            <div>{{ m }}</div>
           {% endfor %}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
         </div>
       {% endif %}
     {% endwith %}
   </div>
 
-  <!-- CONTENT -->
-  <main class="container my-4">
-    {% block content %}{% endblock %}
-  </main>
+  {% block content %}{% endblock %}
+</main>
 
-  <footer class="py-4 mt-5 border-top bg-white">
-    <div class="container d-flex justify-content-between">
-      <span class="text-muted">© {{ (now() if false) or  "" }} {{ config.SITE_NAME if config and config.SITE_NAME else "Operaciones" }}</span>
-      <span class="text-muted">
-        <a href="{{ url_for('template_xlsx', entity='censo') }}">Plantilla Censo</a> ·
-        <a href="{{ url_for('template_xlsx', entity='eventos') }}">Plantilla Eventos</a> ·
-        <a href="{{ url_for('template_xlsx', entity='duplicidades') }}">Plantilla Duplicidades</a> ·
-        <a href="{{ url_for('template_xlsx', entity='encuesta') }}">Plantilla Encuesta</a> ·
-        <a href="{{ url_for('template_xlsx', entity='atencion') }}">Plantilla Atención</a>
-      </span>
-    </div>
-  </footer>
+<footer class="container mt-5 mb-4">
+  <hr>
+  <div class="text-muted small">
+    &copy; {{ (now or None) and now.year or 2025 }} · Sistema Operacional ·
+    <a href="{{ url_for('health') }}">/health</a>
+  </div>
+</footer>
 
-  <!-- Bootstrap JS -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
 
-  {% block scripts %}{% endblock %}
+{% block extra_js %}{% endblock %}
 </body>
 </html>
 
