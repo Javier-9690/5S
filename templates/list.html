@@ -1,488 +1,504 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="h1-tight">Registros</h1>
+  <h1>Registros</h1>
 
-<form method="get" action="{{ url_for('registros') }}" class="mt-2">
-  <div class="row g-3">
-    <div class="col-md-3">
-      <label class="form-label">Desde</label>
-      <input type="date" name="from" value="{{ d_from if d_from else '' }}" class="form-control">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Hasta</label>
-      <input type="date" name="to" value="{{ d_to if d_to else '' }}" class="form-control">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Semana</label>
-      <select name="semana" class="form-select">
-        <option value="">-- (opcional) --</option>
-        {% for num, r in week_map.items()|sort %}
-          <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>{{ num }} ({{ r[0] }} → {{ r[1] }})</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Mostrar</label>
-      {% set opciones = [
-        ('censo','Censo'),
-        ('eventos','Eventos de seguridad'),
-        ('duplicidades','Duplicidades'),
-        ('encuestas','Encuesta de satisfacción'),
-        ('atencion','Atención al público'),
-        ('robos','Robos y hurtos'),
-        ('miscelaneo','Misceláneo'),
-        ('desviaciones','Desviaciones'),
-        ('solicitud_ot','Solicitud y OT de usuario'),
-        ('reclamos','Reclamos de usuarios'),
-        ('activacion_alarma','Activación de alarma'),
-        ('extension_excepcion','Extensión y excepción'),
-        ('onboarding','Registro Onboarding'),
-        ('apertura_habitacion','Apertura de habitación'),
-        ('eecc','Cumplimiento EECC')
-      ] %}
-      <select name="vista" class="form-select" onchange="this.form.submit()">
-        {% for v, label in opciones %}
-          <option value="{{ v }}" {{ 'selected' if vista==v }}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-12">
-      <button class="btn btn-primary">Aplicar filtros</button>
-    </div>
-  </div>
-</form>
+  <form method="get" action="{{ url_for('registros') }}" style="margin-top:10px;">
+    <div style="display:grid; grid-template-columns: repeat(5, minmax(160px,1fr)); gap:12px;">
+      <div>
+        <label>Desde</label>
+        <input type="date" name="from" value="{{ d_from if d_from else '' }}">
+      </div>
+      <div>
+        <label>Hasta</label>
+        <input type="date" name="to" value="{{ d_to if d_to else '' }}">
+      </div>
+      <div>
+        <label>Semana</label>
+        <select name="semana">
+          <option value="">-- (opcional) --</option>
+          {% for num, r in week_map.items()|sort %}
+            <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>{{ num }} ({{ r[0] }} → {{ r[1] }})</option>
+          {% endfor %}
+        </select>
+      </div>
 
-{% macro delbtn(entity, id) -%}
-  <form method="post"
-        action="{{ url_for('delete_record', entity=entity, rid=id) }}"
-        onsubmit="return confirm('¿Eliminar este registro?');"
-        class="d-inline">
-    <input type="hidden" name="next" value="{{ request.full_path }}">
-    <button class="btn btn-sm btn-danger" type="submit">Eliminar</button>
+      <div>
+        <label>Mostrar</label>
+        {% set opciones = [
+          ('censo','Censo'),
+          ('eventos','Eventos de seguridad'),
+          ('duplicidades','Duplicidades'),
+          ('encuestas','Encuesta de satisfacción'),
+          ('atencion','Atención al público'),
+          ('robos','Robos y hurtos'),
+          ('miscelaneo','Misceláneo'),
+          ('desviaciones','Desviaciones'),
+          ('solicitud_ot','Solicitud y OT de usuario'),
+          ('reclamos','Reclamos de usuarios'),
+          ('activacion_alarma', 'Activación de alarma'),
+          ('extension_excepcion', 'Extensión y excepción'),
+          ('onboarding', 'Registro onboarding'),
+          ('apertura_habitacion', 'Apertura de habitación'),
+          ('eecc_cumplimiento', 'Cumplimiento EECC')
+        ] %}
+        <select name="vista" onchange="this.form.submit()">
+          {% for v, label in opciones %}
+            <option value="{{ v }}" {{ 'selected' if vista==v }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="align-self:end;">
+        <button class="btn" type="submit">Aplicar filtros</button>
+      </div>
+    </div>
   </form>
-{%- endmacro %}
 
-{# ---- CENSO ---- #}
-{% if vista == 'censo' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Censo</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='censo', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead><tr><th>Acciones</th><th>Fecha</th><th>Censo día</th><th>Censo noche</th><th>Total</th></tr></thead>
-      <tbody>
-        {% for r in census %}
+  {# Macro botón eliminar que preserva los filtros actuales #}
+  {% macro delbtn(entity, id) -%}
+    <form method="post"
+          action="{{ url_for('delete_record', entity=entity, rid=id) }}"
+          onsubmit="return confirm('¿Eliminar este registro?');"
+          style="display:inline;">
+      <input type="hidden" name="next" value="{{ request.full_path }}">
+      <button class="btn" type="submit" style="padding:4px 8px;">Eliminar</button>
+    </form>
+  {%- endmacro %}
+
+  {# ---- CENSO ---- #}
+  {% if vista == 'censo' %}
+    <h2 style="margin-top:14px;">Censo</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='censo', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
+          <tr><th>Acciones</th><th>Fecha</th><th>Censo día</th><th>Censo noche</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+          {% for r in census %}
+            <tr>
+              <td>{{ delbtn('censo', r.id) }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.censo_dia }}</td>
+              <td>{{ r.censo_noche }}</td>
+              <td>{{ r.total }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
+  {# ---- EVENTOS ---- #}
+  {% if vista == 'eventos' %}
+    <h2 style="margin-top:14px;">Eventos de seguridad</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='eventos', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('censo', r.id) }}</td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ r.censo_dia }}</td>
-            <td>{{ r.censo_noche }}</td>
-            <td>{{ r.total }}</td>
+            <th>Acciones</th>
+            <th>Fecha</th><th>Horario</th><th>Qué ocurrió</th><th>Nombre afectado</th><th>Acción</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in eventos %}
+            <tr>
+              <td>{{ delbtn('eventos', r.id) }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.horario }}</td>
+              <td>{{ r.que_ocurrio }}</td>
+              <td>{{ r.nombre_afectado or '' }}</td>
+              <td>{{ r.accion or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- EVENTOS ---- #}
-{% if vista == 'eventos' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Eventos de seguridad</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='eventos', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>Fecha</th><th>Horario</th><th>Qué ocurrió</th><th>Nombre afectado</th><th>Acción</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in eventos %}
+  {# ---- DUPLICIDADES ---- #}
+  {% if vista == 'duplicidades' %}
+    <h2 style="margin-top:14px;">Duplicidades</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='duplicidades', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('eventos', r.id) }}</td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ r.horario }}</td>
-            <td>{{ r.que_ocurrio }}</td>
-            <td>{{ r.nombre_afectado or '' }}</td>
-            <td>{{ r.accion or '' }}</td>
+            <th>Acciones</th>
+            <th>Semana</th><th>Fecha</th><th>ID</th><th>Empresa</th><th>Descripción</th>
+            <th>Riesgo</th><th>Pabellón</th><th>Habitación</th><th>Contacto</th>
+            <th>Usuario</th><th>Responsable</th><th>Estatus</th><th>Notificación</th>
+            <th>Plan de acción</th><th>Fecha cierre</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in duplics %}
+            <tr>
+              <td>{{ delbtn('duplicidades', r.id) }}</td>
+              <td>{{ r.semana }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.id_interno or '' }}</td>
+              <td>{{ r.empresa_contratista or '' }}</td>
+              <td>{{ r.descripcion_problema or '' }}</td>
+              <td>{{ r.tipo_riesgo or '' }}</td>
+              <td>{{ r.pabellon or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.ingresar_contacto or '' }}</td>
+              <td>{{ r.nombre_usuario or '' }}</td>
+              <td>{{ r.responsable or '' }}</td>
+              <td>{{ r.estatus or '' }}</td>
+              <td>{{ r.notificacion_usuario or '' }}</td>
+              <td>{{ r.plan_accion or '' }}</td>
+              <td>{{ r.fecha_cierre if r.fecha_cierre else '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- DUPLICIDADES ---- #}
-{% if vista == 'duplicidades' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Duplicidades</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='duplicidades', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>Semana</th><th>Fecha</th><th>ID</th><th>Empresa</th><th>Descripción</th>
-          <th>Riesgo</th><th>Pabellón</th><th>Habitación</th><th>Contacto</th>
-          <th>Usuario</th><th>Responsable</th><th>Estatus</th><th>Notificación</th>
-          <th>Plan de acción</th><th>Fecha cierre</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in duplics %}
+  {# ---- ENCUESTAS ---- #}
+  {% if vista == 'encuestas' %}
+    <h2 style="margin-top:14px;">Encuesta de satisfacción</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='encuestas', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('duplicidades', r.id) }}</td>
-            <td>{{ r.semana }}</td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ r.id_interno or '' }}</td>
-            <td>{{ r.empresa_contratista or '' }}</td>
-            <td>{{ r.descripcion_problema or '' }}</td>
-            <td>{{ r.tipo_riesgo or '' }}</td>
-            <td>{{ r.pabellon or '' }}</td>
-            <td>{{ r.habitacion or '' }}</td>
-            <td>{{ r.ingresar_contacto or '' }}</td>
-            <td>{{ r.nombre_usuario or '' }}</td>
-            <td>{{ r.responsable or '' }}</td>
-            <td>{{ r.estatus or '' }}</td>
-            <td>{{ r.notificacion_usuario or '' }}</td>
-            <td>{{ r.plan_accion or '' }}</td>
-            <td>{{ r.fecha_cierre if r.fecha_cierre else '' }}</td>
+            <th>Acciones</th>
+            <th>Fecha Hora</th>
+            <th>Q1(R/P)</th><th>Q2(R/P)</th><th>Q3(R/P)</th><th>Q4(R/P)</th><th>Q5(R/P)</th>
+            <th>Total</th><th>Promedio</th><th>Comentarios</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in encuestas %}
+            <tr>
+              <td>{{ delbtn('encuestas', r.id) }}</td>
+              <td>{{ r.fecha_hora }}</td>
+              <td>{{ (r.q1_respuesta or '') ~ ' / ' ~ (r.q1_puntaje if r.q1_puntaje is not none else '') }}</td>
+              <td>{{ (r.q2_respuesta or '') ~ ' / ' ~ (r.q2_puntaje if r.q2_puntaje is not none else '') }}</td>
+              <td>{{ (r.q3_respuesta or '') ~ ' / ' ~ (r.q3_puntaje if r.q3_puntaje is not none else '') }}</td>
+              <td>{{ (r.q4_respuesta or '') ~ ' / ' ~ (r.q4_puntaje if r.q4_puntaje is not none else '') }}</td>
+              <td>{{ (r.q5_respuesta or '') ~ ' / ' ~ (r.q5_puntaje if r.q5_puntaje is not none else '') }}</td>
+              <td>{{ r.total if r.total is not none else '' }}</td>
+              <td>{{ r.promedio if r.promedio is not none else '' }}</td>
+              <td>{{ r.comentarios or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- ENCUESTAS ---- #}
-{% if vista == 'encuestas' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Encuesta de satisfacción</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='encuestas', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>Fecha Hora</th>
-          <th>Q1(R/P)</th><th>Q2(R/P)</th><th>Q3(R/P)</th><th>Q4(R/P)</th><th>Q5(R/P)</th>
-          <th>Total</th><th>Promedio</th><th>Comentarios</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in encuestas %}
+  {# ---- ATENCIÓN ---- #}
+  {% if vista == 'atencion' %}
+    <h2 style="margin-top:14px;">Atención al público</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='atencion', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('encuestas', r.id) }}</td>
-            <td>{{ r.fecha_hora }}</td>
-            <td>{{ (r.q1_respuesta or '') ~ ' / ' ~ (r.q1_puntaje if r.q1_puntaje is not none else '') }}</td>
-            <td>{{ (r.q2_respuesta or '') ~ ' / ' ~ (r.q2_puntaje if r.q2_puntaje is not none else '') }}</td>
-            <td>{{ (r.q3_respuesta or '') ~ ' / ' ~ (r.q3_puntaje if r.q3_puntaje is not none else '') }}</td>
-            <td>{{ (r.q4_respuesta or '') ~ ' / ' ~ (r.q4_puntaje if r.q4_puntaje is not none else '') }}</td>
-            <td>{{ (r.q5_respuesta or '') ~ ' / ' ~ (r.q5_puntaje if r.q5_puntaje is not none else '') }}</td>
-            <td>{{ r.total if r.total is not none else '' }}</td>
-            <td>{{ r.promedio if r.promedio is not none else '' }}</td>
-            <td>{{ r.comentarios or '' }}</td>
+            <th>Acciones</th>
+            <th>Fecha</th><th>Tiempo promedio (mm:ss)</th><th>Cantidad</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in atenciones %}
+            <tr>
+              <td>{{ delbtn('atencion', r.id) }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ '%02d:%02d'|format((r.tiempo_promedio_sec//60),(r.tiempo_promedio_sec%60)) }}</td>
+              <td>{{ r.cantidad }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- ATENCIÓN ---- #}
-{% if vista == 'atencion' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Atención al público</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='atencion', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead><tr><th>Acciones</th><th>Fecha</th><th>Tiempo promedio (mm:ss)</th><th>Cantidad</th></tr></thead>
-      <tbody>
-        {% for r in atenciones %}
+  {# ---- ROBOS ---- #}
+  {% if vista == 'robos' %}
+    <h2 style="margin-top:14px;">Robos y hurtos</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='robos', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('atencion', r.id) }}</td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ '%02d:%02d'|format((r.tiempo_promedio_sec//60),(r.tiempo_promedio_sec%60)) }}</td>
-            <td>{{ r.cantidad }}</td>
+            <th>Acciones</th>
+            <th>Fecha</th><th>Hora</th><th>Módulo</th><th>Habitación</th><th>Empresa</th><th>Nombre cliente</th>
+            <th>Rut</th><th>Medio Reclamo</th><th>Especies</th><th>Observaciones</th><th>Recepciona</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in robos %}
+            <tr>
+              <td>{{ delbtn('robos', r.id) }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
+              <td>{{ r.modulo or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.empresa or '' }}</td>
+              <td>{{ r.nombre_cliente or '' }}</td>
+              <td>{{ r.rut or '' }}</td>
+              <td>{{ r.medio_reclamo or '' }}</td>
+              <td>{{ r.especies or '' }}</td>
+              <td>{{ r.observaciones or '' }}</td>
+              <td>{{ r.recepciona or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- ROBOS ---- #}
-{% if vista == 'robos' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Robos y hurtos</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='robos', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>Fecha</th><th>Hora</th><th>Módulo</th><th>Habitación</th><th>Empresa</th><th>Nombre cliente</th>
-          <th>Rut</th><th>Medio Reclamo</th><th>Especies</th><th>Observaciones</th><th>Recepciona</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in robos %}
+  {# ---- MISCELÁNEO ---- #}
+  {% if vista == 'miscelaneo' %}
+    <h2 style="margin-top:14px;">Misceláneo</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='miscelaneo', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('robos', r.id) }}</td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
-            <td>{{ r.modulo or '' }}</td>
-            <td>{{ r.habitacion or '' }}</td>
-            <td>{{ r.empresa or '' }}</td>
-            <td>{{ r.nombre_cliente or '' }}</td>
-            <td>{{ r.rut or '' }}</td>
-            <td>{{ r.medio_reclamo or '' }}</td>
-            <td>{{ r.especies or '' }}</td>
-            <td>{{ r.observaciones or '' }}</td>
-            <td>{{ r.recepciona or '' }}</td>
+            <th>Acciones</th>
+            <th>OT</th><th>División</th><th>Área</th><th>Lugar</th><th>Ubicación</th><th>Disciplina</th>
+            <th>Especialidad</th><th>Falla</th><th>Empresa</th><th>Creación</th><th>Inicio</th>
+            <th>Término</th><th>Aprobación</th><th>Estado</th><th>Comentario</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in miscelaneo %}
+            <tr>
+              <td>{{ delbtn('miscelaneo', r.id) }}</td>
+              <td>{{ r.ot or '' }}</td>
+              <td>{{ r.division or '' }}</td>
+              <td>{{ r.area or '' }}</td>
+              <td>{{ r.lugar or '' }}</td>
+              <td>{{ r.ubicacion or '' }}</td>
+              <td>{{ r.disciplina or '' }}</td>
+              <td>{{ r.especialidad or '' }}</td>
+              <td>{{ r.falla or '' }}</td>
+              <td>{{ r.empresa or '' }}</td>
+              <td>{{ r.fecha_creacion or '' }}</td>
+              <td>{{ r.fecha_inicio or '' }}</td>
+              <td>{{ r.fecha_termino or '' }}</td>
+              <td>{{ r.fecha_aprobacion or '' }}</td>
+              <td>{{ r.estado or '' }}</td>
+              <td>{{ r.comentario or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- MISCELÁNEO ---- #}
-{% if vista == 'miscelaneo' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Misceláneo</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='miscelaneo', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>OT</th><th>División</th><th>Área</th><th>Lugar</th><th>Ubicación</th><th>Disciplina</th>
-          <th>Especialidad</th><th>Falla</th><th>Empresa</th><th>Creación</th><th>Inicio</th>
-          <th>Término</th><th>Aprobación</th><th>Estado</th><th>Comentario</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in miscelaneo %}
+  {# ---- DESVIACIONES ---- #}
+  {% if vista == 'desviaciones' %}
+    <h2 style="margin-top:14px;">Desviaciones</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='desviaciones', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('miscelaneo', r.id) }}</td>
-            <td>{{ r.ot or '' }}</td>
-            <td>{{ r.division or '' }}</td>
-            <td>{{ r.area or '' }}</td>
-            <td>{{ r.lugar or '' }}</td>
-            <td>{{ r.ubicacion or '' }}</td>
-            <td>{{ r.disciplina or '' }}</td>
-            <td>{{ r.especialidad or '' }}</td>
-            <td>{{ r.falla or '' }}</td>
-            <td>{{ r.empresa or '' }}</td>
-            <td>{{ r.fecha_creacion or '' }}</td>
-            <td>{{ r.fecha_inicio or '' }}</td>
-            <td>{{ r.fecha_termino or '' }}</td>
-            <td>{{ r.fecha_aprobacion or '' }}</td>
-            <td>{{ r.estado or '' }}</td>
-            <td>{{ r.comentario or '' }}</td>
+            <th>Acciones</th>
+            <th>N° Solicitud</th><th>Fecha</th><th>ID</th><th>Empresa contratista</th><th>Descripción</th>
+            <th>Tipo riesgo</th><th>Tipo Solicitud</th><th>Pabellón</th><th>Habitación</th><th>Vía Solicitud</th>
+            <th>Quién informa</th><th>Riesgo Material</th><th>Correo Destino</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in desviaciones %}
+            <tr>
+              <td>{{ delbtn('desviaciones', r.id) }}</td>
+              <td>{{ r.n_solicitud or '' }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.id_interno or '' }}</td>
+              <td>{{ r.empresa_contratista or '' }}</td>
+              <td>{{ r.descripcion_problema or '' }}</td>
+              <td>{{ r.tipo_riesgo or '' }}</td>
+              <td>{{ r.tipo_solicitud or '' }}</td>
+              <td>{{ r.pabellon or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.via_solicitud or '' }}</td>
+              <td>{{ r.quien_informa or '' }}</td>
+              <td>{{ r.riesgo_material or '' }}</td>
+              <td>{{ r.correo_destino or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- DESVIACIONES ---- #}
-{% if vista == 'desviaciones' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Desviaciones</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='desviaciones', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>N° Solicitud</th><th>Fecha</th><th>ID</th><th>Empresa contratista</th><th>Descripción</th>
-          <th>Tipo riesgo</th><th>Tipo Solicitud</th><th>Pabellón</th><th>Habitación</th><th>Vía Solicitud</th>
-          <th>Quién informa</th><th>Riesgo Material</th><th>Correo Destino</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in desviaciones %}
+  {# ---- SOLICITUD & OT ---- #}
+  {% if vista == 'solicitud_ot' %}
+    <h2 style="margin-top:14px;">Solicitud y OT de usuario</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='solicitud_ot', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('desviaciones', r.id) }}</td>
-            <td>{{ r.n_solicitud or '' }}</td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ r.id_interno or '' }}</td>
-            <td>{{ r.empresa_contratista or '' }}</td>
-            <td>{{ r.descripcion_problema or '' }}</td>
-            <td>{{ r.tipo_riesgo or '' }}</td>
-            <td>{{ r.tipo_solicitud or '' }}</td>
-            <td>{{ r.pabellon or '' }}</td>
-            <td>{{ r.habitacion or '' }}</td>
-            <td>{{ r.via_solicitud or '' }}</td>
-            <td>{{ r.quien_informa or '' }}</td>
-            <td>{{ r.riesgo_material or '' }}</td>
-            <td>{{ r.correo_destino or '' }}</td>
+            <th>Acciones</th>
+            <th>N° Solicitud</th><th>Descripción</th><th>Tipo Solicitud</th><th>Módulo</th><th>Habitación</th>
+            <th>Tipo turno</th><th>Jornada</th><th>Vía</th><th>Correo Usuario</th><th>Tipo Tarea</th>
+            <th>OT</th><th>Fecha Inicio</th><th>Estado</th><th>Tiempo Resp.</th><th>Satisfacción</th><th>Motivo</th><th>Observación</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in solicitudes_ot %}
+            <tr>
+              <td>{{ delbtn('solicitud_ot', r.id) }}</td>
+              <td>{{ r.n_solicitud or '' }}</td>
+              <td>{{ r.descripcion_problema or '' }}</td>
+              <td>{{ r.tipo_solicitud or '' }}</td>
+              <td>{{ r.modulo or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.tipo_turno or '' }}</td>
+              <td>{{ r.jornada or '' }}</td>
+              <td>{{ r.via_solicitud or '' }}</td>
+              <td>{{ r.correo_usuario or '' }}</td>
+              <td>{{ r.tipo_tarea or '' }}</td>
+              <td>{{ r.ot or '' }}</td>
+              <td>{{ r.fecha_inicio or '' }}</td>
+              <td>{{ r.estado or '' }}</td>
+              <td>{% if r.tiempo_respuesta_sec is not none %}{{ '%02d:%02d'|format((r.tiempo_respuesta_sec//60),(r.tiempo_respuesta_sec%60)) }}{% endif %}</td>
+              <td>{{ r.satisfaccion_reclamo or '' }}</td>
+              <td>{{ r.motivo or '' }}</td>
+              <td>{{ r.observacion or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- SOLICITUD & OT ---- #}
-{% if vista == 'solicitud_ot' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Solicitud y OT de usuario</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='solicitud_ot', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>N° Solicitud</th><th>Descripción</th><th>Tipo Solicitud</th><th>Módulo</th><th>Habitación</th>
-          <th>Tipo turno</th><th>Jornada</th><th>Vía</th><th>Correo Usuario</th><th>Tipo Tarea</th>
-          <th>OT</th><th>Fecha Inicio</th><th>Estado</th><th>Tiempo Resp.</th><th>Satisfacción</th><th>Motivo</th><th>Observación</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in solicitudes_ot %}
+  {# ---- RECLAMOS ---- #}
+  {% if vista == 'reclamos' %}
+    <h2 style="margin-top:14px;">Reclamos de usuarios</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='reclamos', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('solicitud_ot', r.id) }}</td>
-            <td>{{ r.n_solicitud or '' }}</td>
-            <td>{{ r.descripcion_problema or '' }}</td>
-            <td>{{ r.tipo_solicitud or '' }}</td>
-            <td>{{ r.modulo or '' }}</td>
-            <td>{{ r.habitacion or '' }}</td>
-            <td>{{ r.tipo_turno or '' }}</td>
-            <td>{{ r.jornada or '' }}</td>
-            <td>{{ r.via_solicitud or '' }}</td>
-            <td>{{ r.correo_usuario or '' }}</td>
-            <td>{{ r.tipo_tarea or '' }}</td>
-            <td>{{ r.ot or '' }}</td>
-            <td>{{ r.fecha_inicio or '' }}</td>
-            <td>{{ r.estado or '' }}</td>
-            <td>{% if r.tiempo_respuesta_sec is not none %}{{ '%02d:%02d'|format((r.tiempo_respuesta_sec//60),(r.tiempo_respuesta_sec%60)) }}{% endif %}</td>
-            <td>{{ r.satisfaccion_reclamo or '' }}</td>
-            <td>{{ r.motivo or '' }}</td>
-            <td>{{ r.observacion or '' }}</td>
+            <th>Acciones</th>
+            <th>N° Solicitud</th><th>Fecha</th><th>ID</th><th>Empresa contratista</th><th>Descripción</th>
+            <th>Tipo Solicitud</th><th>Pabellón</th><th>Habitación</th><th>Vía Solicitud</th>
+            <th>Contacto</th><th>Usuario</th><th>Responsable</th><th>Estatus</th><th>Notificación</th><th>Plan Acción</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </thead>
+        <tbody>
+          {% for r in reclamos %}
+            <tr>
+              <td>{{ delbtn('reclamos', r.id) }}</td>
+              <td>{{ r.n_solicitud or '' }}</td>
+              <td>{{ r.fecha }}</td>
+              <td>{{ r.id_interno or '' }}</td>
+              <td>{{ r.empresa_contratista or '' }}</td>
+              <td>{{ r.descripcion_problema or '' }}</td>
+              <td>{{ r.tipo_solicitud or '' }}</td>
+              <td>{{ r.pabellon or '' }}</td>
+              <td>{{ r.habitacion or '' }}</td>
+              <td>{{ r.via_solicitud or '' }}</td>
+              <td>{{ r.ingresar_contacto or '' }}</td>
+              <td>{{ r.nombre_usuario or '' }}</td>
+              <td>{{ r.responsable or '' }}</td>
+              <td>{{ r.estatus or '' }}</td>
+              <td>{{ r.notificacion_usuario or '' }}</td>
+              <td>{{ r.plan_accion or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{# ---- RECLAMOS ---- #}
-{% if vista == 'reclamos' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Reclamos de usuarios</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='reclamos', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>N° Solicitud</th><th>Fecha</th><th>ID</th><th>Empresa contratista</th><th>Descripción</th>
-          <th>Tipo Solicitud</th><th>Pabellón</th><th>Habitación</th><th>Vía Solicitud</th>
-          <th>Contacto</th><th>Usuario</th><th>Responsable</th><th>Estatus</th><th>Notificación</th><th>Plan Acción</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in reclamos %}
+  {# ================== NUEVOS MÓDULOS ================== #}
+
+  {# ---- ACTIVACIÓN DE ALARMA ---- #}
+  {% if vista == 'activacion_alarma' %}
+    <h2 style="margin-top:14px;">Activación de alarma</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='activacion_alarma', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
           <tr>
-            <td>{{ delbtn('reclamos', r.id) }}</td>
-            <td>{{ r.n_solicitud or '' }}</td>
-            <td>{{ r.fecha }}</td>
-            <td>{{ r.id_interno or '' }}</td>
-            <td>{{ r.empresa_contratista or '' }}</td>
-            <td>{{ r.descripcion_problema or '' }}</td>
-            <td>{{ r.tipo_solicitud or '' }}</td>
-            <td>{{ r.pabellon or '' }}</td>
-            <td>{{ r.habitacion or '' }}</td>
-            <td>{{ r.via_solicitud or '' }}</td>
-            <td>{{ r.ingresar_contacto or '' }}</td>
-            <td>{{ r.nombre_usuario or '' }}</td>
-            <td>{{ r.responsable or '' }}</td>
-            <td>{{ r.estatus or '' }}</td>
-            <td>{{ r.notificacion_usuario or '' }}</td>
-            <td>{{ r.plan_accion or '' }}</td>
+            <th>Acciones</th>
+            <th>Módulo</th><th>N° Habitación</th><th>Nombre Recepcionista</th><th>Fecha</th><th>Empresa</th>
+            <th>ID</th><th>C.O.</th>
+            <th>Aviso mantención (h)</th><th>Llegada mantención (h)</th>
+            <th>Aviso Líder (h)</th><th>Llegada Líder (h)</th>
+            <th>Hora Reporte SALFA</th>
+            <th>Tipo Evento</th><th>Tipo Actividad</th><th>Fecha Reporte</th><th>Turno Recepción/Ingresos</th>
+            <th>Observaciones</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
-
-{# ===== NUEVOS 5 ===== #}
-
-{% if vista == 'activacion_alarma' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Activación de alarma</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='activacion_alarma', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
-        <tr>
-          <th>Acciones</th>
-          <th>Módulo</th><th>Habitación</th><th>Recepcionista</th><th>Fecha</th><th>Empresa</th><th>ID</th><th>C.O.</th>
-          <th>Aviso mant.(h)</th><th>Llegada mant.(h)</th><th>Aviso líder(h)</th><th>Llegada líder(h)</th>
-          <th>Hora Rep. SALFA</th><th>Tipo Evento</th><th>Tipo Actividad</th><th>Fecha Reporte</th><th>Turno</th><th>Observaciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in activaciones %}
+        </thead>
+        <tbody>
+          {% for r in activaciones %}
           <tr>
             <td>{{ delbtn('activacion_alarma', r.id) }}</td>
             <td>{{ r.modulo or '' }}</td>
             <td>{{ r.habitacion or '' }}</td>
-            <td>{{ r.recepcionista or '' }}</td>
+            <td>{{ r.nombre_recepcionista or '' }}</td>
             <td>{{ r.fecha }}</td>
             <td>{{ r.empresa or '' }}</td>
             <td>{{ r.id_interno or '' }}</td>
             <td>{{ r.co or '' }}</td>
-            <td>{{ r.aviso_mantencion_h if r.aviso_mantencion_h is not none else '' }}</td>
-            <td>{{ r.llegada_mantencion_h if r.llegada_mantencion_h is not none else '' }}</td>
-            <td>{{ r.aviso_lider_h if r.aviso_lider_h is not none else '' }}</td>
-            <td>{{ r.llegada_lider_h if r.llegada_lider_h is not none else '' }}</td>
+            <td>{{ r.aviso_mantencion_horas if r.aviso_mantencion_horas is not none else '' }}</td>
+            <td>{{ r.llegada_mantencion_horas if r.llegada_mantencion_horas is not none else '' }}</td>
+            <td>{{ r.aviso_lider_horas if r.aviso_lider_horas is not none else '' }}</td>
+            <td>{{ r.llegada_lider_horas if r.llegada_lider_horas is not none else '' }}</td>
             <td>{{ r.hora_reporte_salfa.strftime('%H:%M') if r.hora_reporte_salfa else '' }}</td>
             <td>{{ r.tipo_evento or '' }}</td>
             <td>{{ r.tipo_actividad or '' }}</td>
             <td>{{ r.fecha_reporte or '' }}</td>
-            <td>{{ r.turno or '' }}</td>
+            <td>{{ r.turno_recepcion or '' }}</td>
             <td>{{ r.observaciones or '' }}</td>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{% if vista == 'extension_excepcion' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Extensión y excepción</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='extension_excepcion', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
+  {# ---- EXTENSIÓN Y EXCEPCIÓN ---- #}
+  {% if vista == 'extension_excepcion' %}
+    <h2 style="margin-top:14px;">Extensión y excepción</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='extension_excepcion', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
         <tr>
           <th>Acciones</th>
-          <th>Fecha solicitud</th><th>ID</th><th>Empresa</th><th>C.O.</th><th>Gerencia</th>
+          <th>Fecha solicitud</th><th>ID</th><th>Empresa</th><th>CO</th><th>Gerencia</th>
           <th>Proyecto</th><th>Cant. clientes</th><th>Desde</th><th>Hasta</th><th>Aprobador</th><th>Observación</th>
         </tr>
-      </thead>
-      <tbody>
+        </thead>
+        <tbody>
         {% for r in extensiones %}
           <tr>
             <td>{{ delbtn('extension_excepcion', r.id) }}</td>
@@ -492,113 +508,112 @@
             <td>{{ r.co or '' }}</td>
             <td>{{ r.gerencia or '' }}</td>
             <td>{{ r.proyecto or '' }}</td>
-            <td>{{ r.cantidad_clientes if r.cantidad_clientes is not none else '' }}</td>
+            <td>{{ r.cant_clientes if r.cant_clientes is not none else '' }}</td>
             <td>{{ r.desde or '' }}</td>
             <td>{{ r.hasta or '' }}</td>
             <td>{{ r.aprobador or '' }}</td>
             <td>{{ r.observacion or '' }}</td>
           </tr>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{% if vista == 'onboarding' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Registro Onboarding</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='onboarding', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
+  {# ---- REGISTRO ONBOARDING ---- #}
+  {% if vista == 'onboarding' %}
+    <h2 style="margin-top:14px;">Registro onboarding</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='onboarding', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
         <tr>
           <th>Acciones</th>
-          <th>Fecha Hora</th><th>Nombre</th><th>RUT</th><th>Empresa</th><th>ID</th><th>Archivo PDF</th>
+          <th>Fecha/Hora</th><th>Nombre</th><th>RUT</th><th>Empresa</th><th>ID</th><th>Archivo PDF</th>
         </tr>
-      </thead>
-      <tbody>
+        </thead>
+        <tbody>
         {% for r in onboardings %}
           <tr>
             <td>{{ delbtn('onboarding', r.id) }}</td>
             <td>{{ r.fecha_hora }}</td>
-            <td>{{ r.nombre }}</td>
-            <td>{{ r.rut }}</td>
+            <td>{{ r.nombre or '' }}</td>
+            <td>{{ r.rut or '' }}</td>
             <td>{{ r.empresa or '' }}</td>
             <td>{{ r.id_interno or '' }}</td>
             <td>
-              {% if r.archivo_pdf %}
-                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('download_onboarding_pdf', oid=r.id) }}">Ver / Descargar</a>
-              {% else %}
-                —
+              {% if r.archivo_pdf_path %}
+                <a class="btn" style="padding:4px 8px;" href="{{ url_for('download_onboarding_pdf', rid=r.id) }}">Ver PDF</a>
               {% endif %}
             </td>
           </tr>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{% if vista == 'apertura_habitacion' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Apertura de habitación</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='apertura_habitacion', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
+  {# ---- APERTURA DE HABITACIÓN ---- #}
+  {% if vista == 'apertura_habitacion' %}
+    <h2 style="margin-top:14px;">Apertura de habitación</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='apertura_habitacion', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
         <tr>
           <th>Acciones</th>
-          <th>Fecha</th><th>Habitación</th><th>Hora</th><th>Responsable</th><th>Estado de la chapa (detalle)</th>
+          <th>Fecha</th><th>Habitación</th><th>Hora</th><th>Responsable</th><th>Estado de la chapa (motivo)</th>
         </tr>
-      </thead>
-      <tbody>
+        </thead>
+        <tbody>
         {% for r in aperturas %}
           <tr>
             <td>{{ delbtn('apertura_habitacion', r.id) }}</td>
             <td>{{ r.fecha }}</td>
-            <td>{{ r.habitacion }}</td>
+            <td>{{ r.habitacion or '' }}</td>
             <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
             <td>{{ r.responsable or '' }}</td>
             <td>{{ r.estado_chapa or '' }}</td>
           </tr>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
-{% if vista == 'eecc' %}
-  <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
-    <h2 class="h2-tight m-0">Cumplimiento EECC</h2>
-    <a class="btn btn-primary" href="{{ url_for('download_entity', entity='eecc', **request.args) }}">Descargar CSV</a>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-striped">
-      <thead>
+  {# ---- CUMPLIMIENTO EECC ---- #}
+  {% if vista == 'eecc_cumplimiento' %}
+    <h2 style="margin-top:14px;">Cumplimiento de reportabilidad de EECC</h2>
+    <div class="toolbar">
+      <a class="btn" href="{{ url_for('download_entity', entity='eecc_cumplimiento', **request.args) }}">Descargar CSV</a>
+    </div>
+    <div style="overflow:auto;">
+      <table>
+        <thead>
         <tr>
           <th>Acciones</th>
           <th>Empresa</th><th>N° Contrato</th><th>C.O.</th><th>Correo</th><th>ID</th><th>Turno</th>
         </tr>
-      </thead>
-      <tbody>
+        </thead>
+        <tbody>
         {% for r in eeccs %}
           <tr>
-            <td>{{ delbtn('eecc', r.id) }}</td>
-            <td>{{ r.empresa }}</td>
-            <td>{{ r.n_contrato }}</td>
+            <td>{{ delbtn('eecc_cumplimiento', r.id) }}</td>
+            <td>{{ r.empresa or '' }}</td>
+            <td>{{ r.n_contrato or '' }}</td>
             <td>{{ r.co or '' }}</td>
             <td>{{ r.correo or '' }}</td>
             <td>{{ r.id_interno or '' }}</td>
             <td>{{ r.turno or '' }}</td>
           </tr>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-{% endif %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
 
 {% endblock %}
-
-
