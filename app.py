@@ -1,6 +1,6 @@
 # app.py - SQLAlchemy puro + 5 módulos nuevos integrados
 import os
-import io
+import io    llegada_lider_horas = Column("lle
 import csv
 import re
 from statistics import mean
@@ -301,24 +301,33 @@ class ActivacionAlarmaEntry(Base):
     __tablename__ = "activacion_alarma"
     id = Column(Integer, primary_key=True)
     modulo = Column(String(100), nullable=True)
-    # 👇 mapear a la columna existente n_habitacion
+
+    # BD: n_habitacion  → Atributo Python: habitacion
     habitacion = Column("n_habitacion", String(100), nullable=True)
+
     nombre_recepcionista = Column(String(200), nullable=True)
     fecha = Column(Date, nullable=False)
     empresa = Column(String(200), nullable=True)
     id_interno = Column(String(100), nullable=True)
     co = Column(String(100), nullable=True)
-    aviso_mantencion_horas = Column(Float, nullable=True)
-    llegada_mantencion_horas = Column(Float, nullable=True)
-    aviso_lider_horas = Column(Float, nullable=True)
-    llegada_lider_horas = Column(Float, nullable=True)
+
+    # BD: aviso_mantencion       → Atributo Python: aviso_mantencion_horas
+    aviso_mantencion_horas = Column("aviso_mantencion", Float, nullable=True)
+    # BD: llegada_mantencion     → Atributo Python: llegada_mantencion_horas
+    llegada_mantencion_horas = Column("llegada_mantencion", Float, nullable=True)
+    # BD: aviso_lider            → Atributo Python: aviso_lider_horas
+    aviso_lider_horas = Column("aviso_lider", Float, nullable=True)
+    # BD: llegada_lider          → Atributo Python: llegada_lider_horas
+    llegada_lider_horas = Column("llegada_lider", Float, nullable=True)
+
     hora_reporte_salfa = Column(Time, nullable=True)
     tipo_evento = Column(String(200), nullable=True)
     tipo_actividad = Column(String(200), nullable=True)
     fecha_reporte = Column(Date, nullable=True)
-    turno_recepcion = Column(String(200), nullable=True)
+    turno_recepcion = Column(String(200), nullable=True)  # Turno Recepción / Ingresos
     observaciones = Column(Text, nullable=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
 
 class ExtensionExcepcionEntry(Base):
     __tablename__ = "extension_excepcion"
