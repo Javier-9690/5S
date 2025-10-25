@@ -611,6 +611,8 @@ class CumplimientoEECCEntry(Base):
     id_interno = Column(String(100), nullable=True)
     turno = Column(String(100), nullable=True)
     fecha = Column(Date, nullable=False)  # fecha de negocio para filtros/dashboard
+    # NUEVO: fecha
+    fecha = db.Column(db.Date, nullable=False, index=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
