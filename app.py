@@ -970,14 +970,26 @@ def registros():
         if d_to:   robos = robos.filter(RoboHurtoEntry.fecha <= d_to)
         robos = robos.order_by(RoboHurtoEntry.fecha.desc()).all()
 
-        miscelaneo = db.query(MiscelaneoEntry).order_by(MiscelaneoEntry.id.desc()).all()
+        miscelaneo = db.query(MiscelaneoEntry)
+        if d_from: miscelaneo = miscelaneo.filter(MiscelaneoEntry.fecha_creacion >= d_from)
+        if d_to:   miscelaneo = miscelaneo.filter(MiscelaneoEntry.fecha_creacion <= d_to)
+        miscelaneo = miscelaneo.order_by(
+            MiscelaneoEntry.fecha_creacion.desc(),
+            MiscelaneoEntry.id.desc()
+        ).all()
 
         desviaciones = db.query(DesviacionEntry)
         if d_from: desviaciones = desviaciones.filter(DesviacionEntry.fecha >= d_from)
         if d_to:   desviaciones = desviaciones.filter(DesviacionEntry.fecha <= d_to)
         desviaciones = desviaciones.order_by(DesviacionEntry.fecha.desc()).all()
 
-        solicitudes_ot = db.query(SolicitudOTEntry).order_by(SolicitudOTEntry.id.desc()).all()
+        solicitudes_ot = db.query(SolicitudOTEntry)
+        if d_from: solicitudes_ot = solicitudes_ot.filter(SolicitudOTEntry.fecha_inicio >= d_from)
+        if d_to:   solicitudes_ot = solicitudes_ot.filter(SolicitudOTEntry.fecha_inicio <= d_to)
+        solicitudes_ot = solicitudes_ot.order_by(
+            SolicitudOTEntry.fecha_inicio.desc().nullslast(),
+            SolicitudOTEntry.id.desc()
+        ).all()
 
         reclamos = db.query(ReclamoUsuarioEntry)
         if d_from: reclamos = reclamos.filter(ReclamoUsuarioEntry.fecha >= d_from)
@@ -1005,7 +1017,10 @@ def registros():
         if d_to:   apertura = apertura.filter(AperturaHabitacionEntry.fecha <= d_to)
         apertura = apertura.order_by(AperturaHabitacionEntry.fecha.desc()).all()
 
-        cumplimiento = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.id.desc()).all()
+        cumplimiento = db.query(CumplimientoEECCEntry)
+        if d_from: cumplimiento = cumplimiento.filter(CumplimientoEECCEntry.creado >= datetime.combine(d_from, time.min))
+        if d_to:   cumplimiento = cumplimiento.filter(CumplimientoEECCEntry.creado <= datetime.combine(d_to, time.max))
+        cumplimiento = cumplimiento.order_by(CumplimientoEECCEntry.creado.desc(), CumplimientoEECCEntry.id.desc()).all()
 
         return render_template(
             "list.html",
