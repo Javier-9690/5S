@@ -1,590 +1,439 @@
-{% set entidades = {
-  'censo':'Censo',
-  'eventos':'Eventos de Seguridad',
-  'duplicidades':'Duplicidades',
-  'encuestas':'Encuestas',
-  'atencion':'Atención al Público',
-  'robos':'Robos/Hurtos',
-  'miscelaneo':'Misceláneo',
-  'desviaciones':'Desviaciones',
-  'solicitud_ot':'Solicitudes/OT',
-  'reclamos':'Reclamos de Usuario',
-  'alarmas':'Activación de Alarma',
-  'extensiones':'Extensiones/Excepciones',
-  'onboarding':'Onboarding',
-  'apertura':'Apertura Habitación',
-  'cumplimiento':'Cumplimiento EECC'
-} %}
+{% extends "base.html" %}
+{% block title %}Sistema de Gestión 5400 - Registros{% endblock %}
 
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>Registros</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; margin:24px; color:#1f2937;}
-    header{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:18px;}
-    a.btn, button.btn{background:#111827;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;border:none;cursor:pointer}
-    a.btn.light{background:#e5e7eb;color:#111827}
-    .filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:10px}
-    .filters label{font-size:12px;color:#374151;display:block;margin-bottom:4px}
-    .filters input, .filters select{padding:8px;border:1px solid #d1d5db;border-radius:8px}
-    .tabs{display:flex;overflow-x:auto;gap:8px;margin:8px 0 16px}
-    .tab{padding:8px 10px;border-radius:999px;border:1px solid #e5e7eb;text-decoration:none;color:#374151;white-space:nowrap}
-    .tab.active{background:#111827;color:#fff;border-color:#111827}
-    table{width:100%;border-collapse:collapse;margin:10px 0 24px}
-    th,td{border-bottom:1px solid #e5e7eb;padding:8px 10px;text-align:left;font-size:14px;vertical-align:top}
-    th{background:#f9fafb;position:sticky;top:0;z-index:1}
-    details {margin: 18px 0}
-    summary{cursor:pointer;font-weight:600}
-    .actions a{margin-right:8px}
-    .muted{color:#6b7280}
-    .wrap{word-break:break-word;white-space:pre-wrap}
-    .section-head{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
-    .bulk-bar{display:flex;gap:8px;align-items:center;margin:6px 0 10px}
-    .bulk-bar .btn{padding:6px 10px}
-    .notice{padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;margin:10px 0}
-    .nowrap{white-space:nowrap}
-  </style>
-</head>
-<body>
+{% block content %}
+<div class="content-container">
+  <h1 class="page-title">Registros del Sistema</h1>
 
-<header>
-  <a class="btn light" href="{{ url_for('dashboard', semana=semana_sel, from=d_from, to=d_to) }}">← Dashboard</a>
-  <h1 style="margin:0;font-size:20px;">Registros</h1>
-</header>
+  <!-- Filtros -->
+  <div class="filter-card">
+    <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h5>
+    <form method="get" action="{{ url_for('registros') }}">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Fecha Desde</label>
+          <input type="date" name="from" class="form-control" value="{{ d_from if d_from else '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha Hasta</label>
+          <input type="date" name="to" class="form-control" value="{{ d_to if d_to else '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Semana Específica</label>
+          <select name="semana" class="form-select">
+            <option value="">-- Todas las semanas --</option>
+            {% for num, r in week_map.items()|sort %}
+              <option value="{{ num }}" {{ 'selected' if semana_sel==num }}>{{ num }} ({{ r[0] }} → {{ r[1] }})</option>
+            {% endfor %}
+          </select>
+        </div>
 
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <div class="notice">
-      {% for m in messages %}<div>{{ m }}</div>{% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
+        <div class="col-md-3">
+          <label class="form-label">Módulo</label>
+          {% set opciones = [
+            ('censo','Censo'),
+            ('eventos','Eventos de seguridad'),
+            ('duplicidades','Duplicidades'),
+            ('encuestas','Encuesta de satisfacción'),
+            ('atencion','Atención al público'),
+            ('robos','Robos y hurtos'),
+            ('miscelaneo','Misceláneo'),
+            ('desviaciones','Desviaciones'),
+            ('solicitud_ot','Solicitud y OT de usuario'),
+            ('reclamos','Reclamos de usuarios'),
+            ('alarmas', 'Activación de alarma'),
+            ('extensiones', 'Extensión y excepción'),
+            ('onboarding', 'Registro onboarding'),
+            ('apertura', 'Apertura de habitación'),
+            ('cumplimiento', 'Cumplimiento EECC')
+          ] %}
+          <select name="vista" class="form-select" onchange="this.form.submit()">
+            {% for v, label in opciones %}
+              <option value="{{ v }}" {{ 'selected' if vista==v }}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
 
-<form class="filters" method="get" action="{{ url_for('registros') }}">
-  <div>
-    <label>Semana</label>
-    <select name="semana">
-      <option value="">—</option>
-      {% for n, rg in week_map.items() %}
-        <option value="{{ n }}" {% if semana_sel==n %}selected{% endif %}>{{ n }} ({{ rg[0] }} → {{ rg[1] }})</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div>
-    <label>Desde</label>
-    <input type="date" name="from" value="{{ d_from if d_from else '' }}">
-  </div>
-  <div>
-    <label>Hasta</label>
-    <input type="date" name="to" value="{{ d_to if d_to else '' }}">
-  </div>
-  <div>
-    <label>Vista</label>
-    <select name="vista">
-      {% for key, label in entidades.items() %}
-        <option value="{{ key }}" {% if vista==key %}selected{% endif %}>{{ label }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div>
-    <button class="btn" type="submit">Aplicar</button>
-  </div>
-  <div>
-    <a class="btn light" href="{{ url_for('registros') }}">Limpiar</a>
-  </div>
-</form>
-
-<div class="tabs">
-  {% for key, label in entidades.items() %}
-    <a class="tab {% if vista==key %}active{% endif %}" href="{{ url_for('registros', vista=key, semana=semana_sel, from=d_from, to=d_to) }}">{{ label }}</a>
-  {% endfor %}
-</div>
-
-{% macro descarga_y_acciones(entity_key) -%}
-  <div class="section-head">
-    <div>
-      <strong>{{ entidades[entity_key] }}</strong>
-      <span class="muted">•</span>
-      <a class="btn light" href="{{ url_for('download_entity', entity=entity_key, semana=semana_sel, from=d_from, to=d_to) }}">Descargar CSV</a>
-    </div>
-    <div>
-      <a class="btn" href="{{ url_for('panel', tab=entity_key) }}">+ Nuevo</a>
-    </div>
-  </div>
-{%- endmacro %}
-
-{% macro celda_txt(v) -%}
-  {{ (v if v is not none else '') }}
-{%- endmacro %}
-
-{% macro acciones(entity, row) -%}
-  <div class="actions">
-    <a href="{{ url_for('edit_record', entity=entity, rid=row.id) }}">Editar</a>
-    <form style="display:inline" method="post" action="{{ url_for('delete_record', entity=entity, rid=row.id) }}" onsubmit="return confirm('¿Eliminar este registro?')">
-      <input type="hidden" name="next" value="{{ request.full_path }}">
-      <button class="btn light" type="submit">Eliminar</button>
+        <div class="col-12">
+          <button class="btn btn-primary-custom" type="submit">
+            <i class="fas fa-search me-1"></i> Aplicar Filtros
+          </button>
+          <a href="{{ url_for('registros') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-undo me-1"></i> Limpiar Filtros
+          </a>
+        </div>
+      </div>
     </form>
   </div>
-{%- endmacro %}
 
-{% macro inicio_bulk(entity) -%}
-  <form method="post" action="{{ url_for('delete_multiple') }}" onsubmit="return confirm('¿Eliminar los seleccionados?')">
-    <input type="hidden" name="entity" value="{{ entity }}">
-    <div class="bulk-bar">
-      <button class="btn light" type="button" onclick="toggleAll(this,'{{ entity }}')">Seleccionar todo</button>
-      <button class="btn" type="submit">Eliminar seleccionados</button>
-    </div>
-{%- endmacro %}
+  {# Macro botón eliminar #}
+  {% macro delbtn(entity, id) -%}
+    <form method="post"
+          action="{{ url_for('delete_record', entity=entity, rid=id) }}"
+          onsubmit="return confirm('¿Está seguro de que desea eliminar este registro?');"
+          style="display:inline;">
+      <input type="hidden" name="next" value="{{ request.full_path }}">
+      <button class="btn btn-sm btn-outline-danger" type="submit" title="Eliminar registro">
+        <i class="fas fa-trash"></i>
+      </button>
+    </form>
+  {%- endmacro %}
 
-{% macro fin_bulk() -%}
-  </form>
-{%- endmacro %}
+  <!-- Sección de datos -->
+  <div class="mt-4">
+    <!-- CENSO -->
+    {% if vista == 'censo' %}
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="fas fa-users me-2"></i>Registros de Censo</h4>
+        <a class="btn btn-primary-custom" href="{{ url_for('download_entity', entity='censo', **request.args) }}">
+          <i class="fas fa-download me-1"></i> Descargar CSV
+        </a>
+      </div>
+      
+      {% if census %}
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Acciones</th>
+                <th>Fecha</th>
+                <th>Censo Día</th>
+                <th>Censo Noche</th>
+                <th>Total</th>
+                <th>Registro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in census %}
+                <tr>
+                  <td class="table-actions">
+                    {{ delbtn('censo', r.id) }}
+                  </td>
+                  <td>{{ r.fecha }}</td>
+                  <td>{{ r.censo_dia }}</td>
+                  <td>{{ r.censo_noche }}</td>
+                  <td><strong>{{ r.total }}</strong></td>
+                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center py-4">
+          <i class="fas fa-users fa-2x mb-3"></i>
+          <h5>No se encontraron registros de censo</h5>
+          <p class="mb-0">No hay datos de censo para los filtros seleccionados.</p>
+        </div>
+      {% endif %}
+    {% endif %}
 
-{% if vista == 'censo' %}
-  {{ descarga_y_acciones('censo') }}
-  {{ inicio_bulk('censo') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Fecha</th><th>Censo Día</th><th>Censo Noche</th><th>Total</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in census %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ r.censo_dia }}</td>
-          <td>{{ r.censo_noche }}</td>
-          <td>{{ r.total }}</td>
-          <td>{{ acciones('censo', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'eventos' %}
-  {{ descarga_y_acciones('eventos') }}
-  {{ inicio_bulk('eventos') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Fecha</th><th>Horario</th><th>Qué ocurrió</th><th>Nombre afectado</th><th>Acción</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in eventos %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ r.horario }}</td>
-          <td class="wrap">{{ r.que_ocurrio }}</td>
-          <td>{{ r.nombre_afectado }}</td>
-          <td class="wrap">{{ r.accion }}</td>
-          <td>{{ acciones('eventos', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'duplicidades' %}
-  {{ descarga_y_acciones('duplicidades') }}
-  {{ inicio_bulk('duplicidades') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Semana</th><th>Fecha</th><th>ID</th><th>Empresa contratista</th><th>Descripción</th>
-      <th>Tipo riesgo</th><th>Pabellón</th><th>Hab.</th><th>Contacto</th><th>Usuario</th><th>Responsable</th>
-      <th>Estatus</th><th>Notif. usuario</th><th>Plan acción</th><th>Fecha cierre</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in duplics %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td>{{ r.semana }}</td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ r.id_interno }}</td>
-          <td>{{ r.empresa_contratista }}</td>
-          <td class="wrap">{{ r.descripcion_problema }}</td>
-          <td>{{ r.tipo_riesgo }}</td>
-          <td>{{ r.pabellon }}</td>
-          <td>{{ r.habitacion }}</td>
-          <td>{{ r.ingresar_contacto }}</td>
-          <td>{{ r.nombre_usuario }}</td>
-          <td>{{ r.responsable }}</td>
-          <td>{{ r.estatus }}</td>
-          <td>{{ r.notificacion_usuario }}</td>
-          <td class="wrap">{{ r.plan_accion }}</td>
-          <td class="nowrap">{{ r.fecha_cierre }}</td>
-          <td>{{ acciones('duplicidades', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'encuestas' %}
-  {{ descarga_y_acciones('encuestas') }}
-  {{ inicio_bulk('encuestas') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Fecha/Hora</th><th>Q1</th><th>P1</th><th>Q2</th><th>P2</th>
-      <th>Q3</th><th>P3</th><th>Q4</th><th>P4</th><th>Q5</th><th>P5</th>
-      <th>Total</th><th>Promedio</th><th>Comentarios</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in encuestas %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td class="nowrap">{{ r.fecha_hora.strftime('%Y-%m-%d %H:%M') }}</td>
-          <td class="wrap">{{ r.q1_respuesta }}</td><td>{{ r.q1_puntaje }}</td>
-          <td class="wrap">{{ r.q2_respuesta }}</td><td>{{ r.q2_puntaje }}</td>
-          <td class="wrap">{{ r.q3_respuesta }}</td><td>{{ r.q3_puntaje }}</td>
-          <td class="wrap">{{ r.q4_respuesta }}</td><td>{{ r.q4_puntaje }}</td>
-          <td class="wrap">{{ r.q5_respuesta }}</td><td>{{ r.q5_puntaje }}</td>
-          <td>{{ r.total }}</td><td>{{ r.promedio }}</td>
-          <td class="wrap">{{ r.comentarios }}</td>
-          <td>{{ acciones('encuestas', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'atencion' %}
-  {{ descarga_y_acciones('atencion') }}
-  {{ inicio_bulk('atencion') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Fecha</th><th>Tiempo prom. (mm:ss)</th><th>Cantidad</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in atenciones %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ seconds_to_mmss(r.tiempo_promedio_sec) }}</td>
-          <td>{{ r.cantidad }}</td>
-          <td>{{ acciones('atencion', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'robos' %}
-  {{ descarga_y_acciones('robos') }}
-  {{ inicio_bulk('robos') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Fecha</th><th>Hora</th><th>Módulo</th><th>Hab.</th><th>Empresa</th>
-      <th>Cliente</th><th>RUT</th><th>Medio reclamo</th><th>Especies</th><th>Observaciones</th><th>Recepciona</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in robos %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
-          <td>{{ r.modulo }}</td>
-          <td>{{ r.habitacion }}</td>
-          <td>{{ r.empresa }}</td>
-          <td>{{ r.nombre_cliente }}</td>
-          <td>{{ r.rut }}</td>
-          <td>{{ r.medio_reclamo }}</td>
-          <td class="wrap">{{ r.especies }}</td>
-          <td class="wrap">{{ r.observaciones }}</td>
-          <td>{{ r.recepciona }}</td>
-          <td>{{ acciones('robos', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'miscelaneo' %}
-  {{ descarga_y_acciones('miscelaneo') }}
-  {{ inicio_bulk('miscelaneo') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>OT</th><th>División</th><th>Área</th><th>Lugar</th><th>Ubicación</th><th>Disciplina</th><th>Especialidad</th>
-      <th>Falla</th><th>Empresa</th><th>F. creación</th><th>F. inicio</th><th>F. término</th><th>F. aprobación</th>
-      <th>Estado</th><th>Comentario</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in miscelaneo %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td>{{ r.ot }}</td><td>{{ r.division }}</td><td>{{ r.area }}</td><td>{{ r.lugar }}</td><td>{{ r.ubicacion }}</td>
-          <td>{{ r.disciplina }}</td><td>{{ r.especialidad }}</td><td>{{ r.falla }}</td><td>{{ r.empresa }}</td>
-          <td class="nowrap">{{ r.fecha_creacion }}</td>
-          <td class="nowrap">{{ r.fecha_inicio }}</td>
-          <td class="nowrap">{{ r.fecha_termino }}</td>
-          <td class="nowrap">{{ r.fecha_aprobacion }}</td>
-          <td>{{ r.estado }}</td><td class="wrap">{{ r.comentario }}</td>
-          <td>{{ acciones('miscelaneo', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'desviaciones' %}
-  {{ descarga_y_acciones('desviaciones') }}
-  {{ inicio_bulk('desviaciones') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>N° Solicitud</th><th>Fecha</th><th>ID</th><th>Empresa</th><th>Descripción</th><th>Tipo riesgo</th>
-      <th>Tipo solicitud</th><th>Pabellón</th><th>Hab.</th><th>Vía</th><th>Quién informa</th><th>Riesgo material</th><th>Correo destino</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in desviaciones %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td>{{ r.n_solicitud }}</td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ r.id_interno }}</td>
-          <td>{{ r.empresa_contratista }}</td>
-          <td class="wrap">{{ r.descripcion_problema }}</td>
-          <td>{{ r.tipo_riesgo }}</td>
-          <td>{{ r.tipo_solicitud }}</td>
-          <td>{{ r.pabellon }}</td>
-          <td>{{ r.habitacion }}</td>
-          <td>{{ r.via_solicitud }}</td>
-          <td>{{ r.quien_informa }}</td>
-          <td>{{ r.riesgo_material }}</td>
-          <td>{{ r.correo_destino }}</td>
-          <td>{{ acciones('desviaciones', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'solicitud_ot' %}
-  {{ descarga_y_acciones('solicitud_ot') }}
-  {{ inicio_bulk('solicitud_ot') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>N° Solicitud</th><th>Descripción</th><th>Tipo</th><th>Módulo</th><th>Hab.</th><th>Turno</th><th>Jornada</th>
-      <th>Vía</th><th>Correo</th><th>Tarea</th><th>OT</th><th>Fecha inicio</th><th>Estado</th><th>T. respuesta (mm:ss)</th>
-      <th>Satisfacción</th><th>Motivo</th><th>Observación</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in solicitudes_ot %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td>{{ r.n_solicitud }}</td>
-          <td class="wrap">{{ r.descripcion_problema }}</td>
-          <td>{{ r.tipo_solicitud }}</td>
-          <td>{{ r.modulo }}</td>
-          <td>{{ r.habitacion }}</td>
-          <td>{{ r.tipo_turno }}</td>
-          <td>{{ r.jornada }}</td>
-          <td>{{ r.via_solicitud }}</td>
-          <td class="wrap">{{ r.correo_usuario }}</td>
-          <td>{{ r.tipo_tarea }}</td>
-          <td>{{ r.ot }}</td>
-          <td class="nowrap">{{ r.fecha_inicio }}</td>
-          <td>{{ r.estado }}</td>
-          <td>{{ seconds_to_mmss(r.tiempo_respuesta_sec or 0) }}</td>
-          <td>{{ r.satisfaccion_reclamo }}</td>
-          <td class="wrap">{{ r.motivo }}</td>
-          <td class="wrap">{{ r.observacion }}</td>
-          <td>{{ acciones('solicitud_ot', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'reclamos' %}
-  {{ descarga_y_acciones('reclamos') }}
-  {{ inicio_bulk('reclamos') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>N° Solicitud</th><th>Fecha</th><th>ID</th><th>Empresa</th><th>Descripción</th><th>Tipo sol.</th><th>Pabellón</th>
-      <th>Hab.</th><th>Vía</th><th>Contacto</th><th>Usuario</th><th>Responsable</th><th>Estatus</th><th>Notificación</th><th>Plan acción</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in reclamos %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td>{{ r.n_solicitud }}</td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ r.id_interno }}</td>
-          <td>{{ r.empresa_contratista }}</td>
-          <td class="wrap">{{ r.descripcion_problema }}</td>
-          <td>{{ r.tipo_solicitud }}</td>
-          <td>{{ r.pabellon }}</td>
-          <td>{{ r.habitacion }}</td>
-          <td>{{ r.via_solicitud }}</td>
-          <td>{{ r.ingresar_contacto }}</td>
-          <td>{{ r.nombre_usuario }}</td>
-          <td>{{ r.responsable }}</td>
-          <td>{{ r.estatus }}</td>
-          <td>{{ r.notificacion_usuario }}</td>
-          <td class="wrap">{{ r.plan_accion }}</td>
-          <td>{{ acciones('reclamos', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'alarmas' %}
-  {{ descarga_y_acciones('alarmas') }}
-  {{ inicio_bulk('alarmas') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Módulo</th><th>Hab.</th><th>Recepcionista</th><th>Fecha</th><th>Empresa</th><th>ID</th><th>CO</th>
-      <th>Aviso Mant. (h)</th><th>Llegada Mant. (h)</th><th>Aviso Líder (h)</th><th>Llegada Líder (h)</th>
-      <th>Hora reporte</th><th>Tipo evento</th><th>Tipo actividad</th><th>Fecha reporte</th><th>Turno</th><th>Observaciones</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in alarmas %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td>{{ r.modulo }}</td>
-          <td>{{ r.n_habitacion }}</td>
-          <td>{{ r.nombre_recepcionista }}</td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ r.empresa }}</td>
-          <td>{{ r.id_interno }}</td>
-          <td>{{ r.co }}</td>
-          <td>{{ r.aviso_mantencion_h }}</td>
-          <td>{{ r.llegada_mantencion_h }}</td>
-          <td>{{ r.aviso_lider_h }}</td>
-          <td>{{ r.llegada_lider_h }}</td>
-          <td>{{ r.hora_reporte_salfa.strftime('%H:%M') if r.hora_reporte_salfa else '' }}</td>
-          <td>{{ r.tipo_evento }}</td>
-          <td>{{ r.tipo_actividad }}</td>
-          <td class="nowrap">{{ r.fecha_reporte }}</td>
-          <td>{{ r.turno_recepcion_ingresos }}</td>
-          <td class="wrap">{{ r.observaciones }}</td>
-          <td>{{ acciones('alarmas', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'extensiones' %}
-  {{ descarga_y_acciones('extensiones') }}
-  {{ inicio_bulk('extensiones') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Fecha solicitud</th><th>ID</th><th>Empresa</th><th>CO</th><th>Gerencia</th><th>Proyecto</th><th># Clientes</th>
-      <th>Desde</th><th>Hasta</th><th>Aprobador</th><th>Observación</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in extensiones %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td class="nowrap">{{ r.fecha_solicitud }}</td>
-          <td>{{ r.id_interno }}</td>
-          <td>{{ r.empresa }}</td>
-          <td>{{ r.co }}</td>
-          <td>{{ r.gerencia }}</td>
-          <td>{{ r.proyecto }}</td>
-          <td>{{ r.cant_clientes }}</td>
-          <td class="nowrap">{{ r.desde }}</td>
-          <td class="nowrap">{{ r.hasta }}</td>
-          <td>{{ r.aprobador }}</td>
-          <td class="wrap">{{ r.observacion }}</td>
-          <td>{{ acciones('extensiones', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'onboarding' %}
-  {{ descarga_y_acciones('onboarding') }}
-  {{ inicio_bulk('onboarding') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Fecha/Hora</th><th>Nombre</th><th>RUT</th><th>Empresa</th><th>ID</th><th>Archivo PDF</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in onboarding %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td class="nowrap">{{ r.fecha_hora.strftime('%Y-%m-%d %H:%M') }}</td>
-          <td>{{ r.nombre }}</td>
-          <td>{{ r.rut }}</td>
-          <td>{{ r.empresa }}</td>
-          <td>{{ r.id_interno }}</td>
-          <td class="wrap">{{ r.archivo_pdf }}</td>
-          <td>{{ acciones('onboarding', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'apertura' %}
-  {{ descarga_y_acciones('apertura') }}
-  {{ inicio_bulk('apertura') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Fecha</th><th>Habitación</th><th>Hora</th><th>Responsable</th><th>Estado chapa</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in apertura %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td class="nowrap">{{ r.fecha }}</td>
-          <td>{{ r.habitacion }}</td>
-          <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
-          <td>{{ r.responsable }}</td>
-          <td class="wrap">{{ r.estado_chapa }}</td>
-          <td>{{ acciones('apertura', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% elif vista == 'cumplimiento' %}
-  {{ descarga_y_acciones('cumplimiento') }}
-  {{ inicio_bulk('cumplimiento') }}
-  <table>
-    <thead><tr>
-      <th><input type="checkbox" onclick="checkAll(this)"></th>
-      <th>Empresa</th><th>N° Contrato</th><th>CO</th><th>Correo</th><th>ID</th><th>Turno</th><th>Acciones</th>
-    </tr></thead>
-    <tbody>
-      {% for r in cumplimiento %}
-        <tr>
-          <td><input type="checkbox" name="ids" value="{{ r.id }}"></td>
-          <td>{{ r.empresa }}</td>
-          <td>{{ r.n_contrato }}</td>
-          <td>{{ r.co }}</td>
-          <td class="wrap">{{ r.correo_electronico }}</td>
-          <td>{{ r.id_interno }}</td>
-          <td>{{ r.turno }}</td>
-          <td>{{ acciones('cumplimiento', r) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ fin_bulk() }}
-{% endif %}
+    <!-- EVENTOS DE SEGURIDAD -->
+    {% if vista == 'eventos' %}
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="fas fa-shield-alt me-2"></i>Eventos de Seguridad</h4>
+        <a class="btn btn-primary-custom" href="{{ url_for('download_entity', entity='eventos', **request.args) }}">
+          <i class="fas fa-download me-1"></i> Descargar CSV
+        </a>
+      </div>
+      
+      {% if eventos %}
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Acciones</th>
+                <th>Fecha</th>
+                <th>Horario</th>
+                <th>Qué Ocurrió</th>
+                <th>Nombre Afectado</th>
+                <th>Registro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in eventos %}
+                <tr>
+                  <td class="table-actions">
+                    {{ delbtn('eventos', r.id) }}
+                  </td>
+                  <td>{{ r.fecha }}</td>
+                  <td>{{ r.horario }}</td>
+                  <td>
+                    <span title="{{ r.que_ocurrio }}">
+                      {{ r.que_ocurrio[:50] }}{% if r.que_ocurrio|length > 50 %}...{% endif %}
+                    </span>
+                  </td>
+                  <td>{{ r.nombre_afectado or '-' }}</td>
+                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center py-4">
+          <i class="fas fa-shield-alt fa-2x mb-3"></i>
+          <h5>No se encontraron eventos de seguridad</h5>
+          <p class="mb-0">No hay eventos de seguridad para los filtros seleccionados.</p>
+        </div>
+      {% endif %}
+    {% endif %}
 
-<script>
-function checkAll(master){
-  const form = master.closest('form');
-  form.querySelectorAll('input[type="checkbox"][name="ids"]').forEach(cb=>{ cb.checked = master.checked; });
-}
-function toggleAll(btn, entity){
-  const container = btn.closest('form');
-  const boxes = container.querySelectorAll('input[type="checkbox"][name="ids"]');
-  const allChecked = Array.from(boxes).every(cb=>cb.checked);
-  boxes.forEach(cb=>cb.checked = !allChecked);
-}
-</script>
+    <!-- DUPLICIDADES -->
+    {% if vista == 'duplicidades' %}
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="fas fa-copy me-2"></i>Duplicidades</h4>
+        <a class="btn btn-primary-custom" href="{{ url_for('download_entity', entity='duplicidades', **request.args) }}">
+          <i class="fas fa-download me-1"></i> Descargar CSV
+        </a>
+      </div>
+      
+      {% if duplics %}
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Acciones</th>
+                <th>Semana</th>
+                <th>Fecha</th>
+                <th>ID</th>
+                <th>Empresa</th>
+                <th>Descripción</th>
+                <th>Estatus</th>
+                <th>Registro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in duplics %}
+                <tr>
+                  <td class="table-actions">
+                    {{ delbtn('duplicidades', r.id) }}
+                  </td>
+                  <td>{{ r.semana }}</td>
+                  <td>{{ r.fecha }}</td>
+                  <td>{{ r.id_interno or '-' }}</td>
+                  <td>
+                    <span title="{{ r.empresa_contratista or '' }}">
+                      {{ (r.empresa_contratista or '-')[:20] }}{% if (r.empresa_contratista or '')|length > 20 %}...{% endif %}
+                    </span>
+                  </td>
+                  <td>
+                    <span title="{{ r.descripcion_problema or '' }}">
+                      {{ (r.descripcion_problema or '')[:30] }}{% if (r.descripcion_problema or '')|length > 30 %}...{% endif %}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge {% if r.estatus == 'Cerrado' %}bg-success{% else %}bg-warning{% endif %}">
+                      {{ r.estatus or 'Abierto' }}
+                    </span>
+                  </td>
+                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center py-4">
+          <i class="fas fa-copy fa-2x mb-3"></i>
+          <h5>No se encontraron duplicidades</h5>
+          <p class="mb-0">No hay duplicidades para los filtros seleccionados.</p>
+        </div>
+      {% endif %}
+    {% endif %}
 
-</body>
-</html>
+    <!-- ENCUESTAS -->
+    {% if vista == 'encuestas' %}
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="fas fa-poll me-2"></i>Encuestas de Satisfacción</h4>
+        <a class="btn btn-primary-custom" href="{{ url_for('download_entity', entity='encuestas', **request.args) }}">
+          <i class="fas fa-download me-1"></i> Descargar CSV
+        </a>
+      </div>
+      
+      {% if encuestas %}
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Acciones</th>
+                <th>Fecha Hora</th>
+                <th>Puntaje 1</th>
+                <th>Puntaje 2</th>
+                <th>Puntaje 3</th>
+                <th>Puntaje 4</th>
+                <th>Puntaje 5</th>
+                <th>Total</th>
+                <th>Promedio</th>
+                <th>Registro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in encuestas %}
+                <tr>
+                  <td class="table-actions">
+                    {{ delbtn('encuestas', r.id) }}
+                  </td>
+                  <td>{{ r.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</td>
+                  <td>{{ r.q1_puntaje if r.q1_puntaje is not none else '-' }}</td>
+                  <td>{{ r.q2_puntaje if r.q2_puntaje is not none else '-' }}</td>
+                  <td>{{ r.q3_puntaje if r.q3_puntaje is not none else '-' }}</td>
+                  <td>{{ r.q4_puntaje if r.q4_puntaje is not none else '-' }}</td>
+                  <td>{{ r.q5_puntaje if r.q5_puntaje is not none else '-' }}</td>
+                  <td><strong>{{ r.total if r.total is not none else '-' }}</strong></td>
+                  <td>
+                    <span class="badge {% if r.promedio and r.promedio >= 8 %}bg-success{% elif r.promedio and r.promedio >= 6 %}bg-warning{% else %}bg-danger{% endif %}">
+                      {{ "%.2f"|format(r.promedio) if r.promedio is not none else '-' }}
+                    </span>
+                  </td>
+                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center py-4">
+          <i class="fas fa-poll fa-2x mb-3"></i>
+          <h5>No se encontraron encuestas</h5>
+          <p class="mb-0">No hay encuestas para los filtros seleccionados.</p>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <!-- ATENCIÓN AL PÚBLICO -->
+    {% if vista == 'atencion' %}
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="fas fa-headset me-2"></i>Atención al Público</h4>
+        <a class="btn btn-primary-custom" href="{{ url_for('download_entity', entity='atencion', **request.args) }}">
+          <i class="fas fa-download me-1"></i> Descargar CSV
+        </a>
+      </div>
+      
+      {% if atenciones %}
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Acciones</th>
+                <th>Fecha</th>
+                <th>Tiempo Promedio</th>
+                <th>Cantidad</th>
+                <th>Registro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in atenciones %}
+                <tr>
+                  <td class="table-actions">
+                    {{ delbtn('atencion', r.id) }}
+                  </td>
+                  <td>{{ r.fecha }}</td>
+                  <td>{{ '%02d:%02d'|format((r.tiempo_promedio_sec//60),(r.tiempo_promedio_sec%60)) }}</td>
+                  <td><strong>{{ r.cantidad }}</strong></td>
+                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center py-4">
+          <i class="fas fa-headset fa-2x mb-3"></i>
+          <h5>No se encontraron registros de atención</h5>
+          <p class="mb-0">No hay registros de atención al público para los filtros seleccionados.</p>
+        </div>
+      {% endif %}
+    {% endif %}
+
+    <!-- MÓDULOS RESTANTES -->
+    {% if vista not in ['censo', 'eventos', 'duplicidades', 'encuestas', 'atencion'] %}
+      {% set entity_data = {
+        'robos': (robos, 'Robos y Hurtos', 'fa-exclamation-triangle'),
+        'miscelaneo': (miscelaneo, 'Misceláneo', 'fa-tools'),
+        'desviaciones': (desviaciones, 'Desviaciones', 'fa-random'),
+        'solicitud_ot': (solicitudes_ot, 'Solicitudes OT', 'fa-clipboard-list'),
+        'reclamos': (reclamos, 'Reclamos', 'fa-comments'),
+        'alarmas': (alarmas, 'Activación de Alarmas', 'fa-bell'),
+        'extensiones': (extensiones, 'Extensiones', 'fa-calendar-plus'),
+        'onboarding': (onboarding, 'Onboarding', 'fa-user-plus'),
+        'apertura': (apertura, 'Apertura de Habitaciones', 'fa-door-open'),
+        'cumplimiento': (cumplimiento, 'Cumplimiento EECC', 'fa-check-circle')
+      } %}
+      
+      {% set data, title, icon = entity_data.get(vista, ([], vista|replace('_', ' ')|title, 'fa-database')) %}
+      
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="fas {{ icon }} me-2"></i>{{ title }}</h4>
+        <a class="btn btn-primary-custom" href="{{ url_for('download_entity', entity=vista, **request.args) }}">
+          <i class="fas fa-download me-1"></i> Descargar CSV
+        </a>
+      </div>
+      
+      {% if data %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          Mostrando {{ data|length }} registros de {{ title }}
+        </div>
+        
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Acciones</th>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Detalles</th>
+                <th>Registro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in data %}
+                <tr>
+                  <td class="table-actions">
+                    {{ delbtn(vista, r.id) }}
+                  </td>
+                  <td>{{ r.id }}</td>
+                  <td>
+                    {% if r.fecha %}
+                      {{ r.fecha }}
+                    {% elif r.fecha_hora %}
+                      {{ r.fecha_hora.strftime('%d/%m/%Y %H:%M') }}
+                    {% elif r.fecha_solicitud %}
+                      {{ r.fecha_solicitud }}
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if r.descripcion_problema %}
+                      <span title="{{ r.descripcion_problema }}">
+                        {{ (r.descripcion_problema or '')[:80] }}{% if (r.descripcion_problema or '')|length > 80 %}...{% endif %}
+                      </span>
+                    {% elif r.nombre %}
+                      {{ r.nombre }}
+                    {% elif r.empresa %}
+                      {{ r.empresa }}
+                    {% else %}
+                      <span class="text-muted">Ver detalles</span>
+                    {% endif %}
+                  </td>
+                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info text-center py-4">
+          <i class="fas {{ icon }} fa-2x mb-3"></i>
+          <h5>No se encontraron registros</h5>
+          <p class="mb-0">No hay registros de {{ title|lower }} para los filtros seleccionados.</p>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
 
