@@ -651,6 +651,8 @@ def panel():
     #       robos | miscelaneo | desviaciones | solicitud_ot | reclamos |
     #       alarmas | extensiones | onboarding | apertura | cumplimiento
     tab = request.args.get("tab", "censo")
+    edit_id = request.args.get("edit", type=int)
+    
     db = SessionLocal()
     try:
         if request.method == "POST":
@@ -660,8 +662,23 @@ def panel():
                 cd = int(request.form.get("censo_dia", 0) or 0)
                 cn = int(request.form.get("censo_noche", 0) or 0)
                 total = int(request.form.get("total", cd + cn) or (cd + cn))
-                db.add(CensusEntry(fecha=fecha, censo_dia=cd, censo_noche=cn, total=total))
-                db.commit(); flash("Censo guardado.")
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(CensusEntry, edit_id)
+                    if record:
+                        record.fecha = fecha
+                        record.censo_dia = cd
+                        record.censo_noche = cn
+                        record.total = total
+                        flash("Censo actualizado.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    db.add(CensusEntry(fecha=fecha, censo_dia=cd, censo_noche=cn, total=total))
+                    flash("Censo guardado.")
+                db.commit()
 
             # -------------------- EVENTOS --------------------
             elif tab == "eventos":
@@ -670,32 +687,75 @@ def panel():
                 que = request.form.get("que_ocurrio", "").strip()
                 nom = request.form.get("nombre_afectado", "").strip()
                 accion = request.form.get("accion", "").strip()
-                db.add(EventSeguridad(fecha=fecha, horario=horario, que_ocurrio=que,
-                                      nombre_afectado=nom, accion=accion))
-                db.commit(); flash("Evento de seguridad guardado.")
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(EventSeguridad, edit_id)
+                    if record:
+                        record.fecha = fecha
+                        record.horario = horario
+                        record.que_ocurrio = que
+                        record.nombre_afectado = nom
+                        record.accion = accion
+                        flash("Evento de seguridad actualizado.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    db.add(EventSeguridad(fecha=fecha, horario=horario, que_ocurrio=que,
+                                          nombre_afectado=nom, accion=accion))
+                    flash("Evento de seguridad guardado.")
+                db.commit()
 
             # -------------------- DUPLICIDADES --------------------
             elif tab == "duplicidades":
                 semana = int(request.form["semana"])
                 fecha = safe_convert_date(request.form["fecha"])
-                rec = DuplicidadEntry(
-                    semana=semana,
-                    fecha=fecha,
-                    id_interno=request.form.get("id", "").strip(),
-                    empresa_contratista=request.form.get("empresa_contratista", "").strip(),
-                    descripcion_problema=request.form.get("descripcion_problema", "").strip(),
-                    tipo_riesgo=request.form.get("tipo_riesgo", "").strip(),
-                    pabellon=request.form.get("pabellon", "").strip(),
-                    habitacion=request.form.get("habitacion", "").strip(),
-                    ingresar_contacto=request.form.get("ingresar_contacto", "").strip(),
-                    nombre_usuario=request.form.get("nombre_usuario", "").strip(),
-                    responsable=request.form.get("responsable", "").strip(),
-                    estatus=request.form.get("estatus", "").strip(),
-                    notificacion_usuario=request.form.get("notificacion_usuario", "").strip(),
-                    plan_accion=request.form.get("plan_accion", "").strip(),
-                    fecha_cierre=safe_convert_date(request.form.get("fecha_cierre")),
-                )
-                db.add(rec); db.commit(); flash("Duplicidad guardada.")
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(DuplicidadEntry, edit_id)
+                    if record:
+                        record.semana = semana
+                        record.fecha = fecha
+                        record.id_interno = request.form.get("id", "").strip()
+                        record.empresa_contratista = request.form.get("empresa_contratista", "").strip()
+                        record.descripcion_problema = request.form.get("descripcion_problema", "").strip()
+                        record.tipo_riesgo = request.form.get("tipo_riesgo", "").strip()
+                        record.pabellon = request.form.get("pabellon", "").strip()
+                        record.habitacion = request.form.get("habitacion", "").strip()
+                        record.ingresar_contacto = request.form.get("ingresar_contacto", "").strip()
+                        record.nombre_usuario = request.form.get("nombre_usuario", "").strip()
+                        record.responsable = request.form.get("responsable", "").strip()
+                        record.estatus = request.form.get("estatus", "").strip()
+                        record.notificacion_usuario = request.form.get("notificacion_usuario", "").strip()
+                        record.plan_accion = request.form.get("plan_accion", "").strip()
+                        record.fecha_cierre = safe_convert_date(request.form.get("fecha_cierre"))
+                        flash("Duplicidad actualizada.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = DuplicidadEntry(
+                        semana=semana,
+                        fecha=fecha,
+                        id_interno=request.form.get("id", "").strip(),
+                        empresa_contratista=request.form.get("empresa_contratista", "").strip(),
+                        descripcion_problema=request.form.get("descripcion_problema", "").strip(),
+                        tipo_riesgo=request.form.get("tipo_riesgo", "").strip(),
+                        pabellon=request.form.get("pabellon", "").strip(),
+                        habitacion=request.form.get("habitacion", "").strip(),
+                        ingresar_contacto=request.form.get("ingresar_contacto", "").strip(),
+                        nombre_usuario=request.form.get("nombre_usuario", "").strip(),
+                        responsable=request.form.get("responsable", "").strip(),
+                        estatus=request.form.get("estatus", "").strip(),
+                        notificacion_usuario=request.form.get("notificacion_usuario", "").strip(),
+                        plan_accion=request.form.get("plan_accion", "").strip(),
+                        fecha_cierre=safe_convert_date(request.form.get("fecha_cierre")),
+                    )
+                    db.add(rec)
+                    flash("Duplicidad guardada.")
+                db.commit()
 
             # -------------------- ENCUESTA --------------------
             elif tab == "encuesta":
@@ -710,229 +770,530 @@ def panel():
                     vals[i] = (r, p)
                     if p is not None: total += p; n += 1
                 promedio = (total / n) if n>0 else None
-                db.add(EncuestaEntry(
-                    fecha_hora=fecha_hora,
-                    q1_respuesta=vals[1][0], q1_puntaje=vals[1][1],
-                    q2_respuesta=vals[2][0], q2_puntaje=vals[2][1],
-                    q3_respuesta=vals[3][0], q3_puntaje=vals[3][1],
-                    q4_respuesta=vals[4][0], q4_puntaje=vals[4][1],
-                    q5_respuesta=vals[5][0], q5_puntaje=vals[5][1],
-                    total=total if n>0 else None,
-                    promedio=round(promedio,2) if promedio is not None else None,
-                    comentarios=request.form.get("comentarios", "").strip(),
-                ))
-                db.commit(); flash("Encuesta guardada.")
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(EncuestaEntry, edit_id)
+                    if record:
+                        record.fecha_hora = fecha_hora
+                        record.q1_respuesta = vals[1][0]
+                        record.q1_puntaje = vals[1][1]
+                        record.q2_respuesta = vals[2][0]
+                        record.q2_puntaje = vals[2][1]
+                        record.q3_respuesta = vals[3][0]
+                        record.q3_puntaje = vals[3][1]
+                        record.q4_respuesta = vals[4][0]
+                        record.q4_puntaje = vals[4][1]
+                        record.q5_respuesta = vals[5][0]
+                        record.q5_puntaje = vals[5][1]
+                        record.total = total if n>0 else None
+                        record.promedio = round(promedio,2) if promedio is not None else None
+                        record.comentarios = request.form.get("comentarios", "").strip()
+                        flash("Encuesta actualizada.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    db.add(EncuestaEntry(
+                        fecha_hora=fecha_hora,
+                        q1_respuesta=vals[1][0], q1_puntaje=vals[1][1],
+                        q2_respuesta=vals[2][0], q2_puntaje=vals[2][1],
+                        q3_respuesta=vals[3][0], q3_puntaje=vals[3][1],
+                        q4_respuesta=vals[4][0], q4_puntaje=vals[4][1],
+                        q5_respuesta=vals[5][0], q5_puntaje=vals[5][1],
+                        total=total if n>0 else None,
+                        promedio=round(promedio,2) if promedio is not None else None,
+                        comentarios=request.form.get("comentarios", "").strip(),
+                    ))
+                    flash("Encuesta guardada.")
+                db.commit()
 
             # -------------------- ATENCIÓN --------------------
             elif tab == "atencion":
                 fecha = safe_convert_date(request.form["fecha"])
                 tiempo_input = request.form.get("tiempo_promedio", "").strip()
-                
                 segundos = safe_convert_time(tiempo_input)
-                
                 cant = int(request.form.get("cantidad", 0) or 0)
-                db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=segundos, cantidad=cant))
-                db.commit(); flash("Atención guardada.")
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(AtencionEntry, edit_id)
+                    if record:
+                        record.fecha = fecha
+                        record.tiempo_promedio_sec = segundos
+                        record.cantidad = cant
+                        flash("Atención actualizada.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    db.add(AtencionEntry(fecha=fecha, tiempo_promedio_sec=segundos, cantidad=cant))
+                    flash("Atención guardada.")
+                db.commit()
 
             # -------------------- ROBOS / HURTOS --------------------
             elif tab == "robos":
                 fecha = safe_convert_date(request.form["fecha"])
                 hora = request.form.get("hora", "00:00")
-                hora_obj = safe_time_hhmm(hora)  # Usamos la nueva función robusta
-                rec = RoboHurtoEntry(
-                    fecha=fecha, hora=hora_obj,
-                    modulo=request.form.get("modulo","").strip(),
-                    habitacion=request.form.get("habitacion","").strip(),
-                    empresa=request.form.get("empresa","").strip(),
-                    nombre_cliente=request.form.get("nombre_cliente","").strip(),
-                    rut=request.form.get("rut","").strip(),
-                    medio_reclamo=request.form.get("medio_reclamo","").strip(),
-                    especies=request.form.get("especies","").strip(),
-                    observaciones=request.form.get("observaciones","").strip(),
-                    recepciona=request.form.get("recepciona","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Robo/Hurto guardado.")
+                hora_obj = safe_time_hhmm(hora)
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(RoboHurtoEntry, edit_id)
+                    if record:
+                        record.fecha = fecha
+                        record.hora = hora_obj
+                        record.modulo = request.form.get("modulo","").strip()
+                        record.habitacion = request.form.get("habitacion","").strip()
+                        record.empresa = request.form.get("empresa","").strip()
+                        record.nombre_cliente = request.form.get("nombre_cliente","").strip()
+                        record.rut = request.form.get("rut","").strip()
+                        record.medio_reclamo = request.form.get("medio_reclamo","").strip()
+                        record.especies = request.form.get("especies","").strip()
+                        record.observaciones = request.form.get("observaciones","").strip()
+                        record.recepciona = request.form.get("recepciona","").strip()
+                        flash("Robo/Hurto actualizado.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = RoboHurtoEntry(
+                        fecha=fecha, hora=hora_obj,
+                        modulo=request.form.get("modulo","").strip(),
+                        habitacion=request.form.get("habitacion","").strip(),
+                        empresa=request.form.get("empresa","").strip(),
+                        nombre_cliente=request.form.get("nombre_cliente","").strip(),
+                        rut=request.form.get("rut","").strip(),
+                        medio_reclamo=request.form.get("medio_reclamo","").strip(),
+                        especies=request.form.get("especies","").strip(),
+                        observaciones=request.form.get("observaciones","").strip(),
+                        recepciona=request.form.get("recepciona","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Robo/Hurto guardado.")
+                db.commit()
 
             # -------------------- MISCELÁNEO --------------------
             elif tab == "miscelaneo":
-                rec = MiscelaneoEntry(
-                    ot=request.form.get("ot","").strip(),
-                    division=request.form.get("division","").strip(),
-                    area=request.form.get("area","").strip(),
-                    lugar=request.form.get("lugar","").strip(),
-                    ubicacion=request.form.get("ubicacion","").strip(),
-                    disciplina=request.form.get("disciplina","").strip(),
-                    especialidad=request.form.get("especialidad","").strip(),
-                    falla=request.form.get("falla","").strip(),
-                    empresa=request.form.get("empresa","").strip(),
-                    fecha_creacion=safe_convert_date(request.form.get("fecha_creacion")),
-                    fecha_inicio=safe_convert_date(request.form.get("fecha_inicio")),
-                    fecha_termino=safe_convert_date(request.form.get("fecha_termino")),
-                    fecha_aprobacion=safe_convert_date(request.form.get("fecha_aprobacion")),
-                    estado=request.form.get("estado","").strip(),
-                    comentario=request.form.get("comentario","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Misceláneo guardado.")
+                if edit_id:
+                    # Modo edición
+                    record = db.get(MiscelaneoEntry, edit_id)
+                    if record:
+                        record.ot = request.form.get("ot","").strip()
+                        record.division = request.form.get("division","").strip()
+                        record.area = request.form.get("area","").strip()
+                        record.lugar = request.form.get("lugar","").strip()
+                        record.ubicacion = request.form.get("ubicacion","").strip()
+                        record.disciplina = request.form.get("disciplina","").strip()
+                        record.especialidad = request.form.get("especialidad","").strip()
+                        record.falla = request.form.get("falla","").strip()
+                        record.empresa = request.form.get("empresa","").strip()
+                        record.fecha_creacion = safe_convert_date(request.form.get("fecha_creacion"))
+                        record.fecha_inicio = safe_convert_date(request.form.get("fecha_inicio"))
+                        record.fecha_termino = safe_convert_date(request.form.get("fecha_termino"))
+                        record.fecha_aprobacion = safe_convert_date(request.form.get("fecha_aprobacion"))
+                        record.estado = request.form.get("estado","").strip()
+                        record.comentario = request.form.get("comentario","").strip()
+                        flash("Misceláneo actualizado.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = MiscelaneoEntry(
+                        ot=request.form.get("ot","").strip(),
+                        division=request.form.get("division","").strip(),
+                        area=request.form.get("area","").strip(),
+                        lugar=request.form.get("lugar","").strip(),
+                        ubicacion=request.form.get("ubicacion","").strip(),
+                        disciplina=request.form.get("disciplina","").strip(),
+                        especialidad=request.form.get("especialidad","").strip(),
+                        falla=request.form.get("falla","").strip(),
+                        empresa=request.form.get("empresa","").strip(),
+                        fecha_creacion=safe_convert_date(request.form.get("fecha_creacion")),
+                        fecha_inicio=safe_convert_date(request.form.get("fecha_inicio")),
+                        fecha_termino=safe_convert_date(request.form.get("fecha_termino")),
+                        fecha_aprobacion=safe_convert_date(request.form.get("fecha_aprobacion")),
+                        estado=request.form.get("estado","").strip(),
+                        comentario=request.form.get("comentario","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Misceláneo guardado.")
+                db.commit()
 
             # -------------------- DESVIACIONES --------------------
             elif tab == "desviaciones":
-                rec = DesviacionEntry(
-                    n_solicitud=request.form.get("n_solicitud","").strip(),
-                    fecha=safe_convert_date(request.form["fecha"]),
-                    id_interno=request.form.get("id","").strip(),
-                    empresa_contratista=request.form.get("empresa_contratista","").strip(),
-                    descripcion_problema=request.form.get("descripcion_problema","").strip(),
-                    tipo_riesgo=request.form.get("tipo_riesgo","").strip(),
-                    tipo_solicitud=request.form.get("tipo_solicitud","").strip(),
-                    pabellon=request.form.get("pabellon","").strip(),
-                    habitacion=request.form.get("habitacion","").strip(),
-                    via_solicitud=request.form.get("via_solicitud","").strip(),
-                    quien_informa=request.form.get("quien_informa","").strip(),
-                    riesgo_material=request.form.get("riesgo_material","").strip(),
-                    correo_destino=request.form.get("correo_destino","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Desviación guardada.")
+                if edit_id:
+                    # Modo edición
+                    record = db.get(DesviacionEntry, edit_id)
+                    if record:
+                        record.n_solicitud = request.form.get("n_solicitud","").strip()
+                        record.fecha = safe_convert_date(request.form["fecha"])
+                        record.id_interno = request.form.get("id","").strip()
+                        record.empresa_contratista = request.form.get("empresa_contratista","").strip()
+                        record.descripcion_problema = request.form.get("descripcion_problema","").strip()
+                        record.tipo_riesgo = request.form.get("tipo_riesgo","").strip()
+                        record.tipo_solicitud = request.form.get("tipo_solicitud","").strip()
+                        record.pabellon = request.form.get("pabellon","").strip()
+                        record.habitacion = request.form.get("habitacion","").strip()
+                        record.via_solicitud = request.form.get("via_solicitud","").strip()
+                        record.quien_informa = request.form.get("quien_informa","").strip()
+                        record.riesgo_material = request.form.get("riesgo_material","").strip()
+                        record.correo_destino = request.form.get("correo_destino","").strip()
+                        flash("Desviación actualizada.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = DesviacionEntry(
+                        n_solicitud=request.form.get("n_solicitud","").strip(),
+                        fecha=safe_convert_date(request.form["fecha"]),
+                        id_interno=request.form.get("id","").strip(),
+                        empresa_contratista=request.form.get("empresa_contratista","").strip(),
+                        descripcion_problema=request.form.get("descripcion_problema","").strip(),
+                        tipo_riesgo=request.form.get("tipo_riesgo","").strip(),
+                        tipo_solicitud=request.form.get("tipo_solicitud","").strip(),
+                        pabellon=request.form.get("pabellon","").strip(),
+                        habitacion=request.form.get("habitacion","").strip(),
+                        via_solicitud=request.form.get("via_solicitud","").strip(),
+                        quien_informa=request.form.get("quien_informa","").strip(),
+                        riesgo_material=request.form.get("riesgo_material","").strip(),
+                        correo_destino=request.form.get("correo_destino","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Desviación guardada.")
+                db.commit()
 
             # -------------------- SOLICITUD / OT USUARIO --------------------
             elif tab == "solicitud_ot":
                 def to_secs(v):
                     v = (v or "").strip()
                     return safe_convert_time(v)
-                rec = SolicitudOTEntry(
-                    n_solicitud=request.form.get("n_solicitud","").strip(),
-                    descripcion_problema=request.form.get("descripcion_problema","").strip(),
-                    tipo_solicitud=request.form.get("tipo_solicitud","").strip(),
-                    modulo=request.form.get("modulo","").strip(),
-                    habitacion=request.form.get("habitacion","").strip(),
-                    tipo_turno=request.form.get("tipo_turno","").strip(),
-                    jornada=request.form.get("jornada","").strip(),
-                    via_solicitud=request.form.get("via_solicitud","").strip(),
-                    correo_usuario=request.form.get("correo_usuario","").strip(),
-                    tipo_tarea=request.form.get("tipo_tarea","").strip(),
-                    ot=request.form.get("ot","").strip(),
-                    fecha_inicio=safe_convert_date(request.form.get("fecha_inicio")),
-                    estado=request.form.get("estado","").strip(),
-                    tiempo_respuesta_sec=to_secs(request.form.get("tiempo_respuesta")),
-                    satisfaccion_reclamo=request.form.get("satisfaccion_reclamo","").strip(),
-                    motivo=request.form.get("motivo","").strip(),
-                    observacion=request.form.get("observacion","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Solicitud/OT guardada.")
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(SolicitudOTEntry, edit_id)
+                    if record:
+                        record.n_solicitud = request.form.get("n_solicitud","").strip()
+                        record.descripcion_problema = request.form.get("descripcion_problema","").strip()
+                        record.tipo_solicitud = request.form.get("tipo_solicitud","").strip()
+                        record.modulo = request.form.get("modulo","").strip()
+                        record.habitacion = request.form.get("habitacion","").strip()
+                        record.tipo_turno = request.form.get("tipo_turno","").strip()
+                        record.jornada = request.form.get("jornada","").strip()
+                        record.via_solicitud = request.form.get("via_solicitud","").strip()
+                        record.correo_usuario = request.form.get("correo_usuario","").strip()
+                        record.tipo_tarea = request.form.get("tipo_tarea","").strip()
+                        record.ot = request.form.get("ot","").strip()
+                        record.fecha_inicio = safe_convert_date(request.form.get("fecha_inicio"))
+                        record.estado = request.form.get("estado","").strip()
+                        record.tiempo_respuesta_sec = to_secs(request.form.get("tiempo_respuesta"))
+                        record.satisfaccion_reclamo = request.form.get("satisfaccion_reclamo","").strip()
+                        record.motivo = request.form.get("motivo","").strip()
+                        record.observacion = request.form.get("observacion","").strip()
+                        flash("Solicitud/OT actualizada.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = SolicitudOTEntry(
+                        n_solicitud=request.form.get("n_solicitud","").strip(),
+                        descripcion_problema=request.form.get("descripcion_problema","").strip(),
+                        tipo_solicitud=request.form.get("tipo_solicitud","").strip(),
+                        modulo=request.form.get("modulo","").strip(),
+                        habitacion=request.form.get("habitacion","").strip(),
+                        tipo_turno=request.form.get("tipo_turno","").strip(),
+                        jornada=request.form.get("jornada","").strip(),
+                        via_solicitud=request.form.get("via_solicitud","").strip(),
+                        correo_usuario=request.form.get("correo_usuario","").strip(),
+                        tipo_tarea=request.form.get("tipo_tarea","").strip(),
+                        ot=request.form.get("ot","").strip(),
+                        fecha_inicio=safe_convert_date(request.form.get("fecha_inicio")),
+                        estado=request.form.get("estado","").strip(),
+                        tiempo_respuesta_sec=to_secs(request.form.get("tiempo_respuesta")),
+                        satisfaccion_reclamo=request.form.get("satisfaccion_reclamo","").strip(),
+                        motivo=request.form.get("motivo","").strip(),
+                        observacion=request.form.get("observacion","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Solicitud/OT guardada.")
+                db.commit()
 
             # -------------------- RECLAMOS USUARIOS --------------------
             elif tab == "reclamos":
-                rec = ReclamoUsuarioEntry(
-                    n_solicitud=request.form.get("n_solicitud","").strip(),
-                    fecha=safe_convert_date(request.form["fecha"]),
-                    id_interno=request.form.get("id","").strip(),
-                    empresa_contratista=request.form.get("empresa_contratista","").strip(),
-                    descripcion_problema=request.form.get("descripcion_problema","").strip(),
-                    tipo_solicitud=request.form.get("tipo_solicitud","").strip(),
-                    pabellon=request.form.get("pabellon","").strip(),
-                    habitacion=request.form.get("habitacion","").strip(),
-                    via_solicitud=request.form.get("via_solicitud","").strip(),
-                    ingresar_contacto=request.form.get("ingresar_contacto","").strip(),
-                    nombre_usuario=request.form.get("nombre_usuario","").strip(),
-                    responsable=request.form.get("responsable","").strip(),
-                    estatus=request.form.get("estatus","").strip(),
-                    notificacion_usuario=request.form.get("notificacion_usuario","").strip(),
-                    plan_accion=request.form.get("plan_accion","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Reclamo de usuario guardado.")
+                if edit_id:
+                    # Modo edición
+                    record = db.get(ReclamoUsuarioEntry, edit_id)
+                    if record:
+                        record.n_solicitud = request.form.get("n_solicitud","").strip()
+                        record.fecha = safe_convert_date(request.form["fecha"])
+                        record.id_interno = request.form.get("id","").strip()
+                        record.empresa_contratista = request.form.get("empresa_contratista","").strip()
+                        record.descripcion_problema = request.form.get("descripcion_problema","").strip()
+                        record.tipo_solicitud = request.form.get("tipo_solicitud","").strip()
+                        record.pabellon = request.form.get("pabellon","").strip()
+                        record.habitacion = request.form.get("habitacion","").strip()
+                        record.via_solicitud = request.form.get("via_solicitud","").strip()
+                        record.ingresar_contacto = request.form.get("ingresar_contacto","").strip()
+                        record.nombre_usuario = request.form.get("nombre_usuario","").strip()
+                        record.responsable = request.form.get("responsable","").strip()
+                        record.estatus = request.form.get("estatus","").strip()
+                        record.notificacion_usuario = request.form.get("notificacion_usuario","").strip()
+                        record.plan_accion = request.form.get("plan_accion","").strip()
+                        flash("Reclamo de usuario actualizado.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = ReclamoUsuarioEntry(
+                        n_solicitud=request.form.get("n_solicitud","").strip(),
+                        fecha=safe_convert_date(request.form["fecha"]),
+                        id_interno=request.form.get("id","").strip(),
+                        empresa_contratista=request.form.get("empresa_contratista","").strip(),
+                        descripcion_problema=request.form.get("descripcion_problema","").strip(),
+                        tipo_solicitud=request.form.get("tipo_solicitud","").strip(),
+                        pabellon=request.form.get("pabellon","").strip(),
+                        habitacion=request.form.get("habitacion","").strip(),
+                        via_solicitud=request.form.get("via_solicitud","").strip(),
+                        ingresar_contacto=request.form.get("ingresar_contacto","").strip(),
+                        nombre_usuario=request.form.get("nombre_usuario","").strip(),
+                        responsable=request.form.get("responsable","").strip(),
+                        estatus=request.form.get("estatus","").strip(),
+                        notificacion_usuario=request.form.get("notificacion_usuario","").strip(),
+                        plan_accion=request.form.get("plan_accion","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Reclamo de usuario guardado.")
+                db.commit()
 
             # -------------------- ACTIVACIÓN DE ALARMA --------------------
             elif tab == "alarmas":
                 fecha = safe_convert_date(request.form["fecha"])
                 def f2t(v):
                     v = (v or "").strip()
-                    return safe_time_hhmm(v)  # Usamos la nueva función robusta
+                    return safe_time_hhmm(v)
                 def f2float(v):
                     try:
                         return float(v) if (v is not None and str(v).strip()!="") else None
                     except:
                         return None
-                rec = ActivacionAlarmaEntry(
-                    modulo=request.form.get("modulo","").strip(),
-                    n_habitacion=request.form.get("n_habitacion","").strip(),
-                    nombre_recepcionista=request.form.get("nombre_recepcionista","").strip(),
-                    fecha=fecha,
-                    empresa=request.form.get("empresa","").strip(),
-                    id_interno=request.form.get("id_interno","").strip(),
-                    co=request.form.get("co","").strip(),
-                    aviso_mantencion_h=f2float(request.form.get("aviso_mantencion_h")),
-                    llegada_mantencion_h=f2float(request.form.get("llegada_mantencion_h")),
-                    aviso_lider_h=f2float(request.form.get("aviso_lider_h")),
-                    llegada_lider_h=f2float(request.form.get("llegada_lider_h")),
-                    hora_reporte_salfa=f2t(request.form.get("hora_reporte_salfa")),
-                    tipo_evento=request.form.get("tipo_evento","").strip(),
-                    tipo_actividad=request.form.get("tipo_actividad","").strip(),
-                    fecha_reporte=safe_convert_date(request.form.get("fecha_reporte")),
-                    turno_recepcion_ingresos=request.form.get("turno_recepcion_ingresos","").strip(),
-                    observaciones=request.form.get("observaciones","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Activación de alarma guardada.")
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(ActivacionAlarmaEntry, edit_id)
+                    if record:
+                        record.modulo = request.form.get("modulo","").strip()
+                        record.n_habitacion = request.form.get("n_habitacion","").strip()
+                        record.nombre_recepcionista = request.form.get("nombre_recepcionista","").strip()
+                        record.fecha = fecha
+                        record.empresa = request.form.get("empresa","").strip()
+                        record.id_interno = request.form.get("id_interno","").strip()
+                        record.co = request.form.get("co","").strip()
+                        record.aviso_mantencion_h = f2float(request.form.get("aviso_mantencion_h"))
+                        record.llegada_mantencion_h = f2float(request.form.get("llegada_mantencion_h"))
+                        record.aviso_lider_h = f2float(request.form.get("aviso_lider_h"))
+                        record.llegada_lider_h = f2float(request.form.get("llegada_lider_h"))
+                        record.hora_reporte_salfa = f2t(request.form.get("hora_reporte_salfa"))
+                        record.tipo_evento = request.form.get("tipo_evento","").strip()
+                        record.tipo_actividad = request.form.get("tipo_actividad","").strip()
+                        record.fecha_reporte = safe_convert_date(request.form.get("fecha_reporte"))
+                        record.turno_recepcion_ingresos = request.form.get("turno_recepcion_ingresos","").strip()
+                        record.observaciones = request.form.get("observaciones","").strip()
+                        flash("Activación de alarma actualizada.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = ActivacionAlarmaEntry(
+                        modulo=request.form.get("modulo","").strip(),
+                        n_habitacion=request.form.get("n_habitacion","").strip(),
+                        nombre_recepcionista=request.form.get("nombre_recepcionista","").strip(),
+                        fecha=fecha,
+                        empresa=request.form.get("empresa","").strip(),
+                        id_interno=request.form.get("id_interno","").strip(),
+                        co=request.form.get("co","").strip(),
+                        aviso_mantencion_h=f2float(request.form.get("aviso_mantencion_h")),
+                        llegada_mantencion_h=f2float(request.form.get("llegada_mantencion_h")),
+                        aviso_lider_h=f2float(request.form.get("aviso_lider_h")),
+                        llegada_lider_h=f2float(request.form.get("llegada_lider_h")),
+                        hora_reporte_salfa=f2t(request.form.get("hora_reporte_salfa")),
+                        tipo_evento=request.form.get("tipo_evento","").strip(),
+                        tipo_actividad=request.form.get("tipo_actividad","").strip(),
+                        fecha_reporte=safe_convert_date(request.form.get("fecha_reporte")),
+                        turno_recepcion_ingresos=request.form.get("turno_recepcion_ingresos","").strip(),
+                        observaciones=request.form.get("observaciones","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Activación de alarma guardada.")
+                db.commit()
 
             # -------------------- EXTENSIÓN / EXCEPCIÓN --------------------
             elif tab == "extensiones":
-                rec = ExtensionExcepcionEntry(
-                    fecha_solicitud=safe_convert_date(request.form["fecha_solicitud"]),
-                    id_interno=request.form.get("id_interno","").strip(),
-                    empresa=request.form.get("empresa","").strip(),
-                    co=request.form.get("co","").strip(),
-                    gerencia=request.form.get("gerencia","").strip(),
-                    proyecto=request.form.get("proyecto","").strip(),
-                    cant_clientes=(int(request.form.get("cant_clientes")) if request.form.get("cant_clientes") else None),
-                    desde=safe_convert_date(request.form.get("desde")),
-                    hasta=safe_convert_date(request.form.get("hasta")),
-                    aprobador=request.form.get("aprobador","").strip(),
-                    observacion=request.form.get("observacion","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Extensión/Excepción guardada.")
+                if edit_id:
+                    # Modo edición
+                    record = db.get(ExtensionExcepcionEntry, edit_id)
+                    if record:
+                        record.fecha_solicitud = safe_convert_date(request.form["fecha_solicitud"])
+                        record.id_interno = request.form.get("id_interno","").strip()
+                        record.empresa = request.form.get("empresa","").strip()
+                        record.co = request.form.get("co","").strip()
+                        record.gerencia = request.form.get("gerencia","").strip()
+                        record.proyecto = request.form.get("proyecto","").strip()
+                        record.cant_clientes = (int(request.form.get("cant_clientes")) if request.form.get("cant_clientes") else None)
+                        record.desde = safe_convert_date(request.form.get("desde"))
+                        record.hasta = safe_convert_date(request.form.get("hasta"))
+                        record.aprobador = request.form.get("aprobador","").strip()
+                        record.observacion = request.form.get("observacion","").strip()
+                        flash("Extensión/Excepción actualizada.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = ExtensionExcepcionEntry(
+                        fecha_solicitud=safe_convert_date(request.form["fecha_solicitud"]),
+                        id_interno=request.form.get("id_interno","").strip(),
+                        empresa=request.form.get("empresa","").strip(),
+                        co=request.form.get("co","").strip(),
+                        gerencia=request.form.get("gerencia","").strip(),
+                        proyecto=request.form.get("proyecto","").strip(),
+                        cant_clientes=(int(request.form.get("cant_clientes")) if request.form.get("cant_clientes") else None),
+                        desde=safe_convert_date(request.form.get("desde")),
+                        hasta=safe_convert_date(request.form.get("hasta")),
+                        aprobador=request.form.get("aprobador","").strip(),
+                        observacion=request.form.get("observacion","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Extensión/Excepción guardada.")
+                db.commit()
 
             # -------------------- ONBOARDING --------------------
             elif tab == "onboarding":
                 fh_raw = request.form.get("fecha_hora")
                 fecha_hora = safe_convert_datetime(fh_raw)
-                rec = OnboardingEntry(
-                    fecha_hora=fecha_hora,
-                    nombre=request.form.get("nombre","").strip(),
-                    rut=request.form.get("rut","").strip(),
-                    empresa=request.form.get("empresa","").strip(),
-                    id_interno=request.form.get("id_interno","").strip(),
-                    archivo_pdf=request.form.get("archivo_pdf","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Onboarding guardado.")
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(OnboardingEntry, edit_id)
+                    if record:
+                        record.fecha_hora = fecha_hora
+                        record.nombre = request.form.get("nombre","").strip()
+                        record.rut = request.form.get("rut","").strip()
+                        record.empresa = request.form.get("empresa","").strip()
+                        record.id_interno = request.form.get("id_interno","").strip()
+                        record.archivo_pdf = request.form.get("archivo_pdf","").strip()
+                        flash("Onboarding actualizado.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = OnboardingEntry(
+                        fecha_hora=fecha_hora,
+                        nombre=request.form.get("nombre","").strip(),
+                        rut=request.form.get("rut","").strip(),
+                        empresa=request.form.get("empresa","").strip(),
+                        id_interno=request.form.get("id_interno","").strip(),
+                        archivo_pdf=request.form.get("archivo_pdf","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Onboarding guardado.")
+                db.commit()
 
             # -------------------- APERTURA DE HABITACIÓN --------------------
             elif tab == "apertura":
                 def f2t(v):
                     v = (v or "").strip()
-                    return safe_time_hhmm(v)  # Usamos la nueva función robusta
-                rec = AperturaHabitacionEntry(
-                    fecha=safe_convert_date(request.form["fecha"]),
-                    habitacion=request.form.get("habitacion","").strip(),
-                    hora=f2t(request.form.get("hora")),
-                    responsable=request.form.get("responsable","").strip(),
-                    estado_chapa=request.form.get("estado_chapa","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Apertura de habitación guardada.")
+                    return safe_time_hhmm(v)
+                
+                if edit_id:
+                    # Modo edición
+                    record = db.get(AperturaHabitacionEntry, edit_id)
+                    if record:
+                        record.fecha = safe_convert_date(request.form["fecha"])
+                        record.habitacion = request.form.get("habitacion","").strip()
+                        record.hora = f2t(request.form.get("hora"))
+                        record.responsable = request.form.get("responsable","").strip()
+                        record.estado_chapa = request.form.get("estado_chapa","").strip()
+                        flash("Apertura de habitación actualizada.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = AperturaHabitacionEntry(
+                        fecha=safe_convert_date(request.form["fecha"]),
+                        habitacion=request.form.get("habitacion","").strip(),
+                        hora=f2t(request.form.get("hora")),
+                        responsable=request.form.get("responsable","").strip(),
+                        estado_chapa=request.form.get("estado_chapa","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Apertura de habitación guardada.")
+                db.commit()
 
             # -------------------- CUMPLIMIENTO EECC --------------------
             elif tab == "cumplimiento":
-                rec = CumplimientoEECCEntry(
-                    empresa=request.form.get("empresa","").strip(),
-                    n_contrato=request.form.get("n_contrato","").strip(),
-                    co=request.form.get("co","").strip(),
-                    correo_electronico=request.form.get("correo_electronico","").strip(),
-                    id_interno=request.form.get("id_interno","").strip(),
-                    turno=request.form.get("turno","").strip(),
-                )
-                db.add(rec); db.commit(); flash("Cumplimiento EECC guardado.")
+                if edit_id:
+                    # Modo edición
+                    record = db.get(CumplimientoEECCEntry, edit_id)
+                    if record:
+                        record.empresa = request.form.get("empresa","").strip()
+                        record.n_contrato = request.form.get("n_contrato","").strip()
+                        record.co = request.form.get("co","").strip()
+                        record.correo_electronico = request.form.get("correo_electronico","").strip()
+                        record.id_interno = request.form.get("id_interno","").strip()
+                        record.turno = request.form.get("turno","").strip()
+                        flash("Cumplimiento EECC actualizado.")
+                    else:
+                        flash("Registro no encontrado.")
+                else:
+                    # Modo creación
+                    rec = CumplimientoEECCEntry(
+                        empresa=request.form.get("empresa","").strip(),
+                        n_contrato=request.form.get("n_contrato","").strip(),
+                        co=request.form.get("co","").strip(),
+                        correo_electronico=request.form.get("correo_electronico","").strip(),
+                        id_interno=request.form.get("id_interno","").strip(),
+                        turno=request.form.get("turno","").strip(),
+                    )
+                    db.add(rec)
+                    flash("Cumplimiento EECC guardado.")
+                db.commit()
 
             return redirect(url_for("panel", tab=tab))
 
-        # GET
-        return render_template("panel.html", tab=tab, week_map=WEEK_MAP, current_tab=tab)
+        # GET - Cargar datos para edición si es necesario
+        edit_record = None
+        if edit_id:
+            if tab == "censo":
+                edit_record = db.get(CensusEntry, edit_id)
+            elif tab == "eventos":
+                edit_record = db.get(EventSeguridad, edit_id)
+            elif tab == "duplicidades":
+                edit_record = db.get(DuplicidadEntry, edit_id)
+            elif tab == "encuesta":
+                edit_record = db.get(EncuestaEntry, edit_id)
+            elif tab == "atencion":
+                edit_record = db.get(AtencionEntry, edit_id)
+            elif tab == "robos":
+                edit_record = db.get(RoboHurtoEntry, edit_id)
+            elif tab == "miscelaneo":
+                edit_record = db.get(MiscelaneoEntry, edit_id)
+            elif tab == "desviaciones":
+                edit_record = db.get(DesviacionEntry, edit_id)
+            elif tab == "solicitud_ot":
+                edit_record = db.get(SolicitudOTEntry, edit_id)
+            elif tab == "reclamos":
+                edit_record = db.get(ReclamoUsuarioEntry, edit_id)
+            elif tab == "alarmas":
+                edit_record = db.get(ActivacionAlarmaEntry, edit_id)
+            elif tab == "extensiones":
+                edit_record = db.get(ExtensionExcepcionEntry, edit_id)
+            elif tab == "onboarding":
+                edit_record = db.get(OnboardingEntry, edit_id)
+            elif tab == "apertura":
+                edit_record = db.get(AperturaHabitacionEntry, edit_id)
+            elif tab == "cumplimiento":
+                edit_record = db.get(CumplimientoEECCEntry, edit_id)
+
+        return render_template("panel.html", tab=tab, week_map=WEEK_MAP, current_tab=tab, edit_record=edit_record, edit_id=edit_id)
     finally:
         db.close()
 
@@ -1340,152 +1701,6 @@ ENTITY_MODEL = {
     "apertura": AperturaHabitacionEntry,
     "cumplimiento": CumplimientoEECCEntry,
 }
-
-# ------------------ EDICIÓN GENÉRICA DESDE REGISTROS ------------------
-from sqlalchemy import inspect as sqla_inspect
-from sqlalchemy.sql.sqltypes import Date as SA_Date, DateTime as SA_DateTime, Time as SA_Time, Integer as SA_Integer, Float as SA_Float, Text as SA_Text, String as SA_String
-
-# Campos que NO se editan nunca
-EXCLUDE_FIELDS = {"id", "creado"}
-
-# Campos que conviene mostrar como textarea
-LONG_TEXT_HINT = {
-    "que_ocurrio", "accion", "descripcion_problema", "especies", "observaciones",
-    "plan_accion", "comentario", "estado_chapa"
-}
-
-# Campos con tratamiento mm:ss <-> segundos
-MMSS_FIELDS = {
-    "atencion": {"tiempo_promedio_sec"},
-    "solicitud_ot": {"tiempo_respuesta_sec"},
-}
-
-def _column_type_map(col):
-    """Devuelve clase de tipo SQLAlchemy para un Column."""
-    return type(col.type)
-
-def _get_entity_columns(Model):
-    insp = sqla_inspect(Model)
-    return {c.name: c for c in insp.columns}
-
-def _serialize_value(entity, colname, value):
-    """Cómo mostrar en el input HTML el valor actual."""
-    if value is None:
-        return ""
-    # mm:ss especiales
-    if entity in MMSS_FIELDS and colname in MMSS_FIELDS[entity]:
-        try:
-            return seconds_to_mmss(int(value))
-        except:
-            return ""
-    # fechas/tiempos
-    if isinstance(value, date) and not isinstance(value, datetime):
-        return value.isoformat()
-    if isinstance(value, datetime):
-        # datetime-local => YYYY-MM-DDTHH:MM
-        return value.strftime("%Y-%m-%dT%H:%M")
-    if isinstance(value, time):
-        return value.strftime("%H:%M")
-    return str(value)
-
-def _parse_value(entity, col, raw):
-    """Convierte string del form a tipo Python correcto, por columna."""
-    T = _column_type_map(col)
-    name = col.name
-    s = None if raw is None else str(raw).strip()
-
-    # Campos mm:ss almacenados en segundos
-    if entity in MMSS_FIELDS and name in MMSS_FIELDS[entity]:
-        return safe_convert_time(s) if s else None
-
-    if T is SA_Date:
-        return safe_convert_date(s) if s else None
-    if T is SA_DateTime:
-        return safe_convert_datetime(s) if s else None
-    if T is SA_Time:
-        return safe_time_hhmm(s) if s else None
-    if T is SA_Integer:
-        if s in (None, ""): 
-            return None if col.nullable else 0
-        try:
-            return int(float(s))
-        except:
-            return None if col.nullable else 0
-    if T is SA_Float:
-        if s in (None, ""): 
-            return None
-        try:
-            return float(s)
-        except:
-            return None
-    # Text/String
-    return s if s != "" else None
-
-@app.route("/edit/<string:entity>/<int:rid>", methods=["GET", "POST"])
-def edit_record(entity, rid):
-    entity = entity.lower()
-    Model = ENTITY_MODEL.get(entity)
-    if not Model:
-        flash("Entidad inválida.")
-        return redirect(url_for("registros"))
-
-    db = SessionLocal()
-    try:
-        obj = db.get(Model, rid)
-        if not obj:
-            flash("Registro no encontrado.")
-            return redirect(url_for("registros", vista=entity))
-
-        cols = _get_entity_columns(Model)
-
-        if request.method == "POST":
-            try:
-                for name, col in cols.items():
-                    if name in EXCLUDE_FIELDS:
-                        continue
-                    # Carga desde form (si el input existe en el form)
-                    if name in request.form:
-                        raw = request.form.get(name)
-                        val = _parse_value(entity, col, raw)
-                        setattr(obj, name, val)
-                db.commit()
-                flash("Registro actualizado correctamente.")
-                # Volver a la lista filtrada del mismo módulo
-                return redirect(url_for("registros", vista=entity))
-            except Exception as e:
-                db.rollback()
-                flash(f"No se pudo actualizar: {e}")
-
-        # GET: construimos estructura (nombre, tipo, valor) para el template
-        fields = []
-        for name, col in cols.items():
-            if name in EXCLUDE_FIELDS:
-                continue
-            T = _column_type_map(col)
-            current = getattr(obj, name)
-            fields.append({
-                "name": name,
-                "nullable": col.nullable,
-                "is_textarea": (name in LONG_TEXT_HINT) or (T in (SA_Text,)),
-                "html_type": (
-                    "date" if T is SA_Date else
-                    "datetime-local" if T is SA_DateTime else
-                    "time" if T is SA_Time else
-                    "number" if T in (SA_Integer, SA_Float) else
-                    "text"
-                ),
-                "value": _serialize_value(entity, name, current),
-                "label": name.replace("_"," ").title()
-            })
-
-        # Pasamos además datos útiles al template
-        return render_template(
-            "edit_record.html",
-            entity=entity, rid=rid, obj=obj, fields=fields,
-            seconds_to_mmss=seconds_to_mmss  # por si lo quieres usar en el template
-        )
-    finally:
-        db.close()
 
 @app.post("/delete/<string:entity>/<int:rid>")
 def delete_record(entity, rid):
@@ -2176,4 +2391,3 @@ def dashboard():
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
