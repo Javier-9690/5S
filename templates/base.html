@@ -60,13 +60,13 @@
     }
     
     .system-title h1 {
-      font-size: 1.8rem;
+      font-size: 1.6rem;  /* Reducido de 1.8rem */
       margin-bottom: 0.25rem;
       font-weight: 600;
     }
     
     .system-title p {
-      font-size: 1rem;
+      font-size: 0.9rem;  /* Reducido de 1rem */
       opacity: 0.9;
       margin-bottom: 0;
     }
@@ -90,6 +90,7 @@
       margin-bottom: 1.5rem;
       padding-bottom: 0.75rem;
       border-bottom: 2px solid var(--light-bg);
+      font-size: 1.5rem;  /* Tamaño reducido para títulos de página */
     }
     
     .filter-card {
@@ -244,6 +245,21 @@
       display: flex;
       gap: 0.25rem;
     }
+
+    /* Estilos para selección múltiple */
+    .bulk-actions {
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .select-all-checkbox {
+      margin-right: 0.5rem;
+    }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -289,19 +305,7 @@
         </li>
       </ul>
 
-      <form class="d-flex" role="search" method="get" action="{{ url_for('registros') }}">
-        <input type="date" class="form-control form-control-sm me-2" name="from" value="{{ (d_from or None) and d_from.isoformat() or '' }}" title="Desde">
-        <input type="date" class="form-control form-control-sm me-2" name="to" value="{{ (d_to or None) and d_to.isoformat() or '' }}" title="Hasta">
-        <select name="semana" class="form-select form-select-sm me-2" title="Semana (anula fechas)">
-          <option value="">Semana…</option>
-          {% for wk, rng in week_map.items() %}
-            <option value="{{ wk }}" {% if semana_sel==wk %}selected{% endif %}>{{ wk }} ({{ rng[0] }} → {{ rng[1] }})</option>
-          {% endfor %}
-        </select>
-        <button class="btn btn-sm btn-outline-light" type="submit">
-          <i class="fas fa-filter me-1"></i> Filtrar
-        </button>
-      </form>
+      <!-- ELIMINADO: Formulario de filtro que no servía -->
     </div>
   </div>
 </nav>
