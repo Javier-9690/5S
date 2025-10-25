@@ -1341,6 +1341,152 @@ ENTITY_MODEL = {
     "cumplimiento": CumplimientoEECCEntry,
 }
 
+# ------------------ EDICIÓN GENÉRICA DESDE REGISTROS ------------------
+from sqlalchemy import inspect as sqla_inspect
+from sqlalchemy.sql.sqltypes import Date as SA_Date, DateTime as SA_DateTime, Time as SA_Time, Integer as SA_Integer, Float as SA_Float, Text as SA_Text, String as SA_String
+
+# Campos que NO se editan nunca
+EXCLUDE_FIELDS = {"id", "creado"}
+
+# Campos que conviene mostrar como textarea
+LONG_TEXT_HINT = {
+    "que_ocurrio", "accion", "descripcion_problema", "especies", "observaciones",
+    "plan_accion", "comentario", "estado_chapa"
+}
+
+# Campos con tratamiento mm:ss <-> segundos
+MMSS_FIELDS = {
+    "atencion": {"tiempo_promedio_sec"},
+    "solicitud_ot": {"tiempo_respuesta_sec"},
+}
+
+def _column_type_map(col):
+    """Devuelve clase de tipo SQLAlchemy para un Column."""
+    return type(col.type)
+
+def _get_entity_columns(Model):
+    insp = sqla_inspect(Model)
+    return {c.name: c for c in insp.columns}
+
+def _serialize_value(entity, colname, value):
+    """Cómo mostrar en el input HTML el valor actual."""
+    if value is None:
+        return ""
+    # mm:ss especiales
+    if entity in MMSS_FIELDS and colname in MMSS_FIELDS[entity]:
+        try:
+            return seconds_to_mmss(int(value))
+        except:
+            return ""
+    # fechas/tiempos
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, datetime):
+        # datetime-local => YYYY-MM-DDTHH:MM
+        return value.strftime("%Y-%m-%dT%H:%M")
+    if isinstance(value, time):
+        return value.strftime("%H:%M")
+    return str(value)
+
+def _parse_value(entity, col, raw):
+    """Convierte string del form a tipo Python correcto, por columna."""
+    T = _column_type_map(col)
+    name = col.name
+    s = None if raw is None else str(raw).strip()
+
+    # Campos mm:ss almacenados en segundos
+    if entity in MMSS_FIELDS and name in MMSS_FIELDS[entity]:
+        return safe_convert_time(s) if s else None
+
+    if T is SA_Date:
+        return safe_convert_date(s) if s else None
+    if T is SA_DateTime:
+        return safe_convert_datetime(s) if s else None
+    if T is SA_Time:
+        return safe_time_hhmm(s) if s else None
+    if T is SA_Integer:
+        if s in (None, ""): 
+            return None if col.nullable else 0
+        try:
+            return int(float(s))
+        except:
+            return None if col.nullable else 0
+    if T is SA_Float:
+        if s in (None, ""): 
+            return None
+        try:
+            return float(s)
+        except:
+            return None
+    # Text/String
+    return s if s != "" else None
+
+@app.route("/edit/<string:entity>/<int:rid>", methods=["GET", "POST"])
+def edit_record(entity, rid):
+    entity = entity.lower()
+    Model = ENTITY_MODEL.get(entity)
+    if not Model:
+        flash("Entidad inválida.")
+        return redirect(url_for("registros"))
+
+    db = SessionLocal()
+    try:
+        obj = db.get(Model, rid)
+        if not obj:
+            flash("Registro no encontrado.")
+            return redirect(url_for("registros", vista=entity))
+
+        cols = _get_entity_columns(Model)
+
+        if request.method == "POST":
+            try:
+                for name, col in cols.items():
+                    if name in EXCLUDE_FIELDS:
+                        continue
+                    # Carga desde form (si el input existe en el form)
+                    if name in request.form:
+                        raw = request.form.get(name)
+                        val = _parse_value(entity, col, raw)
+                        setattr(obj, name, val)
+                db.commit()
+                flash("Registro actualizado correctamente.")
+                # Volver a la lista filtrada del mismo módulo
+                return redirect(url_for("registros", vista=entity))
+            except Exception as e:
+                db.rollback()
+                flash(f"No se pudo actualizar: {e}")
+
+        # GET: construimos estructura (nombre, tipo, valor) para el template
+        fields = []
+        for name, col in cols.items():
+            if name in EXCLUDE_FIELDS:
+                continue
+            T = _column_type_map(col)
+            current = getattr(obj, name)
+            fields.append({
+                "name": name,
+                "nullable": col.nullable,
+                "is_textarea": (name in LONG_TEXT_HINT) or (T in (SA_Text,)),
+                "html_type": (
+                    "date" if T is SA_Date else
+                    "datetime-local" if T is SA_DateTime else
+                    "time" if T is SA_Time else
+                    "number" if T in (SA_Integer, SA_Float) else
+                    "text"
+                ),
+                "value": _serialize_value(entity, name, current),
+                "label": name.replace("_"," ").title()
+            })
+
+        # Pasamos además datos útiles al template
+        return render_template(
+            "edit_record.html",
+            entity=entity, rid=rid, obj=obj, fields=fields,
+            seconds_to_mmss=seconds_to_mmss  # por si lo quieres usar en el template
+        )
+    finally:
+        db.close()
+
 @app.post("/delete/<string:entity>/<int:rid>")
 def delete_record(entity, rid):
     mapping = ENTITY_MODEL
@@ -2030,3 +2176,4 @@ def dashboard():
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
