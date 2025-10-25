@@ -1,6 +1,29 @@
 {% extends "base.html" %}
 {% block title %}Sistema de Gestión 5400 - Registros{% endblock %}
 
+{% block extra_head %}
+<style>
+  .bulk-actions {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: none;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .bulk-actions.show {
+    display: flex;
+  }
+  
+  .record-checkbox {
+    width: 20px;
+    height: 20px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="content-container">
   <h1 class="page-title">Registros del Sistema</h1>
@@ -79,6 +102,17 @@
     </form>
   {%- endmacro %}
 
+  <!-- Acciones masivas -->
+  <div class="bulk-actions" id="bulkActions">
+    <span id="selectedCount">0 registros seleccionados</span>
+    <button class="btn btn-danger btn-sm" id="deleteSelected">
+      <i class="fas fa-trash me-1"></i> Eliminar Seleccionados
+    </button>
+    <button class="btn btn-outline-secondary btn-sm" id="clearSelection">
+      <i class="fas fa-times me-1"></i> Limpiar Selección
+    </button>
+  </div>
+
   <!-- Sección de datos -->
   <div class="mt-4">
     <!-- CENSO -->
@@ -91,34 +125,44 @@
       </div>
       
       {% if census %}
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Acciones</th>
-                <th>Fecha</th>
-                <th>Censo Día</th>
-                <th>Censo Noche</th>
-                <th>Total</th>
-                <th>Registro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in census %}
+        <form id="bulkForm" method="post" action="{{ url_for('delete_multiple') }}">
+          <input type="hidden" name="entity" value="censo">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
                 <tr>
-                  <td class="table-actions">
-                    {{ delbtn('censo', r.id) }}
-                  </td>
-                  <td>{{ r.fecha }}</td>
-                  <td>{{ r.censo_dia }}</td>
-                  <td>{{ r.censo_noche }}</td>
-                  <td><strong>{{ r.total }}</strong></td>
-                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                  <th width="40">
+                    <input type="checkbox" id="selectAll" class="record-checkbox">
+                  </th>
+                  <th>Acciones</th>
+                  <th>Fecha</th>
+                  <th>Censo Día</th>
+                  <th>Censo Noche</th>
+                  <th>Total</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {% for r in census %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="ids" value="{{ r.id }}" class="record-checkbox">
+                    </td>
+                    <td class="table-actions">
+                      <a href="{{ url_for('panel', tab='censo') }}?edit={{ r.id }}" class="btn btn-sm btn-outline-primary" title="Editar registro">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      {{ delbtn('censo', r.id) }}
+                    </td>
+                    <td>{{ r.fecha }}</td>
+                    <td>{{ r.censo_dia }}</td>
+                    <td>{{ r.censo_noche }}</td>
+                    <td><strong>{{ r.total }}</strong></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
       {% else %}
         <div class="alert alert-info text-center py-4">
           <i class="fas fa-users fa-2x mb-3"></i>
@@ -138,38 +182,48 @@
       </div>
       
       {% if eventos %}
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Acciones</th>
-                <th>Fecha</th>
-                <th>Horario</th>
-                <th>Qué Ocurrió</th>
-                <th>Nombre Afectado</th>
-                <th>Registro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in eventos %}
+        <form id="bulkForm" method="post" action="{{ url_for('delete_multiple') }}">
+          <input type="hidden" name="entity" value="eventos">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
                 <tr>
-                  <td class="table-actions">
-                    {{ delbtn('eventos', r.id) }}
-                  </td>
-                  <td>{{ r.fecha }}</td>
-                  <td>{{ r.horario }}</td>
-                  <td>
-                    <span title="{{ r.que_ocurrio }}">
-                      {{ r.que_ocurrio[:50] }}{% if r.que_ocurrio|length > 50 %}...{% endif %}
-                    </span>
-                  </td>
-                  <td>{{ r.nombre_afectado or '-' }}</td>
-                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                  <th width="40">
+                    <input type="checkbox" id="selectAll" class="record-checkbox">
+                  </th>
+                  <th>Acciones</th>
+                  <th>Fecha</th>
+                  <th>Horario</th>
+                  <th>Qué Ocurrió</th>
+                  <th>Nombre Afectado</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {% for r in eventos %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="ids" value="{{ r.id }}" class="record-checkbox">
+                    </td>
+                    <td class="table-actions">
+                      <a href="{{ url_for('panel', tab='eventos') }}?edit={{ r.id }}" class="btn btn-sm btn-outline-primary" title="Editar registro">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      {{ delbtn('eventos', r.id) }}
+                    </td>
+                    <td>{{ r.fecha }}</td>
+                    <td>{{ r.horario }}</td>
+                    <td>
+                      <span title="{{ r.que_ocurrio }}">
+                        {{ r.que_ocurrio[:50] }}{% if r.que_ocurrio|length > 50 %}...{% endif %}
+                      </span>
+                    </td>
+                    <td>{{ r.nombre_afectado or '-' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
       {% else %}
         <div class="alert alert-info text-center py-4">
           <i class="fas fa-shield-alt fa-2x mb-3"></i>
@@ -189,50 +243,54 @@
       </div>
       
       {% if duplics %}
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Acciones</th>
-                <th>Semana</th>
-                <th>Fecha</th>
-                <th>ID</th>
-                <th>Empresa</th>
-                <th>Descripción</th>
-                <th>Estatus</th>
-                <th>Registro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in duplics %}
+        <form id="bulkForm" method="post" action="{{ url_for('delete_multiple') }}">
+          <input type="hidden" name="entity" value="duplicidades">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
                 <tr>
-                  <td class="table-actions">
-                    {{ delbtn('duplicidades', r.id) }}
-                  </td>
-                  <td>{{ r.semana }}</td>
-                  <td>{{ r.fecha }}</td>
-                  <td>{{ r.id_interno or '-' }}</td>
-                  <td>
-                    <span title="{{ r.empresa_contratista or '' }}">
-                      {{ (r.empresa_contratista or '-')[:20] }}{% if (r.empresa_contratista or '')|length > 20 %}...{% endif %}
-                    </span>
-                  </td>
-                  <td>
-                    <span title="{{ r.descripcion_problema or '' }}">
-                      {{ (r.descripcion_problema or '')[:30] }}{% if (r.descripcion_problema or '')|length > 30 %}...{% endif %}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="badge {% if r.estatus == 'Cerrado' %}bg-success{% else %}bg-warning{% endif %}">
-                      {{ r.estatus or 'Abierto' }}
-                    </span>
-                  </td>
-                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                  <th width="40">
+                    <input type="checkbox" id="selectAll" class="record-checkbox">
+                  </th>
+                  <th>Acciones</th>
+                  <th>Semana</th>
+                  <th>Fecha</th>
+                  <th>ID</th>
+                  <th>Empresa</th>
+                  <th>Estatus</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {% for r in duplics %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="ids" value="{{ r.id }}" class="record-checkbox">
+                    </td>
+                    <td class="table-actions">
+                      <a href="{{ url_for('panel', tab='duplicidades') }}?edit={{ r.id }}" class="btn btn-sm btn-outline-primary" title="Editar registro">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      {{ delbtn('duplicidades', r.id) }}
+                    </td>
+                    <td>{{ r.semana }}</td>
+                    <td>{{ r.fecha }}</td>
+                    <td>{{ r.id_interno or '-' }}</td>
+                    <td>
+                      <span title="{{ r.empresa_contratista or '' }}">
+                        {{ (r.empresa_contratista or '-')[:20] }}{% if (r.empresa_contratista or '')|length > 20 %}...{% endif %}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge {% if r.estatus == 'Cerrado' %}bg-success{% else %}bg-warning{% endif %}">
+                        {{ r.estatus or 'Abierto' }}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
       {% else %}
         <div class="alert alert-info text-center py-4">
           <i class="fas fa-copy fa-2x mb-3"></i>
@@ -252,46 +310,52 @@
       </div>
       
       {% if encuestas %}
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Acciones</th>
-                <th>Fecha Hora</th>
-                <th>Puntaje 1</th>
-                <th>Puntaje 2</th>
-                <th>Puntaje 3</th>
-                <th>Puntaje 4</th>
-                <th>Puntaje 5</th>
-                <th>Total</th>
-                <th>Promedio</th>
-                <th>Registro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in encuestas %}
+        <form id="bulkForm" method="post" action="{{ url_for('delete_multiple') }}">
+          <input type="hidden" name="entity" value="encuestas">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
                 <tr>
-                  <td class="table-actions">
-                    {{ delbtn('encuestas', r.id) }}
-                  </td>
-                  <td>{{ r.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</td>
-                  <td>{{ r.q1_puntaje if r.q1_puntaje is not none else '-' }}</td>
-                  <td>{{ r.q2_puntaje if r.q2_puntaje is not none else '-' }}</td>
-                  <td>{{ r.q3_puntaje if r.q3_puntaje is not none else '-' }}</td>
-                  <td>{{ r.q4_puntaje if r.q4_puntaje is not none else '-' }}</td>
-                  <td>{{ r.q5_puntaje if r.q5_puntaje is not none else '-' }}</td>
-                  <td><strong>{{ r.total if r.total is not none else '-' }}</strong></td>
-                  <td>
-                    <span class="badge {% if r.promedio and r.promedio >= 8 %}bg-success{% elif r.promedio and r.promedio >= 6 %}bg-warning{% else %}bg-danger{% endif %}">
-                      {{ "%.2f"|format(r.promedio) if r.promedio is not none else '-' }}
-                    </span>
-                  </td>
-                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                  <th width="40">
+                    <input type="checkbox" id="selectAll" class="record-checkbox">
+                  </th>
+                  <th>Acciones</th>
+                  <th>Fecha Hora</th>
+                  <th>Promedio</th>
+                  <th>Total</th>
+                  <th>Comentarios</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {% for r in encuestas %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="ids" value="{{ r.id }}" class="record-checkbox">
+                    </td>
+                    <td class="table-actions">
+                      <a href="{{ url_for('panel', tab='encuesta') }}?edit={{ r.id }}" class="btn btn-sm btn-outline-primary" title="Editar registro">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      {{ delbtn('encuestas', r.id) }}
+                    </td>
+                    <td>{{ r.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                      <span class="badge {% if r.promedio and r.promedio >= 8 %}bg-success{% elif r.promedio and r.promedio >= 6 %}bg-warning{% else %}bg-danger{% endif %}">
+                        {{ "%.2f"|format(r.promedio) if r.promedio is not none else '-' }}
+                      </span>
+                    </td>
+                    <td><strong>{{ r.total if r.total is not none else '-' }}</strong></td>
+                    <td>
+                      <span title="{{ r.comentarios or '' }}">
+                        {{ (r.comentarios or '')[:30] }}{% if (r.comentarios or '')|length > 30 %}...{% endif %}
+                      </span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
       {% else %}
         <div class="alert alert-info text-center py-4">
           <i class="fas fa-poll fa-2x mb-3"></i>
@@ -311,32 +375,42 @@
       </div>
       
       {% if atenciones %}
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Acciones</th>
-                <th>Fecha</th>
-                <th>Tiempo Promedio</th>
-                <th>Cantidad</th>
-                <th>Registro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in atenciones %}
+        <form id="bulkForm" method="post" action="{{ url_for('delete_multiple') }}">
+          <input type="hidden" name="entity" value="atencion">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
                 <tr>
-                  <td class="table-actions">
-                    {{ delbtn('atencion', r.id) }}
-                  </td>
-                  <td>{{ r.fecha }}</td>
-                  <td>{{ '%02d:%02d'|format((r.tiempo_promedio_sec//60),(r.tiempo_promedio_sec%60)) }}</td>
-                  <td><strong>{{ r.cantidad }}</strong></td>
-                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                  <th width="40">
+                    <input type="checkbox" id="selectAll" class="record-checkbox">
+                  </th>
+                  <th>Acciones</th>
+                  <th>Fecha</th>
+                  <th>Tiempo Promedio</th>
+                  <th>Cantidad</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {% for r in atenciones %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="ids" value="{{ r.id }}" class="record-checkbox">
+                    </td>
+                    <td class="table-actions">
+                      <a href="{{ url_for('panel', tab='atencion') }}?edit={{ r.id }}" class="btn btn-sm btn-outline-primary" title="Editar registro">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      {{ delbtn('atencion', r.id) }}
+                    </td>
+                    <td>{{ r.fecha }}</td>
+                    <td>{{ '%02d:%02d'|format((r.tiempo_promedio_sec//60),(r.tiempo_promedio_sec%60)) }}</td>
+                    <td><strong>{{ r.cantidad }}</strong></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
       {% else %}
         <div class="alert alert-info text-center py-4">
           <i class="fas fa-headset fa-2x mb-3"></i>
@@ -349,19 +423,19 @@
     <!-- MÓDULOS RESTANTES -->
     {% if vista not in ['censo', 'eventos', 'duplicidades', 'encuestas', 'atencion'] %}
       {% set entity_data = {
-        'robos': (robos, 'Robos y Hurtos', 'fa-exclamation-triangle'),
-        'miscelaneo': (miscelaneo, 'Misceláneo', 'fa-tools'),
-        'desviaciones': (desviaciones, 'Desviaciones', 'fa-random'),
-        'solicitud_ot': (solicitudes_ot, 'Solicitudes OT', 'fa-clipboard-list'),
-        'reclamos': (reclamos, 'Reclamos', 'fa-comments'),
-        'alarmas': (alarmas, 'Activación de Alarmas', 'fa-bell'),
-        'extensiones': (extensiones, 'Extensiones', 'fa-calendar-plus'),
-        'onboarding': (onboarding, 'Onboarding', 'fa-user-plus'),
-        'apertura': (apertura, 'Apertura de Habitaciones', 'fa-door-open'),
-        'cumplimiento': (cumplimiento, 'Cumplimiento EECC', 'fa-check-circle')
+        'robos': (robos, 'Robos y Hurtos', 'fa-exclamation-triangle', ['Fecha', 'Hora', 'Empresa', 'Nombre Cliente', 'Especies']),
+        'miscelaneo': (miscelaneo, 'Misceláneo', 'fa-tools', ['OT', 'Empresa', 'Estado', 'Falla', 'Comentario']),
+        'desviaciones': (desviaciones, 'Desviaciones', 'fa-random', ['N° Solicitud', 'Fecha', 'Empresa', 'Tipo Riesgo', 'Estatus']),
+        'solicitud_ot': (solicitudes_ot, 'Solicitudes OT', 'fa-clipboard-list', ['N° Solicitud', 'Descripción', 'Estado', 'Tiempo Respuesta', 'Satisfacción']),
+        'reclamos': (reclamos, 'Reclamos', 'fa-comments', ['N° Solicitud', 'Fecha', 'Empresa', 'Estatus', 'Plan Acción']),
+        'alarmas': (alarmas, 'Activación de Alarmas', 'fa-bell', ['Módulo', 'Fecha', 'Empresa', 'Tipo Evento', 'Observaciones']),
+        'extensiones': (extensiones, 'Extensiones', 'fa-calendar-plus', ['Fecha Solicitud', 'Empresa', 'Cant. Clientes', 'Desde', 'Hasta']),
+        'onboarding': (onboarding, 'Onboarding', 'fa-user-plus', ['Fecha Hora', 'Nombre', 'Empresa', 'RUT', 'ID']),
+        'apertura': (apertura, 'Apertura de Habitaciones', 'fa-door-open', ['Fecha', 'Habitación', 'Hora', 'Responsable', 'Estado']),
+        'cumplimiento': (cumplimiento, 'Cumplimiento EECC', 'fa-check-circle', ['Empresa', 'N° Contrato', 'CO', 'Correo', 'Turno'])
       } %}
       
-      {% set data, title, icon = entity_data.get(vista, ([], vista|replace('_', ' ')|title, 'fa-database')) %}
+      {% set data, title, icon, relevant_fields = entity_data.get(vista, ([], vista|replace('_', ' ')|title, 'fa-database', [])) %}
       
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h4><i class="fas {{ icon }} me-2"></i>{{ title }}</h4>
@@ -371,59 +445,151 @@
       </div>
       
       {% if data %}
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle me-2"></i>
-          Mostrando {{ data|length }} registros de {{ title }}
-        </div>
-        
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Acciones</th>
-                <th>ID</th>
-                <th>Fecha</th>
-                <th>Detalles</th>
-                <th>Registro</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in data %}
+        <form id="bulkForm" method="post" action="{{ url_for('delete_multiple') }}">
+          <input type="hidden" name="entity" value="{{ vista }}">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
                 <tr>
-                  <td class="table-actions">
-                    {{ delbtn(vista, r.id) }}
-                  </td>
-                  <td>{{ r.id }}</td>
-                  <td>
-                    {% if r.fecha %}
-                      {{ r.fecha }}
-                    {% elif r.fecha_hora %}
-                      {{ r.fecha_hora.strftime('%d/%m/%Y %H:%M') }}
-                    {% elif r.fecha_solicitud %}
-                      {{ r.fecha_solicitud }}
-                    {% else %}
-                      -
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if r.descripcion_problema %}
-                      <span title="{{ r.descripcion_problema }}">
-                        {{ (r.descripcion_problema or '')[:80] }}{% if (r.descripcion_problema or '')|length > 80 %}...{% endif %}
-                      </span>
-                    {% elif r.nombre %}
-                      {{ r.nombre }}
-                    {% elif r.empresa %}
-                      {{ r.empresa }}
-                    {% else %}
-                      <span class="text-muted">Ver detalles</span>
-                    {% endif %}
-                  </td>
-                  <td><small class="text-muted">{{ r.creado.strftime('%d/%m/%Y %H:%M') }}</small></td>
+                  <th width="40">
+                    <input type="checkbox" id="selectAll" class="record-checkbox">
+                  </th>
+                  <th>Acciones</th>
+                  {% for field in relevant_fields %}
+                  <th>{{ field }}</th>
+                  {% endfor %}
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {% for r in data %}
+                  <tr>
+                    <td>
+                      <input type="checkbox" name="ids" value="{{ r.id }}" class="record-checkbox">
+                    </td>
+                    <td class="table-actions">
+                      <a href="{{ url_for('panel', tab=vista) }}?edit={{ r.id }}" class="btn btn-sm btn-outline-primary" title="Editar registro">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      {{ delbtn(vista, r.id) }}
+                    </td>
+                    
+                    {% if vista == 'robos' %}
+                      <td>{{ r.fecha }}</td>
+                      <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
+                      <td>{{ r.empresa or '-' }}</td>
+                      <td>{{ r.nombre_cliente or '-' }}</td>
+                      <td>
+                        <span title="{{ r.especies or '' }}">
+                          {{ (r.especies or '')[:30] }}{% if (r.especies or '')|length > 30 %}...{% endif %}
+                        </span>
+                      </td>
+                    
+                    {% elif vista == 'miscelaneo' %}
+                      <td>{{ r.ot or '-' }}</td>
+                      <td>{{ r.empresa or '-' }}</td>
+                      <td>
+                        <span class="badge {% if r.estado == 'Completado' %}bg-success{% else %}bg-warning{% endif %}">
+                          {{ r.estado or 'Pendiente' }}
+                        </span>
+                      </td>
+                      <td>{{ r.falla or '-' }}</td>
+                      <td>
+                        <span title="{{ r.comentario or '' }}">
+                          {{ (r.comentario or '')[:30] }}{% if (r.comentario or '')|length > 30 %}...{% endif %}
+                        </span>
+                      </td>
+                    
+                    {% elif vista == 'desviaciones' %}
+                      <td>{{ r.n_solicitud or '-' }}</td>
+                      <td>{{ r.fecha }}</td>
+                      <td>{{ r.empresa_contratista or '-' }}</td>
+                      <td>{{ r.tipo_riesgo or '-' }}</td>
+                      <td>{{ r.estado or 'Pendiente' }}</td>
+                    
+                    {% elif vista == 'solicitud_ot' %}
+                      <td>{{ r.n_solicitud or '-' }}</td>
+                      <td>
+                        <span title="{{ r.descripcion_problema or '' }}">
+                          {{ (r.descripcion_problema or '')[:30] }}{% if (r.descripcion_problema or '')|length > 30 %}...{% endif %}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="badge {% if r.estado == 'Completado' %}bg-success{% else %}bg-warning{% endif %}">
+                          {{ r.estado or 'Pendiente' }}
+                        </span>
+                      </td>
+                      <td>{{ seconds_to_mmss(r.tiempo_respuesta_sec or 0) }}</td>
+                      <td>{{ r.satisfaccion_reclamo or '-' }}</td>
+                    
+                    {% elif vista == 'reclamos' %}
+                      <td>{{ r.n_solicitud or '-' }}</td>
+                      <td>{{ r.fecha }}</td>
+                      <td>{{ r.empresa_contratista or '-' }}</td>
+                      <td>
+                        <span class="badge {% if r.estatus == 'Cerrado' %}bg-success{% else %}bg-warning{% endif %}">
+                          {{ r.estatus or 'Abierto' }}
+                        </span>
+                      </td>
+                      <td>
+                        <span title="{{ r.plan_accion or '' }}">
+                          {{ (r.plan_accion or '')[:30] }}{% if (r.plan_accion or '')|length > 30 %}...{% endif %}
+                        </span>
+                      </td>
+                    
+                    {% elif vista == 'alarmas' %}
+                      <td>{{ r.modulo or '-' }}</td>
+                      <td>{{ r.fecha }}</td>
+                      <td>{{ r.empresa or '-' }}</td>
+                      <td>{{ r.tipo_evento or '-' }}</td>
+                      <td>
+                        <span title="{{ r.observaciones or '' }}">
+                          {{ (r.observaciones or '')[:30] }}{% if (r.observaciones or '')|length > 30 %}...{% endif %}
+                        </span>
+                      </td>
+                    
+                    {% elif vista == 'extensiones' %}
+                      <td>{{ r.fecha_solicitud }}</td>
+                      <td>{{ r.empresa or '-' }}</td>
+                      <td>{{ r.cant_clientes or '-' }}</td>
+                      <td>{{ r.desde if r.desde else '-' }}</td>
+                      <td>{{ r.hasta if r.hasta else '-' }}</td>
+                    
+                    {% elif vista == 'onboarding' %}
+                      <td>{{ r.fecha_hora.strftime('%d/%m/%Y %H:%M') }}</td>
+                      <td>{{ r.nombre or '-' }}</td>
+                      <td>{{ r.empresa or '-' }}</td>
+                      <td>{{ r.rut or '-' }}</td>
+                      <td>{{ r.id_interno or '-' }}</td>
+                    
+                    {% elif vista == 'apertura' %}
+                      <td>{{ r.fecha }}</td>
+                      <td>{{ r.habitacion or '-' }}</td>
+                      <td>{{ r.hora.strftime('%H:%M') if r.hora else '' }}</td>
+                      <td>{{ r.responsable or '-' }}</td>
+                      <td>
+                        <span title="{{ r.estado_chapa or '' }}">
+                          {{ (r.estado_chapa or '')[:30] }}{% if (r.estado_chapa or '')|length > 30 %}...{% endif %}
+                        </span>
+                      </td>
+                    
+                    {% elif vista == 'cumplimiento' %}
+                      <td>{{ r.empresa or '-' }}</td>
+                      <td>{{ r.n_contrato or '-' }}</td>
+                      <td>{{ r.co or '-' }}</td>
+                      <td>{{ r.correo_electronico or '-' }}</td>
+                      <td>{{ r.turno or '-' }}</td>
+                    
+                    {% else %}
+                      <td colspan="{{ relevant_fields|length }}">
+                        <span class="text-muted">Información no disponible</span>
+                      </td>
+                    {% endif %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </form>
       {% else %}
         <div class="alert alert-info text-center py-4">
           <i class="fas {{ icon }} fa-2x mb-3"></i>
@@ -434,4 +600,79 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('input[name="ids"]');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    const deleteSelected = document.getElementById('deleteSelected');
+    const clearSelection = document.getElementById('clearSelection');
+    const bulkForm = document.getElementById('bulkForm');
+
+    // Función para actualizar la interfaz de selección múltiple
+    function updateBulkActions() {
+      const checked = document.querySelectorAll('input[name="ids"]:checked');
+      const count = checked.length;
+      
+      if (count > 0) {
+        bulkActions.classList.add('show');
+        selectedCount.textContent = count + ' registro' + (count !== 1 ? 's' : '') + ' seleccionado' + (count !== 1 ? 's' : '');
+        deleteSelected.disabled = false;
+      } else {
+        bulkActions.classList.remove('show');
+        deleteSelected.disabled = true;
+      }
+      
+      // Actualizar estado de "Seleccionar todos"
+      selectAll.checked = (count > 0 && count === checkboxes.length);
+      selectAll.indeterminate = (count > 0 && count < checkboxes.length);
+    }
+
+    // Seleccionar/deseleccionar todos
+    if (selectAll) {
+      selectAll.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = selectAll.checked;
+        });
+        updateBulkActions();
+      });
+    }
+
+    // Actualizar cuando se cambia cualquier checkbox individual
+    checkboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', updateBulkActions);
+    });
+
+    // Eliminar registros seleccionados
+    if (deleteSelected) {
+      deleteSelected.addEventListener('click', function() {
+        const checked = document.querySelectorAll('input[name="ids"]:checked');
+        if (checked.length > 0) {
+          if (confirm(`¿Está seguro de que desea eliminar ${checked.length} registro(s)?`)) {
+            bulkForm.submit();
+          }
+        }
+      });
+    }
+
+    // Limpiar selección
+    if (clearSelection) {
+      clearSelection.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = false;
+        });
+        if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+        }
+        updateBulkActions();
+      });
+    }
+
+    // Inicializar estado
+    updateBulkActions();
+  });
+</script>
 {% endblock %}
