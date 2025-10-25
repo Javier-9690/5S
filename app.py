@@ -1843,12 +1843,15 @@ def dashboard():
         for r in q.all():
             bucket(r.fecha.isoformat())["robos"] += 1
 
-        # Miscelaneo
+        # Miscelaneo (filtrar por fecha de negocio)
         q = db.query(MiscelaneoEntry)
-        if d_from: q = q.filter(MiscelaneoEntry.creado >= datetime.combine(d_from, time.min))
-        if d_to:   q = q.filter(MiscelaneoEntry.creado <= datetime.combine(d_to, time.max))
+        if d_from: q = q.filter(MiscelaneoEntry.fecha_creacion >= d_from)
+        if d_to:   q = q.filter(MiscelaneoEntry.fecha_creacion <= d_to)
         for r in q.all():
-            bucket(r.creado.date().isoformat())["miscelaneo"] += 1
+            # Agrupar por la fecha de negocio; si viene nula, caer al timestamp de creación
+            key_date = r.fecha_creacion or r.creado.date()
+            bucket(key_date.isoformat())["miscelaneo"] += 1
+
 
         # Desviaciones
         q = db.query(DesviacionEntry)
@@ -1858,11 +1861,15 @@ def dashboard():
             bucket(r.fecha.isoformat())["desviaciones"] += 1
 
         # Solicitudes OT
+        # Solicitudes OT (filtrar por fecha de negocio)
         q = db.query(SolicitudOTEntry)
-        if d_from: q = q.filter(SolicitudOTEntry.creado >= datetime.combine(d_from, time.min))
-        if d_to:   q = q.filter(SolicitudOTEntry.creado <= datetime.combine(d_to, time.max))
+        if d_from: q = q.filter(SolicitudOTEntry.fecha_inicio >= d_from)
+        if d_to:   q = q.filter(SolicitudOTEntry.fecha_inicio <= d_to)
         for r in q.all():
-            bucket(r.creado.date().isoformat())["solicitudes_ot"] += 1
+            # Agrupar por la fecha de negocio; si viene nula, caer al timestamp de creación
+            key_date = r.fecha_inicio or r.creado.date()
+            bucket(key_date.isoformat())["solicitudes_ot"] += 1
+
 
         # Reclamos
         q = db.query(ReclamoUsuarioEntry)
