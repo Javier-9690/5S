@@ -3,8 +3,9 @@
 
 {% block extra_head %}
 <style>
-  .form-hint { font-size: .85rem; color: #6c757d; }
-  .sticky-actions {
+  /* === TODO el CSS está *scopeado* a .edit-record para no afectar otras páginas === */
+  .edit-record .form-hint { font-size: .85rem; color: #6c757d; }
+  .edit-record .sticky-actions {
     position: sticky; bottom: 0; background: #fff; padding: .75rem 1rem;
     border-top: 1px solid #eee; display: flex; gap: .5rem; justify-content: flex-end;
   }
@@ -12,7 +13,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="content-container">
+<div class="content-container edit-record">
   <h1 class="page-title">
     <i class="fas fa-edit me-2"></i>Editar registro
     <small class="text-muted">· {{ title or entity|capitalize }} (ID {{ record.id }})</small>
@@ -27,32 +28,15 @@
   <form method="post" action="{{ request.path }}">
     <div class="row g-3">
       {# 
-        Este template es GENÉRICO.
-        Espera en el contexto:
-          - entity: nombre de la entidad (str)
-          - title: título legible (str)
-          - record: objeto del registro (con atributos)
-          - fields: lista de definiciones de campos. Cada elemento puede ser:
-              {"name": "fecha", "label": "Fecha", "type": "date"}
-              {"name": "cantidad", "label": "Cantidad", "type": "number", "step": "1", "min": "0"}
-              {"name": "descripcion", "label": "Descripción", "type": "textarea", "rows": 3}
-              {"name": "estado", "label": "Estado", "type": "select", "choices": [["Abierto","Abierto"],["Cerrado","Cerrado"]]}
-              {"name": "hora", "label": "Hora", "type": "time"}
-              {"name": "fecha_hora", "label": "Fecha y hora", "type": "datetime-local"}
-              {"name": "readonly_id", "label": "ID Interno", "type": "text", "readonly": true}
-            - value_from_record: (opcional) función/flag; si no está, se usa getattr(record, name)
-        Los valores se renderizan automáticamente con filtros de formato simples.
+        Contexto esperado:
+          - entity, title, record
+          - fields: lista de dicts con (name, label, type, etc.)
       #}
 
-      {% macro input_name(f) -%}
-        {{ f.name }}
-      {%- endmacro %}
+      {% macro input_name(f) -%}{{ f.name }}{%- endmacro %}
 
       {% macro value_of(f) -%}
-        {# Obtiene el valor del registro y lo adapta al tipo de input #}
         {% set v = getattr(record, f.name) if record is defined else None %}
-
-        {# Adaptaciones por tipo #}
         {% if v is none %}
           {{ "" }}
         {% elif f.type == "date" and v.__class__.__name__ in ("date","datetime") %}
@@ -60,16 +44,11 @@
         {% elif f.type == "time" and v.__class__.__name__ == "time" %}
           {{ v.strftime("%H:%M") }}
         {% elif f.type == "datetime-local" and v.__class__.__name__ in ("datetime","date") %}
-          {# mostrar hasta minutos #}
           {% if v.__class__.__name__ == "date" %}
             {{ v.strftime("%Y-%m-%d") ~ "T00:00" }}
           {% else %}
             {{ v.strftime("%Y-%m-%dT%H:%M") }}
           {% endif %}
-        {% elif f.type in ("number",) %}
-          {{ v }}
-        {% elif f.type in ("textarea","select") %}
-          {{ v }}
         {% else %}
           {{ v }}
         {% endif %}
@@ -82,7 +61,6 @@
             {{ f.label or f.name|replace("_"," ")|title }}
           </label>
 
-          {# TEXTAREA #}
           {% if t == "textarea" %}
             <textarea
               class="form-control"
@@ -90,9 +68,8 @@
               rows="{{ f.rows or 3 }}"
               {% if f.required %}required{% endif %}
               {% if f.readonly %}readonly{% endif %}
-              >{{ value_of(f) }}</textarea>
+            >{{ value_of(f) }}</textarea>
 
-          {# SELECT #}
           {% elif t == "select" %}
             <select
               class="form-select"
@@ -113,7 +90,6 @@
               <input type="hidden" name="{{ input_name(f) }}" value="{{ value_of(f) }}">
             {% endif %}
 
-          {# CHECKBOX #}
           {% elif t == "checkbox" %}
             {% set checked = value_of(f) in (True, "true", "True", 1, "1", "on", "yes") %}
             <div class="form-check">
@@ -127,7 +103,6 @@
               <input type="hidden" name="{{ input_name(f) }}" value="{{ "on" if checked else "" }}">
             {% endif %}
 
-          {# INPUT GENÉRICO (text, number, date, time, datetime-local, email, etc.) #}
           {% else %}
             <input
               class="form-control"
