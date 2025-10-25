@@ -1028,6 +1028,17 @@
           </div>
           
           <form method="post" action="{{ url_for('panel', tab='cumplimiento') }}">
+            <!-- NUEVO: Fecha del registro -->
+            <div class="form-section">
+              <h6>Fecha del Registro</h6>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label required">Fecha</label>
+                  <input type="date" name="fecha" class="form-control" required>
+                </div>
+              </div>
+            </div>
+
             <div class="form-section">
               <h6>Información de la Empresa</h6>
               <div class="row g-3">
@@ -1055,6 +1066,7 @@
         </div>
       </div>
       {% endif %}
+
 
     </div>
   </div>
