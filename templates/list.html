@@ -787,6 +787,7 @@
             <thead>
               <tr>
                 <th>Acciones</th>
+                <th>Fecha</th>
                 <th>Empresa</th>
                 <th>N° Contrato</th>
                 <th>CO</th>
@@ -800,6 +801,7 @@
               {% for r in cumplimiento %}
                 <tr>
                   <td class="table-actions">{{ delbtn('cumplimiento', r.id) }}</td>
+                  <td>{{ r.fecha }}</td>
                   <td>{{ r.empresa or '-' }}</td>
                   <td>{{ r.n_contrato or '-' }}</td>
                   <td>{{ r.co or '-' }}</td>
