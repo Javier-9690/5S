@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Editar registro · {{ title or entity|capitalize }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .form-hint { font-size: .85rem; color: #6c757d; }
+  .sticky-actions {
+    position: sticky; bottom: 0; background: #fff; padding: .75rem 1rem;
+    border-top: 1px solid #eee; display: flex; gap: .5rem; justify-content: flex-end;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-container">
+  <h1 class="page-title">
+    <i class="fas fa-edit me-2"></i>Editar registro
+    <small class="text-muted">· {{ title or entity|capitalize }} (ID {{ record.id }})</small>
+  </h1>
+
+  <div class="mb-3">
+    <a class="btn btn-outline-secondary" href="{{ back_url or url_for('registros', vista=entity) }}">
+      <i class="fas fa-arrow-left me-1"></i> Volver a {{ title or entity|capitalize }}
+    </a>
+  </div>
+
+  <form method="post" action="{{ request.path }}">
+    <div class="row g-3">
+      {# 
+        Este template es GENÉRICO.
+        Espera en el contexto:
+          - entity: nombre de la entidad (str)
+          - title: título legible (str)
+          - record: objeto del registro (con atributos)
+          - fields: lista de definiciones de campos. Cada elemento puede ser:
+              {"name": "fecha", "label": "Fecha", "type": "date"}
+              {"name": "cantidad", "label": "Cantidad", "type": "number", "step": "1", "min": "0"}
+              {"name": "descripcion", "label": "Descripción", "type": "textarea", "rows": 3}
+              {"name": "estado", "label": "Estado", "type": "select", "choices": [["Abierto","Abierto"],["Cerrado","Cerrado"]]}
+              {"name": "hora", "label": "Hora", "type": "time"}
+              {"name": "fecha_hora", "label": "Fecha y hora", "type": "datetime-local"}
+              {"name": "readonly_id", "label": "ID Interno", "type": "text", "readonly": true}
+            - value_from_record: (opcional) función/flag; si no está, se usa getattr(record, name)
+        Los valores se renderizan automáticamente con filtros de formato simples.
+      #}
+
+      {% macro input_name(f) -%}
+        {{ f.name }}
+      {%- endmacro %}
+
+      {% macro value_of(f) -%}
+        {# Obtiene el valor del registro y lo adapta al tipo de input #}
+        {% set v = getattr(record, f.name) if record is defined else None %}
+
+        {# Adaptaciones por tipo #}
+        {% if v is none %}
+          {{ "" }}
+        {% elif f.type == "date" and v.__class__.__name__ in ("date","datetime") %}
+          {{ (v.date() if v.__class__.__name__ == "datetime" else v).isoformat() }}
+        {% elif f.type == "time" and v.__class__.__name__ == "time" %}
+          {{ v.strftime("%H:%M") }}
+        {% elif f.type == "datetime-local" and v.__class__.__name__ in ("datetime","date") %}
+          {# mostrar hasta minutos #}
+          {% if v.__class__.__name__ == "date" %}
+            {{ v.strftime("%Y-%m-%d") ~ "T00:00" }}
+          {% else %}
+            {{ v.strftime("%Y-%m-%dT%H:%M") }}
+          {% endif %}
+        {% elif f.type in ("number",) %}
+          {{ v }}
+        {% elif f.type in ("textarea","select") %}
+          {{ v }}
+        {% else %}
+          {{ v }}
+        {% endif %}
+      {%- endmacro %}
+
+      {% for f in fields %}
+        {% set t = f.type or "text" %}
+        <div class="col-md-{{ f.col or 6 }}">
+          <label class="form-label {% if f.required %}required{% endif %}">
+            {{ f.label or f.name|replace("_"," ")|title }}
+          </label>
+
+          {# TEXTAREA #}
+          {% if t == "textarea" %}
+            <textarea
+              class="form-control"
+              name="{{ input_name(f) }}"
+              rows="{{ f.rows or 3 }}"
+              {% if f.required %}required{% endif %}
+              {% if f.readonly %}readonly{% endif %}
+              >{{ value_of(f) }}</textarea>
+
+          {# SELECT #}
+          {% elif t == "select" %}
+            <select
+              class="form-select"
+              name="{{ input_name(f) }}"
+              {% if f.required %}required{% endif %}
+              {% if f.readonly %}disabled{% endif %}
+            >
+              {% if not f.required %}
+                <option value="">-- Seleccionar --</option>
+              {% endif %}
+              {% for val, text in f.choices or [] %}
+                <option value="{{ val }}" {{ "selected" if value_of(f)|string == val|string }}>
+                  {{ text }}
+                </option>
+              {% endfor %}
+            </select>
+            {% if f.readonly %}
+              <input type="hidden" name="{{ input_name(f) }}" value="{{ value_of(f) }}">
+            {% endif %}
+
+          {# CHECKBOX #}
+          {% elif t == "checkbox" %}
+            {% set checked = value_of(f) in (True, "true", "True", 1, "1", "on", "yes") %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox"
+                     name="{{ input_name(f) }}"
+                     {% if checked %}checked{% endif %}
+                     {% if f.readonly %}disabled{% endif %}>
+              <label class="form-check-label">{{ f.help or "Marcar si aplica" }}</label>
+            </div>
+            {% if f.readonly %}
+              <input type="hidden" name="{{ input_name(f) }}" value="{{ "on" if checked else "" }}">
+            {% endif %}
+
+          {# INPUT GENÉRICO (text, number, date, time, datetime-local, email, etc.) #}
+          {% else %}
+            <input
+              class="form-control"
+              type="{{ t }}"
+              name="{{ input_name(f) }}"
+              value="{{ value_of(f) }}"
+              {% if f.placeholder %}placeholder="{{ f.placeholder }}"{% endif %}
+              {% if f.min is defined %}min="{{ f.min }}"{% endif %}
+              {% if f.max is defined %}max="{{ f.max }}"{% endif %}
+              {% if f.step is defined %}step="{{ f.step }}"{% endif %}
+              {% if f.pattern %}pattern="{{ f.pattern }}"{% endif %}
+              {% if f.title %}title="{{ f.title }}"{% endif %}
+              {% if f.required %}required{% endif %}
+              {% if f.readonly %}readonly{% endif %}
+            >
+          {% endif %}
+
+          {% if f.hint %}
+            <div class="form-hint">{{ f.hint }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="sticky-actions mt-4">
+      <a class="btn btn-outline-secondary" href="{{ back_url or url_for('registros', vista=entity) }}">
+        Cancelar
+      </a>
+      <button class="btn btn-primary-custom" type="submit">
+        <i class="fas fa-save me-1"></i> Guardar Cambios
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
