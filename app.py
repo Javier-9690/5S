@@ -2,6 +2,7 @@ import os
 import io
 import csv
 import re
+from sqlalchemy import text  # <-- pon este import junto a los demás de SQLAlchemy
 from statistics import mean
 from datetime import datetime, date, time, timedelta
 
@@ -612,13 +613,23 @@ class CumplimientoEECCEntry(Base):
     turno = Column(String(100), nullable=True)
     fecha = Column(Date, nullable=False)  # fecha de negocio para filtros/dashboard
     # NUEVO: fecha
-    fecha = db.Column(db.Date, nullable=False, index=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 # Crear tablas si no existen
 Base.metadata.create_all(ENGINE)
 
+# Asegura columna 'fecha' en cumplimiento_eecc si la tabla ya existía sin ella
+with ENGINE.begin() as conn:
+    conn.execute(text("ALTER TABLE cumplimiento_eecc ADD COLUMN IF NOT EXISTS fecha date"))
+    conn.execute(text("""
+        UPDATE cumplimiento_eecc
+        SET fecha = COALESCE(date(creado), CURRENT_DATE)
+        WHERE fecha IS NULL
+    """))
+    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_cumplimiento_eecc_fecha ON cumplimiento_eecc (fecha)"))
+    # Si ya hay datos, ahora sí podemos exigir NOT NULL
+    conn.execute(text("ALTER TABLE cumplimiento_eecc ALTER COLUMN fecha SET NOT NULL"))
 
 # -----------------------------------------------------------------------------
 # Helpers filtros
