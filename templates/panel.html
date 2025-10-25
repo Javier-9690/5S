@@ -3,13 +3,7 @@
 
 {% block content %}
 <div class="content-container">
-  <h1 class="page-title">
-    {% if edit_id %}
-      <i class="fas fa-edit me-2"></i>Editando Registro de {{ tab|title }}
-    {% else %}
-      Panel de Gestión
-    {% endif %}
-  </h1>
+  <h1 class="page-title">Panel de Gestión</h1>
   
   <div class="row">
     <!-- Sidebar Navigation -->
@@ -73,13 +67,9 @@
       {% if tab=='censo' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-users me-2"></i>
-            {% if edit_id %}Editar Registro de Censo{% else %}Registro de Censo{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-users me-2"></i>Registro de Censo</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='censo') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -91,41 +81,30 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='censo', edit=edit_id) if edit_id else url_for('panel', tab='censo') }}">
+          <form method="post" action="{{ url_for('panel', tab='censo') }}">
             <div class="row g-3">
               <div class="col-md-4">
                 <label class="form-label required">Fecha</label>
-                <input type="date" name="fecha" class="form-control" 
-                       value="{{ edit_record.fecha if edit_record else '' }}" required>
+                <input type="date" name="fecha" class="form-control" required>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Censo Día</label>
-                <input type="number" name="censo_dia" class="form-control" min="0" 
-                       value="{{ edit_record.censo_dia if edit_record else '' }}" placeholder="0">
+                <input type="number" name="censo_dia" class="form-control" min="0" placeholder="0">
               </div>
               <div class="col-md-4">
                 <label class="form-label">Censo Noche</label>
-                <input type="number" name="censo_noche" class="form-control" min="0" 
-                       value="{{ edit_record.censo_noche if edit_record else '' }}" placeholder="0">
+                <input type="number" name="censo_noche" class="form-control" min="0" placeholder="0">
               </div>
               <div class="col-md-4">
                 <label class="form-label">Total (opcional)</label>
-                <input type="number" name="total" class="form-control" min="0" 
-                       value="{{ edit_record.total if edit_record else '' }}" placeholder="(auto)">
+                <input type="number" name="total" class="form-control" min="0" placeholder="(auto)">
               </div>
             </div>
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Registro{% else %}Guardar Registro{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Registro
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='censo') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -136,13 +115,9 @@
       {% if tab=='eventos' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-shield-alt me-2"></i>
-            {% if edit_id %}Editar Evento de Seguridad{% else %}Eventos de Seguridad{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Eventos de Seguridad</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='eventos') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -154,44 +129,34 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='eventos', edit=edit_id) if edit_id else url_for('panel', tab='eventos') }}">
+          <form method="post" action="{{ url_for('panel', tab='eventos') }}">
             <div class="row g-3">
               <div class="col-md-3">
                 <label class="form-label required">Fecha</label>
-                <input type="date" name="fecha" class="form-control" 
-                       value="{{ edit_record.fecha if edit_record else '' }}" required>
+                <input type="date" name="fecha" class="form-control" required>
               </div>
               <div class="col-md-3">
                 <label class="form-label required">Horario</label>
-                <input type="text" name="horario" class="form-control" 
-                       value="{{ edit_record.horario if edit_record else '' }}" required placeholder="Mañana/Tarde/Noche o HH:MM">
+                <input type="text" name="horario" class="form-control" required placeholder="Mañana/Tarde/Noche o HH:MM">
               </div>
               <div class="col-md-6">
                 <label class="form-label">Nombre del Afectado</label>
-                <input type="text" name="nombre_afectado" class="form-control"
-                       value="{{ edit_record.nombre_afectado if edit_record else '' }}">
+                <input type="text" name="nombre_afectado" class="form-control">
               </div>
               <div class="col-12">
                 <label class="form-label required">Qué Ocurrió</label>
-                <textarea name="que_ocurrio" class="form-control" rows="3" required>{{ edit_record.que_ocurrio if edit_record else '' }}</textarea>
+                <textarea name="que_ocurrio" class="form-control" rows="3" required></textarea>
               </div>
               <div class="col-12">
                 <label class="form-label">Acción Tomada</label>
-                <textarea name="accion" class="form-control" rows="3">{{ edit_record.accion if edit_record else '' }}</textarea>
+                <textarea name="accion" class="form-control" rows="3"></textarea>
               </div>
             </div>
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Evento{% else %}Guardar Evento{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Evento
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='eventos') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -202,13 +167,9 @@
       {% if tab=='duplicidades' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-copy me-2"></i>
-            {% if edit_id %}Editar Duplicidad{% else %}Registro de Duplicidades{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-copy me-2"></i>Registro de Duplicidades</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='duplicidades') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -220,9 +181,8 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='duplicidades', edit=edit_id) if edit_id else url_for('panel', tab='duplicidades') }}">
+          <form method="post" action="{{ url_for('panel', tab='duplicidades') }}">
             <div class="form-section">
               <h6>Información Principal</h6>
               <div class="row g-3">
@@ -231,21 +191,17 @@
                   <select name="semana" class="form-select" required>
                     <option value="">-- Elegir Semana --</option>
                     {% for num, r in week_map.items()|sort %}
-                      <option value="{{ num }}" {% if edit_record and edit_record.semana == num %}selected{% endif %}>
-                        {{ num }} ({{ r[0] }} → {{ r[1] }})
-                      </option>
+                      <option value="{{ num }}">{{ num }} ({{ r[0] }} → {{ r[1] }})</option>
                     {% endfor %}
                   </select>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label required">Fecha</label>
-                  <input type="date" name="fecha" class="form-control" 
-                         value="{{ edit_record.fecha if edit_record else '' }}" required>
+                  <input type="date" name="fecha" class="form-control" required>
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">ID Interno</label>
-                  <input type="text" name="id" class="form-control"
-                         value="{{ edit_record.id_interno if edit_record else '' }}">
+                  <input type="text" name="id" class="form-control">
                 </div>
               </div>
             </div>
@@ -255,13 +211,11 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Empresa Contratista</label>
-                  <input type="text" name="empresa_contratista" class="form-control"
-                         value="{{ edit_record.empresa_contratista if edit_record else '' }}">
+                  <input type="text" name="empresa_contratista" class="form-control">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Tipo de Riesgo</label>
-                  <input type="text" name="tipo_riesgo" class="form-control" 
-                         value="{{ edit_record.tipo_riesgo if edit_record else '' }}" placeholder="Psicosocial, etc.">
+                  <input type="text" name="tipo_riesgo" class="form-control" placeholder="Psicosocial, etc.">
                 </div>
               </div>
             </div>
@@ -271,18 +225,15 @@
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">Pabellón</label>
-                  <input type="text" name="pabellon" class="form-control"
-                         value="{{ edit_record.pabellon if edit_record else '' }}">
+                  <input type="text" name="pabellon" class="form-control">
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Habitación</label>
-                  <input type="text" name="habitacion" class="form-control"
-                         value="{{ edit_record.habitacion if edit_record else '' }}">
+                  <input type="text" name="habitacion" class="form-control">
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Contacto</label>
-                  <input type="text" name="ingresar_contacto" class="form-control"
-                         value="{{ edit_record.ingresar_contacto if edit_record else '' }}">
+                  <input type="text" name="ingresar_contacto" class="form-control">
                 </div>
               </div>
             </div>
@@ -292,7 +243,7 @@
               <div class="row g-3">
                 <div class="col-12">
                   <label class="form-label">Descripción Detallada</label>
-                  <textarea name="descripcion_problema" class="form-control" rows="3">{{ edit_record.descripcion_problema if edit_record else '' }}</textarea>
+                  <textarea name="descripcion_problema" class="form-control" rows="3"></textarea>
                 </div>
               </div>
             </div>
@@ -302,50 +253,40 @@
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">Nombre Usuario</label>
-                  <input type="text" name="nombre_usuario" class="form-control"
-                         value="{{ edit_record.nombre_usuario if edit_record else '' }}">
+                  <input type="text" name="nombre_usuario" class="form-control">
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Responsable</label>
-                  <input type="text" name="responsable" class="form-control"
-                         value="{{ edit_record.responsable if edit_record else '' }}">
+                  <input type="text" name="responsable" class="form-control">
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Estatus</label>
                   <select name="estatus" class="form-select">
                     <option value="">-- Seleccionar --</option>
-                    <option value="Abierto" {% if edit_record and edit_record.estatus == 'Abierto' %}selected{% endif %}>Abierto</option>
-                    <option value="Cerrado" {% if edit_record and edit_record.estatus == 'Cerrado' %}selected{% endif %}>Cerrado</option>
-                    <option value="En Proceso" {% if edit_record and edit_record.estatus == 'En Proceso' %}selected{% endif %}>En Proceso</option>
+                    <option value="Abierto">Abierto</option>
+                    <option value="Cerrado">Cerrado</option>
+                    <option value="En Proceso">En Proceso</option>
                   </select>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Notificación Usuario</label>
-                  <input type="text" name="notificacion_usuario" class="form-control"
-                         value="{{ edit_record.notificacion_usuario if edit_record else '' }}">
+                  <input type="text" name="notificacion_usuario" class="form-control">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Fecha de Cierre</label>
-                  <input type="date" name="fecha_cierre" class="form-control"
-                         value="{{ edit_record.fecha_cierre if edit_record else '' }}">
+                  <input type="date" name="fecha_cierre" class="form-control">
                 </div>
                 <div class="col-12">
                   <label class="form-label">Plan de Acción</label>
-                  <textarea name="plan_accion" class="form-control" rows="3">{{ edit_record.plan_accion if edit_record else '' }}</textarea>
+                  <textarea name="plan_accion" class="form-control" rows="3"></textarea>
                 </div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Duplicidad{% else %}Guardar Duplicidad{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Duplicidad
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='duplicidades') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -356,13 +297,9 @@
       {% if tab=='encuesta' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-poll me-2"></i>
-            {% if edit_id %}Editar Encuesta{% else %}Encuesta de Satisfacción{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-poll me-2"></i>Encuesta de Satisfacción</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='encuesta') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -374,16 +311,14 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='encuesta', edit=edit_id) if edit_id else url_for('panel', tab='encuesta') }}">
+          <form method="post" action="{{ url_for('panel', tab='encuesta') }}">
             <div class="form-section">
               <h6>Información General</h6>
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label required">Fecha y Hora</label>
-                  <input type="datetime-local" name="fecha_hora" class="form-control" 
-                         value="{{ edit_record.fecha_hora.strftime('%Y-%m-%dT%H:%M') if edit_record else '' }}" required>
+                  <input type="datetime-local" name="fecha_hora" class="form-control" required>
                 </div>
               </div>
             </div>
@@ -394,13 +329,11 @@
                 {% for i in range(1,6) %}
                 <div class="col-md-6">
                   <label class="form-label">Pregunta {{i}} - Respuesta</label>
-                  <input type="text" name="q{{i}}_respuesta" class="form-control" 
-                         value="{{ edit_record['q' ~ i ~ '_respuesta'] if edit_record else '' }}" placeholder="Respuesta para pregunta {{i}}">
+                  <input type="text" name="q{{i}}_respuesta" class="form-control" placeholder="Respuesta para pregunta {{i}}">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Pregunta {{i}} - Puntaje</label>
-                  <input type="number" name="q{{i}}_puntaje" class="form-control" min="0" max="10" 
-                         value="{{ edit_record['q' ~ i ~ '_puntaje'] if edit_record else '' }}" placeholder="0-10">
+                  <input type="number" name="q{{i}}_puntaje" class="form-control" min="0" max="10" placeholder="0-10">
                 </div>
                 {% endfor %}
               </div>
@@ -411,21 +344,15 @@
               <div class="row g-3">
                 <div class="col-12">
                   <label class="form-label">Comentarios Adicionales</label>
-                  <textarea name="comentarios" class="form-control" rows="3">{{ edit_record.comentarios if edit_record else '' }}</textarea>
+                  <textarea name="comentarios" class="form-control" rows="3"></textarea>
                 </div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Encuesta{% else %}Guardar Encuesta{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Encuesta
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='encuesta') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -436,13 +363,9 @@
       {% if tab=='atencion' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-headset me-2"></i>
-            {% if edit_id %}Editar Atención al Público{% else %}Atención al Público{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-headset me-2"></i>Atención al Público</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='atencion') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -454,37 +377,26 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='atencion', edit=edit_id) if edit_id else url_for('panel', tab='atencion') }}">
+          <form method="post" action="{{ url_for('panel', tab='atencion') }}">
             <div class="row g-3">
               <div class="col-md-4">
                 <label class="form-label required">Fecha</label>
-                <input type="date" name="fecha" class="form-control" 
-                       value="{{ edit_record.fecha if edit_record else '' }}" required>
+                <input type="date" name="fecha" class="form-control" required>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Tiempo Promedio (mm:ss)</label>
-                <input type="text" name="tiempo_promedio" class="form-control" 
-                       value="{{ '%02d:%02d'|format((edit_record.tiempo_promedio_sec//60), (edit_record.tiempo_promedio_sec%60)) if edit_record else '' }}" 
-                       placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}" title="mm:ss, ej: 03:54">
+                <input type="text" name="tiempo_promedio" class="form-control" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}" title="mm:ss, ej: 03:54">
               </div>
               <div class="col-md-4">
                 <label class="form-label">Cantidad de Atenciones</label>
-                <input type="number" name="cantidad" class="form-control" min="0" 
-                       value="{{ edit_record.cantidad if edit_record else '' }}" placeholder="0">
+                <input type="number" name="cantidad" class="form-control" min="0" placeholder="0">
               </div>
             </div>
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Registro{% else %}Guardar Registro{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Registro
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='atencion') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -495,13 +407,9 @@
       {% if tab=='robos' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            {% if edit_id %}Editar Robo/Hurto{% else %}Robos y Hurtos{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Robos y Hurtos</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='robos') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -513,31 +421,26 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='robos', edit=edit_id) if edit_id else url_for('panel', tab='robos') }}">
+          <form method="post" action="{{ url_for('panel', tab='robos') }}">
             <div class="form-section">
               <h6>Información del Incidente</h6>
               <div class="row g-3">
                 <div class="col-md-3">
                   <label class="form-label required">Fecha</label>
-                  <input type="date" name="fecha" class="form-control" 
-                         value="{{ edit_record.fecha if edit_record else '' }}" required>
+                  <input type="date" name="fecha" class="form-control" required>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label required">Hora</label>
-                  <input type="time" name="hora" class="form-control" 
-                         value="{{ edit_record.hora.strftime('%H:%M') if edit_record and edit_record.hora else '' }}" required>
+                  <input type="time" name="hora" class="form-control" required>
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Módulo</label>
-                  <input type="text" name="modulo" class="form-control"
-                         value="{{ edit_record.modulo if edit_record else '' }}">
+                  <input type="text" name="modulo" class="form-control">
                 </div>
                 <div class="col-md-3">
                   <label class="form-label">Habitación</label>
-                  <input type="text" name="habitacion" class="form-control"
-                         value="{{ edit_record.habitacion if edit_record else '' }}">
+                  <input type="text" name="habitacion" class="form-control">
                 </div>
               </div>
             </div>
@@ -547,18 +450,15 @@
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">Empresa</label>
-                  <input type="text" name="empresa" class="form-control"
-                         value="{{ edit_record.empresa if edit_record else '' }}">
+                  <input type="text" name="empresa" class="form-control">
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Nombre Cliente</label>
-                  <input type="text" name="nombre_cliente" class="form-control"
-                         value="{{ edit_record.nombre_cliente if edit_record else '' }}">
+                  <input type="text" name="nombre_cliente" class="form-control">
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">RUT</label>
-                  <input type="text" name="rut" class="form-control"
-                         value="{{ edit_record.rut if edit_record else '' }}">
+                  <input type="text" name="rut" class="form-control">
                 </div>
               </div>
             </div>
@@ -568,35 +468,27 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">Medio del Reclamo</label>
-                  <input type="text" name="medio_reclamo" class="form-control"
-                         value="{{ edit_record.medio_reclamo if edit_record else '' }}">
+                  <input type="text" name="medio_reclamo" class="form-control">
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Nombre de quien Recepciona</label>
-                  <input type="text" name="recepciona" class="form-control"
-                         value="{{ edit_record.recepciona if edit_record else '' }}">
+                  <input type="text" name="recepciona" class="form-control">
                 </div>
                 <div class="col-12">
                   <label class="form-label">Especies Sustraídas</label>
-                  <textarea name="especies" class="form-control" rows="3">{{ edit_record.especies if edit_record else '' }}</textarea>
+                  <textarea name="especies" class="form-control" rows="3"></textarea>
                 </div>
                 <div class="col-12">
                   <label class="form-label">Observaciones</label>
-                  <textarea name="observaciones" class="form-control" rows="3">{{ edit_record.observaciones if edit_record else '' }}</textarea>
+                  <textarea name="observaciones" class="form-control" rows="3"></textarea>
                 </div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Reporte{% else %}Guardar Reporte{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Reporte
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='robos') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -607,13 +499,9 @@
       {% if tab=='miscelaneo' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-tools me-2"></i>
-            {% if edit_id %}Editar Misceláneo{% else %}Registro Misceláneo{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Registro Misceláneo</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='miscelaneo') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -625,58 +513,51 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='miscelaneo', edit=edit_id) if edit_id else url_for('panel', tab='miscelaneo') }}">
+          <form method="post" action="{{ url_for('panel', tab='miscelaneo') }}">
             <div class="form-section">
               <h6>Información de la OT</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">OT</label><input type="text" name="ot" class="form-control" value="{{ edit_record.ot if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">División</label><input type="text" name="division" class="form-control" value="{{ edit_record.division if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Área</label><input type="text" name="area" class="form-control" value="{{ edit_record.area if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Lugar</label><input type="text" name="lugar" class="form-control" value="{{ edit_record.lugar if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">OT</label><input type="text" name="ot" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">División</label><input type="text" name="division" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Área</label><input type="text" name="area" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Lugar</label><input type="text" name="lugar" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Detalles Técnicos</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">Ubicación</label><input type="text" name="ubicacion" class="form-control" value="{{ edit_record.ubicacion if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Disciplina</label><input type="text" name="disciplina" class="form-control" value="{{ edit_record.disciplina if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Especialidad</label><input type="text" name="especialidad" class="form-control" value="{{ edit_record.especialidad if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Falla</label><input type="text" name="falla" class="form-control" value="{{ edit_record.falla if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">Ubicación</label><input type="text" name="ubicacion" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Disciplina</label><input type="text" name="disciplina" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Especialidad</label><input type="text" name="especialidad" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Falla</label><input type="text" name="falla" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información de la Empresa</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control" value="{{ edit_record.empresa if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">Fecha creación</label><input type="date" name="fecha_creacion" class="form-control" value="{{ edit_record.fecha_creacion if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">Fecha inicio</label><input type="date" name="fecha_inicio" class="form-control" value="{{ edit_record.fecha_inicio if edit_record else '' }}"></div>
+                <div class="col-md-4"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">Fecha creación</label><input type="date" name="fecha_creacion" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">Fecha inicio</label><input type="date" name="fecha_inicio" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Fechas y Estado</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">Fecha término</label><input type="date" name="fecha_termino" class="form-control" value="{{ edit_record.fecha_termino if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Fecha aprobación</label><input type="date" name="fecha_aprobacion" class="form-control" value="{{ edit_record.fecha_aprobacion if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Estado</label><input type="text" name="estado" class="form-control" value="{{ edit_record.estado if edit_record else '' }}"></div>
-                <div class="col-md-12"><label class="form-label">Comentario</label><textarea name="comentario" class="form-control">{{ edit_record.comentario if edit_record else '' }}</textarea></div>
+                <div class="col-md-3"><label class="form-label">Fecha término</label><input type="date" name="fecha_termino" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Fecha aprobación</label><input type="date" name="fecha_aprobacion" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Estado</label><input type="text" name="estado" class="form-control"></div>
+                <div class="col-md-12"><label class="form-label">Comentario</label><textarea name="comentario" class="form-control"></textarea></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Registro{% else %}Guardar Registro{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Registro
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='miscelaneo') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -687,13 +568,9 @@
       {% if tab=='desviaciones' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-random me-2"></i>
-            {% if edit_id %}Editar Desviación{% else %}Registro de Desviaciones{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-random me-2"></i>Registro de Desviaciones</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='desviaciones') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -705,56 +582,49 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='desviaciones', edit=edit_id) if edit_id else url_for('panel', tab='desviaciones') }}">
+          <form method="post" action="{{ url_for('panel', tab='desviaciones') }}">
             <div class="form-section">
               <h6>Información de la Solicitud</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control" value="{{ edit_record.n_solicitud if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label required">Fecha</label><input type="date" name="fecha" class="form-control" value="{{ edit_record.fecha if edit_record else '' }}" required></div>
-                <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id" class="form-control" value="{{ edit_record.id_interno if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Empresa contratista</label><input type="text" name="empresa_contratista" class="form-control" value="{{ edit_record.empresa_contratista if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label required">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
+                <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Empresa contratista</label><input type="text" name="empresa_contratista" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Descripción del Problema</h6>
               <div class="row g-3">
-                <div class="col-12"><label class="form-label">Descripción Detallada</label><textarea name="descripcion_problema" class="form-control" rows="3">{{ edit_record.descripcion_problema if edit_record else '' }}</textarea></div>
+                <div class="col-12"><label class="form-label">Descripción Detallada</label><textarea name="descripcion_problema" class="form-control" rows="3"></textarea></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Clasificación</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">TIPO DE RIESGO</label><input type="text" name="tipo_riesgo" class="form-control" value="{{ edit_record.tipo_riesgo if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control" value="{{ edit_record.tipo_solicitud if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">PABELLON</label><input type="text" name="pabellon" class="form-control" value="{{ edit_record.pabellon if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control" value="{{ edit_record.habitacion if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">TIPO DE RIESGO</label><input type="text" name="tipo_riesgo" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">PABELLON</label><input type="text" name="pabellon" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información de Contacto</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control" value="{{ edit_record.via_solicitud if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">Quién informa</label><input type="text" name="quien_informa" class="form-control" value="{{ edit_record.quien_informa if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">Riesgo Material</label><input type="text" name="riesgo_material" class="form-control" value="{{ edit_record.riesgo_material if edit_record else '' }}"></div>
-                <div class="col-md-12"><label class="form-label">Correo Destino</label><input type="text" name="correo_destino" class="form-control" value="{{ edit_record.correo_destino if edit_record else '' }}"></div>
+                <div class="col-md-4"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">Quién informa</label><input type="text" name="quien_informa" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">Riesgo Material</label><input type="text" name="riesgo_material" class="form-control"></div>
+                <div class="col-md-12"><label class="form-label">Correo Destino</label><input type="text" name="correo_destino" class="form-control"></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Desviación{% else %}Guardar Desviación{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Desviación
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='desviaciones') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -765,13 +635,9 @@
       {% if tab=='solicitud_ot' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-clipboard-list me-2"></i>
-            {% if edit_id %}Editar Solicitud/OT{% else %}Solicitud y OT de Usuario{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Solicitud y OT de Usuario</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='solicitud_ot') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -783,64 +649,53 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='solicitud_ot', edit=edit_id) if edit_id else url_for('panel', tab='solicitud_ot') }}">
+          <form method="post" action="{{ url_for('panel', tab='solicitud_ot') }}">
             <div class="form-section">
               <h6>Información de la Solicitud</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control" value="{{ edit_record.n_solicitud if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Descripción Problema</label><input type="text" name="descripcion_problema" class="form-control" value="{{ edit_record.descripcion_problema if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control" value="{{ edit_record.tipo_solicitud if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Módulo</label><input type="text" name="modulo" class="form-control" value="{{ edit_record.modulo if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Descripción Problema</label><input type="text" name="descripcion_problema" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Módulo</label><input type="text" name="modulo" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Ubicación y Horario</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control" value="{{ edit_record.habitacion if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Tipo de turno</label><input type="text" name="tipo_turno" class="form-control" value="{{ edit_record.tipo_turno if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Jornada</label><input type="text" name="jornada" class="form-control" value="{{ edit_record.jornada if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control" value="{{ edit_record.via_solicitud if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Tipo de turno</label><input type="text" name="tipo_turno" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Jornada</label><input type="text" name="jornada" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información de Contacto</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Correo Usuario</label><input type="text" name="correo_usuario" class="form-control" value="{{ edit_record.correo_usuario if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">Tipo Tarea</label><input type="text" name="tipo_tarea" class="form-control" value="{{ edit_record.tipo_tarea if edit_record else '' }}"></div>
-                <div class="col-md-2"><label class="form-label">OT</label><input type="text" name="ot" class="form-control" value="{{ edit_record.ot if edit_record else '' }}"></div>
-                <div class="col-md-2"><label class="form-label">Fecha Inicio</label><input type="date" name="fecha_inicio" class="form-control" value="{{ edit_record.fecha_inicio if edit_record else '' }}"></div>
+                <div class="col-md-4"><label class="form-label">Correo Usuario</label><input type="text" name="correo_usuario" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">Tipo Tarea</label><input type="text" name="tipo_tarea" class="form-control"></div>
+                <div class="col-md-2"><label class="form-label">OT</label><input type="text" name="ot" class="form-control"></div>
+                <div class="col-md-2"><label class="form-label">Fecha Inicio</label><input type="date" name="fecha_inicio" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Seguimiento</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">Estado</label><input type="text" name="estado" class="form-control" value="{{ edit_record.estado if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Tiempo de Respuesta (mm:ss)</label>
-                  <input type="text" name="tiempo_respuesta" class="form-control" 
-                         value="{{ '%02d:%02d'|format((edit_record.tiempo_respuesta_sec//60), (edit_record.tiempo_respuesta_sec%60)) if edit_record and edit_record.tiempo_respuesta_sec else '' }}" 
-                         placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}">
-                </div>
-                <div class="col-md-3"><label class="form-label">Satisfacción Reclamo</label><input type="text" name="satisfaccion_reclamo" class="form-control" value="{{ edit_record.satisfaccion_reclamo if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Motivo</label><input type="text" name="motivo" class="form-control" value="{{ edit_record.motivo if edit_record else '' }}"></div>
-                <div class="col-md-12"><label class="form-label">Observación</label><textarea name="observacion" class="form-control">{{ edit_record.observacion if edit_record else '' }}</textarea></div>
+                <div class="col-md-3"><label class="form-label">Estado</label><input type="text" name="estado" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Tiempo de Respuesta (mm:ss)</label><input type="text" name="tiempo_respuesta" class="form-control" placeholder="mm:ss" pattern="[0-9]{2}:[0-9]{2}"></div>
+                <div class="col-md-3"><label class="form-label">Satisfacción Reclamo</label><input type="text" name="satisfaccion_reclamo" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Motivo</label><input type="text" name="motivo" class="form-control"></div>
+                <div class="col-md-12"><label class="form-label">Observación</label><textarea name="observacion" class="form-control"></textarea></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Solicitud{% else %}Guardar Solicitud{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Solicitud
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='solicitud_ot') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -851,13 +706,9 @@
       {% if tab=='reclamos' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-comments me-2"></i>
-            {% if edit_id %}Editar Reclamo{% else %}Reclamos de Usuarios{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-comments me-2"></i>Reclamos de Usuarios</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='reclamos') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -869,64 +720,57 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='reclamos', edit=edit_id) if edit_id else url_for('panel', tab='reclamos') }}">
+          <form method="post" action="{{ url_for('panel', tab='reclamos') }}">
             <div class="form-section">
               <h6>Información de la Solicitud</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control" value="{{ edit_record.n_solicitud if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label required">Fecha</label><input type="date" name="fecha" class="form-control" value="{{ edit_record.fecha if edit_record else '' }}" required></div>
-                <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id" class="form-control" value="{{ edit_record.id_interno if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Empresa contratista</label><input type="text" name="empresa_contratista" class="form-control" value="{{ edit_record.empresa_contratista if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">N° Solicitud</label><input type="text" name="n_solicitud" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label required">Fecha</label><input type="date" name="fecha" class="form-control" required></div>
+                <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Empresa contratista</label><input type="text" name="empresa_contratista" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Descripción del Problema</h6>
               <div class="row g-3">
-                <div class="col-12"><label class="form-label">Descripción Detallada</label><textarea name="descripcion_problema" class="form-control" rows="3">{{ edit_record.descripcion_problema if edit_record else '' }}</textarea></div>
+                <div class="col-12"><label class="form-label">Descripción Detallada</label><textarea name="descripcion_problema" class="form-control" rows="3"></textarea></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Clasificación</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control" value="{{ edit_record.tipo_solicitud if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">PABELLON</label><input type="text" name="pabellon" class="form-control" value="{{ edit_record.pabellon if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control" value="{{ edit_record.habitacion if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control" value="{{ edit_record.via_solicitud if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">Tipo de Solicitud</label><input type="text" name="tipo_solicitud" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">PABELLON</label><input type="text" name="pabellon" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Habitación</label><input type="text" name="habitacion" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Vía Solicitud</label><input type="text" name="via_solicitud" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información de Contacto</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">Ingresar Contacto</label><input type="text" name="ingresar_contacto" class="form-control" value="{{ edit_record.ingresar_contacto if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Nombre usuario</label><input type="text" name="nombre_usuario" class="form-control" value="{{ edit_record.nombre_usuario if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Responsable</label><input type="text" name="responsable" class="form-control" value="{{ edit_record.responsable if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Estatus</label><input type="text" name="estatus" class="form-control" value="{{ edit_record.estatus if edit_record else '' }}" placeholder="Abierto/Cerrado"></div>
+                <div class="col-md-3"><label class="form-label">Ingresar Contacto</label><input type="text" name="ingresar_contacto" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Nombre usuario</label><input type="text" name="nombre_usuario" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Responsable</label><input type="text" name="responsable" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Estatus</label><input type="text" name="estatus" class="form-control" placeholder="Abierto/Cerrado"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Seguimiento</h6>
               <div class="row g-3">
-                <div class="col-md-6"><label class="form-label">Notificación Usuario</label><input type="text" name="notificacion_usuario" class="form-control" value="{{ edit_record.notificacion_usuario if edit_record else '' }}"></div>
-                <div class="col-md-6"><label class="form-label">Plan de Acción</label><input type="text" name="plan_accion" class="form-control" value="{{ edit_record.plan_accion if edit_record else '' }}"></div>
+                <div class="col-md-6"><label class="form-label">Notificación Usuario</label><input type="text" name="notificacion_usuario" class="form-control"></div>
+                <div class="col-md-6"><label class="form-label">Plan de Acción</label><input type="text" name="plan_accion" class="form-control"></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Reclamo{% else %}Guardar Reclamo{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Reclamo
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='reclamos') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -937,13 +781,9 @@
       {% if tab=='alarmas' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-bell me-2"></i>
-            {% if edit_id %}Editar Activación de Alarma{% else %}Activación de Alarma{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Activación de Alarma</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='alarmas') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -955,66 +795,59 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='alarmas', edit=edit_id) if edit_id else url_for('panel', tab='alarmas') }}">
+          <form method="post" action="{{ url_for('panel', tab='alarmas') }}">
             <div class="form-section">
               <h6>Información de la Alarma</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">MÓDULO</label><input type="text" name="modulo" class="form-control" value="{{ edit_record.modulo if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">N° HABITACION</label><input type="text" name="n_habitacion" class="form-control" value="{{ edit_record.n_habitacion if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Nombre Recepcionista</label><input type="text" name="nombre_recepcionista" class="form-control" value="{{ edit_record.nombre_recepcionista if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label required">FECHA</label><input type="date" name="fecha" class="form-control" value="{{ edit_record.fecha if edit_record else '' }}" required></div>
+                <div class="col-md-3"><label class="form-label">MÓDULO</label><input type="text" name="modulo" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">N° HABITACION</label><input type="text" name="n_habitacion" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Nombre Recepcionista</label><input type="text" name="nombre_recepcionista" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label required">FECHA</label><input type="date" name="fecha" class="form-control" required></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información de la Empresa</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control" value="{{ edit_record.empresa if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control" value="{{ edit_record.id_interno if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">C.O.</label><input type="text" name="co" class="form-control" value="{{ edit_record.co if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Hora Reporte SALFA</label><input type="time" name="hora_reporte_salfa" class="form-control" value="{{ edit_record.hora_reporte_salfa.strftime('%H:%M') if edit_record and edit_record.hora_reporte_salfa else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">C.O.</label><input type="text" name="co" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Hora Reporte SALFA</label><input type="time" name="hora_reporte_salfa" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Tiempos de Respuesta (horas)</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">Aviso a mantención</label><input type="number" step="0.01" name="aviso_mantencion_h" class="form-control" value="{{ edit_record.aviso_mantencion_h if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Llegada mantención</label><input type="number" step="0.01" name="llegada_mantencion_h" class="form-control" value="{{ edit_record.llegada_mantencion_h if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Aviso Líder emergencias</label><input type="number" step="0.01" name="aviso_lider_h" class="form-control" value="{{ edit_record.aviso_lider_h if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">Llegada Líder</label><input type="number" step="0.01" name="llegada_lider_h" class="form-control" value="{{ edit_record.llegada_lider_h if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">Aviso a mantención</label><input type="number" step="0.01" name="aviso_mantencion_h" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Llegada mantención</label><input type="number" step="0.01" name="llegada_mantencion_h" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Aviso Líder emergencias</label><input type="number" step="0.01" name="aviso_lider_h" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">Llegada Líder</label><input type="number" step="0.01" name="llegada_lider_h" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Clasificación</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Tipo Evento</label><input type="text" name="tipo_evento" class="form-control" value="{{ edit_record.tipo_evento if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">Tipo Actividad</label><input type="text" name="tipo_actividad" class="form-control" value="{{ edit_record.tipo_actividad if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">Turno Recepción / Ingresos</label><input type="text" name="turno_recepcion_ingresos" class="form-control" value="{{ edit_record.turno_recepcion_ingresos if edit_record else '' }}"></div>
+                <div class="col-md-4"><label class="form-label">Tipo Evento</label><input type="text" name="tipo_evento" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">Tipo Actividad</label><input type="text" name="tipo_actividad" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">Turno Recepción / Ingresos</label><input type="text" name="turno_recepcion_ingresos" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información Adicional</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Fecha Reporte</label><input type="date" name="fecha_reporte" class="form-control" value="{{ edit_record.fecha_reporte if edit_record else '' }}"></div>
-                <div class="col-12"><label class="form-label">Observaciones</label><textarea name="observaciones" class="form-control" rows="3">{{ edit_record.observaciones if edit_record else '' }}</textarea></div>
+                <div class="col-md-4"><label class="form-label">Fecha Reporte</label><input type="date" name="fecha_reporte" class="form-control"></div>
+                <div class="col-12"><label class="form-label">Observaciones</label><textarea name="observaciones" class="form-control" rows="3"></textarea></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Activación{% else %}Guardar Activación{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Activación
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='alarmas') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -1025,13 +858,9 @@
       {% if tab=='extensiones' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-calendar-plus me-2"></i>
-            {% if edit_id %}Editar Extensión/Excepción{% else %}Extensión y Excepción{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>Extensión y Excepción</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='extensiones') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -1043,48 +872,41 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='extensiones', edit=edit_id) if edit_id else url_for('panel', tab='extensiones') }}">
+          <form method="post" action="{{ url_for('panel', tab='extensiones') }}">
             <div class="form-section">
               <h6>Información de la Solicitud</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label required">FECHA DE SOLICITUD</label><input type="date" name="fecha_solicitud" class="form-control" value="{{ edit_record.fecha_solicitud if edit_record else '' }}" required></div>
-                <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control" value="{{ edit_record.id_interno if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control" value="{{ edit_record.empresa if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">CO</label><input type="text" name="co" class="form-control" value="{{ edit_record.co if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label required">FECHA DE SOLICITUD</label><input type="date" name="fecha_solicitud" class="form-control" required></div>
+                <div class="col-md-3"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">CO</label><input type="text" name="co" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información Organizacional</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">GERENCIA</label><input type="text" name="gerencia" class="form-control" value="{{ edit_record.gerencia if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">PROYECTO</label><input type="text" name="proyecto" class="form-control" value="{{ edit_record.proyecto if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">CANT. CLIENTES</label><input type="number" name="cant_clientes" class="form-control" min="0" value="{{ edit_record.cant_clientes if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">APROBADOR</label><input type="text" name="aprobador" class="form-control" value="{{ edit_record.aprobador if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label">GERENCIA</label><input type="text" name="gerencia" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">PROYECTO</label><input type="text" name="proyecto" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">CANT. CLIENTES</label><input type="number" name="cant_clientes" class="form-control" min="0"></div>
+                <div class="col-md-3"><label class="form-label">APROBADOR</label><input type="text" name="aprobador" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Período Solicitado</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">DESDE</label><input type="date" name="desde" class="form-control" value="{{ edit_record.desde if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">HASTA</label><input type="date" name="hasta" class="form-control" value="{{ edit_record.hasta if edit_record else '' }}"></div>
-                <div class="col-md-12"><label class="form-label">OBSERVACION</label><textarea name="observacion" class="form-control" rows="3">{{ edit_record.observacion if edit_record else '' }}</textarea></div>
+                <div class="col-md-3"><label class="form-label">DESDE</label><input type="date" name="desde" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">HASTA</label><input type="date" name="hasta" class="form-control"></div>
+                <div class="col-md-12"><label class="form-label">OBSERVACION</label><textarea name="observacion" class="form-control" rows="3"></textarea></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Extensión{% else %}Guardar Extensión{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Extensión
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='extensiones') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -1095,13 +917,9 @@
       {% if tab=='onboarding' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-user-plus me-2"></i>
-            {% if edit_id %}Editar Onboarding{% else %}Registro Onboarding{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Registro Onboarding</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='onboarding') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -1113,37 +931,30 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='onboarding', edit=edit_id) if edit_id else url_for('panel', tab='onboarding') }}" enctype="multipart/form-data">
+          <form method="post" action="{{ url_for('panel', tab='onboarding') }}" enctype="multipart/form-data">
             <div class="form-section">
               <h6>Información Personal</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label required">FECHA_HORA</label><input type="datetime-local" name="fecha_hora" class="form-control" value="{{ edit_record.fecha_hora.strftime('%Y-%m-%dT%H:%M') if edit_record else '' }}" required></div>
-                <div class="col-md-4"><label class="form-label">NOMBRE</label><input type="text" name="nombre" class="form-control" value="{{ edit_record.nombre if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">RUT</label><input type="text" name="rut" class="form-control" value="{{ edit_record.rut if edit_record else '' }}"></div>
+                <div class="col-md-4"><label class="form-label required">FECHA_HORA</label><input type="datetime-local" name="fecha_hora" class="form-control" required></div>
+                <div class="col-md-4"><label class="form-label">NOMBRE</label><input type="text" name="nombre" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">RUT</label><input type="text" name="rut" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información Laboral</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control" value="{{ edit_record.empresa if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control" value="{{ edit_record.id_interno if edit_record else '' }}"></div>
+                <div class="col-md-4"><label class="form-label">EMPRESA</label><input type="text" name="empresa" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control"></div>
                 <div class="col-md-4"><label class="form-label">ARCHIVO_PDF</label><input type="file" name="archivo_pdf" class="form-control" accept="application/pdf"></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Onboarding{% else %}Guardar Onboarding{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Onboarding
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='onboarding') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -1154,13 +965,9 @@
       {% if tab=='apertura' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-door-open me-2"></i>
-            {% if edit_id %}Editar Apertura de Habitación{% else %}Apertura de Habitación{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-door-open me-2"></i>Apertura de Habitación</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='apertura') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -1172,36 +979,29 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='apertura', edit=edit_id) if edit_id else url_for('panel', tab='apertura') }}">
+          <form method="post" action="{{ url_for('panel', tab='apertura') }}">
             <div class="form-section">
               <h6>Información de la Apertura</h6>
               <div class="row g-3">
-                <div class="col-md-3"><label class="form-label required">FECHA</label><input type="date" name="fecha" class="form-control" value="{{ edit_record.fecha if edit_record else '' }}" required></div>
-                <div class="col-md-3"><label class="form-label">HABITACIÓN</label><input type="text" name="habitacion" class="form-control" value="{{ edit_record.habitacion if edit_record else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">HORA</label><input type="time" name="hora" class="form-control" value="{{ edit_record.hora.strftime('%H:%M') if edit_record and edit_record.hora else '' }}"></div>
-                <div class="col-md-3"><label class="form-label">RESPONSABLE</label><input type="text" name="responsable" class="form-control" value="{{ edit_record.responsable if edit_record else '' }}"></div>
+                <div class="col-md-3"><label class="form-label required">FECHA</label><input type="date" name="fecha" class="form-control" required></div>
+                <div class="col-md-3"><label class="form-label">HABITACIÓN</label><input type="text" name="habitacion" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">HORA</label><input type="time" name="hora" class="form-control"></div>
+                <div class="col-md-3"><label class="form-label">RESPONSABLE</label><input type="text" name="responsable" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Estado de la Chapa</h6>
               <div class="row g-3">
-                <div class="col-12"><label class="form-label">ESTADO DE LA CHAPA DETALLADO (MOTIVO)</label><textarea name="estado_chapa" class="form-control" rows="3">{{ edit_record.estado_chapa if edit_record else '' }}</textarea></div>
+                <div class="col-12"><label class="form-label">ESTADO DE LA CHAPA DETALLADO (MOTIVO)</label><textarea name="estado_chapa" class="form-control" rows="3"></textarea></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Apertura{% else %}Guardar Apertura{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Apertura
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='apertura') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -1212,13 +1012,9 @@
       {% if tab=='cumplimiento' %}
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">
-            <i class="fas fa-check-circle me-2"></i>
-            {% if edit_id %}Editar Cumplimiento EECC{% else %}Cumplimiento EECC{% endif %}
-          </h5>
+          <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Cumplimiento EECC</h5>
         </div>
         <div class="card-body">
-          {% if not edit_id %}
           <div class="d-flex gap-2 flex-wrap mb-4">
             <a class="btn btn-outline-primary btn-sm" href="{{ url_for('template_xlsx', entity='cumplimiento') }}">
               <i class="fas fa-download me-1"></i> Descargar Plantilla
@@ -1230,37 +1026,30 @@
               </button>
             </form>
           </div>
-          {% endif %}
           
-          <form method="post" action="{{ url_for('panel', tab='cumplimiento', edit=edit_id) if edit_id else url_for('panel', tab='cumplimiento') }}">
+          <form method="post" action="{{ url_for('panel', tab='cumplimiento') }}">
             <div class="form-section">
               <h6>Información de la Empresa</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control" value="{{ edit_record.empresa if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">N° Contrato</label><input type="text" name="n_contrato" class="form-control" value="{{ edit_record.n_contrato if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">C.O.</label><input type="text" name="co" class="form-control" value="{{ edit_record.co if edit_record else '' }}"></div>
+                <div class="col-md-4"><label class="form-label">Empresa</label><input type="text" name="empresa" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">N° Contrato</label><input type="text" name="n_contrato" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">C.O.</label><input type="text" name="co" class="form-control"></div>
               </div>
             </div>
 
             <div class="form-section">
               <h6>Información de Contacto</h6>
               <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Correo Electrónico</label><input type="email" name="correo_electronico" class="form-control" value="{{ edit_record.correo_electronico if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control" value="{{ edit_record.id_interno if edit_record else '' }}"></div>
-                <div class="col-md-4"><label class="form-label">Turno</label><input type="text" name="turno" class="form-control" value="{{ edit_record.turno if edit_record else '' }}"></div>
+                <div class="col-md-4"><label class="form-label">Correo Electrónico</label><input type="email" name="correo_electronico" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">ID</label><input type="text" name="id_interno" class="form-control"></div>
+                <div class="col-md-4"><label class="form-label">Turno</label><input type="text" name="turno" class="form-control"></div>
               </div>
             </div>
 
             <div class="mt-4">
               <button class="btn btn-primary-custom" type="submit">
-                <i class="fas fa-save me-1"></i> 
-                {% if edit_id %}Actualizar Cumplimiento{% else %}Guardar Cumplimiento{% endif %}
+                <i class="fas fa-save me-1"></i> Guardar Cumplimiento
               </button>
-              {% if edit_id %}
-              <a href="{{ url_for('panel', tab='cumplimiento') }}" class="btn btn-secondary">
-                <i class="fas fa-times me-1"></i> Cancelar
-              </a>
-              {% endif %}
             </div>
           </form>
         </div>
@@ -1271,3 +1060,4 @@
   </div>
 </div>
 {% endblock %}
+
