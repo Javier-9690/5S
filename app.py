@@ -970,14 +970,20 @@ def registros():
         if d_to:   robos = robos.filter(RoboHurtoEntry.fecha <= d_to)
         robos = robos.order_by(RoboHurtoEntry.fecha.desc()).all()
 
-        miscelaneo = db.query(MiscelaneoEntry).order_by(MiscelaneoEntry.id.desc()).all()
+        miscelaneo = db.query(MiscelaneoEntry)
+        if d_from: miscelaneo = miscelaneo.filter(MiscelaneoEntry.creado >= datetime.combine(d_from, time.min))
+        if d_to:   miscelaneo = miscelaneo.filter(MiscelaneoEntry.creado <= datetime.combine(d_to, time.max))
+        miscelaneo = miscelaneo.order_by(MiscelaneoEntry.id.desc()).all()
 
         desviaciones = db.query(DesviacionEntry)
         if d_from: desviaciones = desviaciones.filter(DesviacionEntry.fecha >= d_from)
         if d_to:   desviaciones = desviaciones.filter(DesviacionEntry.fecha <= d_to)
         desviaciones = desviaciones.order_by(DesviacionEntry.fecha.desc()).all()
 
-        solicitudes_ot = db.query(SolicitudOTEntry).order_by(SolicitudOTEntry.id.desc()).all()
+        solicitudes_ot = db.query(SolicitudOTEntry)
+        if d_from: solicitudes_ot = solicitudes_ot.filter(SolicitudOTEntry.creado >= datetime.combine(d_from, time.min))
+        if d_to:   solicitudes_ot = solicitudes_ot.filter(SolicitudOTEntry.creado <= datetime.combine(d_to, time.max))
+        solicitudes_ot = solicitudes_ot.order_by(SolicitudOTEntry.id.desc()).all()
 
         reclamos = db.query(ReclamoUsuarioEntry)
         if d_from: reclamos = reclamos.filter(ReclamoUsuarioEntry.fecha >= d_from)
@@ -1005,7 +1011,10 @@ def registros():
         if d_to:   apertura = apertura.filter(AperturaHabitacionEntry.fecha <= d_to)
         apertura = apertura.order_by(AperturaHabitacionEntry.fecha.desc()).all()
 
-        cumplimiento = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.id.desc()).all()
+        cumplimiento = db.query(CumplimientoEECCEntry)
+        if d_from: cumplimiento = cumplimiento.filter(CumplimientoEECCEntry.creado >= datetime.combine(d_from, time.min))
+        if d_to:   cumplimiento = cumplimiento.filter(CumplimientoEECCEntry.creado <= datetime.combine(d_to, time.max))
+        cumplimiento = cumplimiento.order_by(CumplimientoEECCEntry.id.desc()).all()
 
         return render_template(
             "list.html",
@@ -1357,6 +1366,36 @@ def delete_record(entity, rid):
 
     nxt = request.form.get("next")
     return redirect(nxt or url_for("registros"))
+
+# Nueva ruta para eliminar múltiples registros
+@app.post("/delete-multiple")
+def delete_multiple():
+    entity = request.form.get("entity")
+    ids = request.form.getlist("ids")
+    
+    if not entity or not ids:
+        flash("No se seleccionaron registros para eliminar.")
+        return redirect(request.referrer or url_for("registros"))
+
+    mapping = ENTITY_MODEL
+    Model = mapping.get(entity)
+    if not Model:
+        flash("Entidad inválida.")
+        return redirect(request.referrer or url_for("registros"))
+
+    db = SessionLocal()
+    try:
+        # Eliminar los registros seleccionados
+        count = db.query(Model).filter(Model.id.in_(ids)).delete(synchronize_session=False)
+        db.commit()
+        flash(f"Se eliminaron {count} registros correctamente.")
+    except Exception as e:
+        db.rollback()
+        flash(f"Error al eliminar registros: {e}")
+    finally:
+        db.close()
+
+    return redirect(request.referrer or url_for("registros"))
 
 # -----------------------------------------------------------------------------
 # PLANTILLAS EXCEL + IMPORTACIÓN POR MÓDULO
@@ -1843,7 +1882,7 @@ def dashboard():
         for r in q.all():
             bucket(r.fecha.isoformat())["robos"] += 1
 
-        # Miscelaneo
+        # Miscelaneo - CORREGIDO: usar filtros de fecha
         q = db.query(MiscelaneoEntry)
         if d_from: q = q.filter(MiscelaneoEntry.creado >= datetime.combine(d_from, time.min))
         if d_to:   q = q.filter(MiscelaneoEntry.creado <= datetime.combine(d_to, time.max))
@@ -1857,7 +1896,7 @@ def dashboard():
         for r in q.all():
             bucket(r.fecha.isoformat())["desviaciones"] += 1
 
-        # Solicitudes OT
+        # Solicitudes OT - CORREGIDO: usar filtros de fecha
         q = db.query(SolicitudOTEntry)
         if d_from: q = q.filter(SolicitudOTEntry.creado >= datetime.combine(d_from, time.min))
         if d_to:   q = q.filter(SolicitudOTEntry.creado <= datetime.combine(d_to, time.max))
@@ -1899,7 +1938,7 @@ def dashboard():
         for r in q.all():
             bucket(r.fecha.isoformat())["apertura"] += 1
 
-        # Cumplimiento
+        # Cumplimiento - CORREGIDO: usar filtros de fecha
         q = db.query(CumplimientoEECCEntry)
         if d_from: q = q.filter(CumplimientoEECCEntry.creado >= datetime.combine(d_from, time.min))
         if d_to:   q = q.filter(CumplimientoEECCEntry.creado <= datetime.combine(d_to, time.max))
