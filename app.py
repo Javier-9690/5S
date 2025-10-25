@@ -927,6 +927,9 @@ def panel():
                     correo_electronico=request.form.get("correo_electronico","").strip(),
                     id_interno=request.form.get("id_interno","").strip(),
                     turno=request.form.get("turno","").strip(),
+            
+                    # --- NUEVO ---
+                    fecha=safe_convert_date(request.form.get("fecha")),
                 )
                 db.add(rec); db.commit(); flash("Cumplimiento EECC guardado.")
 
@@ -1019,9 +1022,12 @@ def registros():
         apertura = apertura.order_by(AperturaHabitacionEntry.fecha.desc()).all()
 
         cumplimiento = db.query(CumplimientoEECCEntry)
-        if d_from: cumplimiento = cumplimiento.filter(CumplimientoEECCEntry.creado >= datetime.combine(d_from, time.min))
-        if d_to:   cumplimiento = cumplimiento.filter(CumplimientoEECCEntry.creado <= datetime.combine(d_to, time.max))
-        cumplimiento = cumplimiento.order_by(CumplimientoEECCEntry.creado.desc(), CumplimientoEECCEntry.id.desc()).all()
+        if d_from: cumplimiento = cumplimiento.filter(CumplimientoEECCEntry.fecha >= d_from)
+        if d_to:   cumplimiento = cumplimiento.filter(CumplimientoEECCEntry.fecha <= d_to)
+        cumplimiento = cumplimiento.order_by(
+            CumplimientoEECCEntry.fecha.desc(),
+            CumplimientoEECCEntry.id.desc()
+        ).all()
 
         return render_template(
             "list.html",
@@ -1302,11 +1308,12 @@ def download_entity(entity):
                 })
 
         elif entity == "cumplimiento":
-            rows = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.id).all()
-            headers = ["EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"]
+            rows = db.query(CumplimientoEECCEntry).order_by(CumplimientoEECCEntry.fecha, CumplimientoEECCEntry.id).all()
+            headers = ["FECHA","EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"]
             w = csv.DictWriter(buf, fieldnames=headers); w.writeheader()
             for r in rows:
                 w.writerow({
+                    "FECHA": r.fecha.isoformat() if r.fecha else "",
                     "EMPRESA": r.empresa or "",
                     "N_CONTRATO": r.n_contrato or "",
                     "CO": r.co or "",
@@ -1430,7 +1437,7 @@ TEMPLATES = {
     ],
     "onboarding": ["FECHA_HORA","NOMBRE","RUT","EMPRESA","ID","ARCHIVO_PDF"],
     "apertura": ["FECHA","HABITACION","HORA","RESPONSABLE","ESTADO_CHAPA"],
-    "cumplimiento": ["EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"],
+    "cumplimiento": ["FECHA","EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"],
 }
 
 @app.get("/template/<string:entity>.xlsx")
@@ -1477,7 +1484,18 @@ def template_xlsx(entity):
             "Observación de ejemplo" # OBSERVACIONES
         ]
         ws.append(example_row)
-    
+        
+    if entity == "cumplimiento":
+        ws.append(["FECHA","EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"])
+        ws.append([
+            "2025-10-20",     # FECHA (reconoce varios formatos al importar)
+            "Empresa X",
+            "C-123",
+            "CO45",
+            "contacto@x.cl",
+            "ID987",
+            "NOCHE",
+        ])
     out = io.BytesIO()
     wb.save(out)
     out.seek(0)
@@ -1759,12 +1777,13 @@ def import_xlsx(entity):
 
                 elif entity == "cumplimiento":
                     db.add(CumplimientoEECCEntry(
-                        empresa=str(row[0] or "").strip(),
-                        n_contrato=str(row[1] or "").strip(),
-                        co=str(row[2] or "").strip(),
-                        correo_electronico=str(row[3] or "").strip(),
-                        id_interno=str(row[4] or "").strip(),
-                        turno=str(row[5] or "").strip(),
+                        fecha=safe_convert_date(row[0]),                    # <-- NUEVO
+                        empresa=str(row[1] or "").strip(),
+                        n_contrato=str(row[2] or "").strip(),
+                        co=str(row[3] or "").strip(),
+                        correo_electronico=str(row[4] or "").strip(),
+                        id_interno=str(row[5] or "").strip(),
+                        turno=str(row[6] or "").strip(),
                     ))
 
                 inserted += 1
@@ -1924,10 +1943,10 @@ def dashboard():
 
         # Cumplimiento
         q = db.query(CumplimientoEECCEntry)
-        if d_from: q = q.filter(CumplimientoEECCEntry.creado >= datetime.combine(d_from, time.min))
-        if d_to:   q = q.filter(CumplimientoEECCEntry.creado <= datetime.combine(d_to, time.max))
+        if d_from: q = q.filter(CumplimientoEECCEntry.fecha >= d_from)
+        if d_to:   q = q.filter(CumplimientoEECCEntry.fecha <= d_to)
         for r in q.all():
-            bucket(r.creado.date().isoformat())["cumplimiento"] += 1
+            bucket(r.fecha.isoformat())["cumplimiento"] += 1
 
         if not per_day:
             return render_template("dashboard.html", have_data=False, week_map=WEEK_MAP,
