@@ -1,140 +1,88 @@
 {% extends "base.html" %}
-{% block title %}Editar registro · {{ title or entity|capitalize }}{% endblock %}
-
-{% block extra_head %}
-<style>
-  /* === TODO el CSS está *scopeado* a .edit-record para no afectar otras páginas === */
-  .edit-record .form-hint { font-size: .85rem; color: #6c757d; }
-  .edit-record .sticky-actions {
-    position: sticky; bottom: 0; background: #fff; padding: .75rem 1rem;
-    border-top: 1px solid #eee; display: flex; gap: .5rem; justify-content: flex-end;
-  }
-</style>
-{% endblock %}
+{% block title %}Editar - {{ title or entity|title }}{% endblock %}
 
 {% block content %}
-<div class="content-container edit-record">
-  <h1 class="page-title">
-    <i class="fas fa-edit me-2"></i>Editar registro
-    <small class="text-muted">· {{ title or entity|capitalize }} (ID {{ record.id }})</small>
-  </h1>
-
-  <div class="mb-3">
-    <a class="btn btn-outline-secondary" href="{{ back_url or url_for('registros', vista=entity) }}">
-      <i class="fas fa-arrow-left me-1"></i> Volver a {{ title or entity|capitalize }}
+<div class="content-container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="page-title mb-0">
+      <i class="fas fa-pen-to-square me-2"></i>
+      Editar {{ title or entity|replace('_', ' ')|title }}
+    </h1>
+    <a href="{{ back_url or url_for('registros', vista=entity) }}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left me-1"></i> Volver a Registros
     </a>
   </div>
 
-  <form method="post" action="{{ request.path }}">
-    <div class="row g-3">
-      {# 
-        Contexto esperado:
-          - entity, title, record
-          - fields: lista de dicts con (name, label, type, etc.)
-      #}
+  <!-- Mensajes flash (usa los del base.html si llegan) -->
 
-      {% macro input_name(f) -%}{{ f.name }}{%- endmacro %}
+  <div class="card">
+    <div class="card-header">
+      <div class="d-flex align-items-center justify-content-between">
+        <span>Formulario de edición</span>
+        <span class="badge bg-light text-dark">ID: {{ record.id }}</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('edit_record', entity=entity, rid=record.id) }}">
+        <input type="hidden" name="back_url" value="{{ back_url or url_for('registros', vista=entity) }}">
 
-      {% macro value_of(f) -%}
-        {% set v = getattr(record, f.name) if record is defined else None %}
-        {% if v is none %}
-          {{ "" }}
-        {% elif f.type == "date" and v.__class__.__name__ in ("date","datetime") %}
-          {{ (v.date() if v.__class__.__name__ == "datetime" else v).isoformat() }}
-        {% elif f.type == "time" and v.__class__.__name__ == "time" %}
-          {{ v.strftime("%H:%M") }}
-        {% elif f.type == "datetime-local" and v.__class__.__name__ in ("datetime","date") %}
-          {% if v.__class__.__name__ == "date" %}
-            {{ v.strftime("%Y-%m-%d") ~ "T00:00" }}
-          {% else %}
-            {{ v.strftime("%Y-%m-%dT%H:%M") }}
-          {% endif %}
-        {% else %}
-          {{ v }}
-        {% endif %}
-      {%- endmacro %}
+        <div class="row g-3">
+          {# fields: name, label, type(text|number|date|time|datetime-local|textarea), required(bool), col(12/6/4), hint #}
+          {% for f in fields %}
+            {% set val = getattr(record, f.name) %}
+            {% set itype = f.type or 'text' %}
+            {% set colw = f.col or 6 %}
 
-      {% for f in fields %}
-        {% set t = f.type or "text" %}
-        <div class="col-md-{{ f.col or 6 }}">
-          <label class="form-label {% if f.required %}required{% endif %}">
-            {{ f.label or f.name|replace("_"," ")|title }}
-          </label>
+            {% if itype == 'date' %}
+              {% set vstr = (val.isoformat() if val else '') %}
+            {% elif itype == 'time' %}
+              {% set vstr = (val.strftime('%H:%M') if val else '') %}
+            {% elif itype == 'datetime-local' %}
+              {% set vstr = (val.strftime('%Y-%m-%dT%H:%M') if val else '') %}
+            {% else %}
+              {% set vstr = (val if val is not none else '') %}
+            {% endif %}
 
-          {% if t == "textarea" %}
-            <textarea
-              class="form-control"
-              name="{{ input_name(f) }}"
-              rows="{{ f.rows or 3 }}"
-              {% if f.required %}required{% endif %}
-              {% if f.readonly %}readonly{% endif %}
-            >{{ value_of(f) }}</textarea>
+            <div class="col-md-{{ colw }} col-12">
+              <label class="form-label {% if f.required %}required{% endif %}">{{ f.label }}</label>
 
-          {% elif t == "select" %}
-            <select
-              class="form-select"
-              name="{{ input_name(f) }}"
-              {% if f.required %}required{% endif %}
-              {% if f.readonly %}disabled{% endif %}
-            >
-              {% if not f.required %}
-                <option value="">-- Seleccionar --</option>
+              {% if itype == 'textarea' %}
+                <textarea
+                  class="form-control"
+                  name="{{ f.name }}"
+                  rows="3"
+                  {% if f.required %}required{% endif %}
+                >{{ vstr }}</textarea>
+              {% else %}
+                <input
+                  class="form-control"
+                  type="{{ itype }}"
+                  name="{{ f.name }}"
+                  value="{{ vstr }}"
+                  {% if f.required %}required{% endif %}
+                >
               {% endif %}
-              {% for val, text in f.choices or [] %}
-                <option value="{{ val }}" {{ "selected" if value_of(f)|string == val|string }}>
-                  {{ text }}
-                </option>
-              {% endfor %}
-            </select>
-            {% if f.readonly %}
-              <input type="hidden" name="{{ input_name(f) }}" value="{{ value_of(f) }}">
-            {% endif %}
 
-          {% elif t == "checkbox" %}
-            {% set checked = value_of(f) in (True, "true", "True", 1, "1", "on", "yes") %}
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox"
-                     name="{{ input_name(f) }}"
-                     {% if checked %}checked{% endif %}
-                     {% if f.readonly %}disabled{% endif %}>
-              <label class="form-check-label">{{ f.help or "Marcar si aplica" }}</label>
+              {% if f.hint %}
+                <small class="text-muted d-block mt-1">
+                  <i class="fas fa-circle-info me-1"></i>{{ f.hint }}
+                </small>
+              {% endif %}
             </div>
-            {% if f.readonly %}
-              <input type="hidden" name="{{ input_name(f) }}" value="{{ "on" if checked else "" }}">
-            {% endif %}
-
-          {% else %}
-            <input
-              class="form-control"
-              type="{{ t }}"
-              name="{{ input_name(f) }}"
-              value="{{ value_of(f) }}"
-              {% if f.placeholder %}placeholder="{{ f.placeholder }}"{% endif %}
-              {% if f.min is defined %}min="{{ f.min }}"{% endif %}
-              {% if f.max is defined %}max="{{ f.max }}"{% endif %}
-              {% if f.step is defined %}step="{{ f.step }}"{% endif %}
-              {% if f.pattern %}pattern="{{ f.pattern }}"{% endif %}
-              {% if f.title %}title="{{ f.title }}"{% endif %}
-              {% if f.required %}required{% endif %}
-              {% if f.readonly %}readonly{% endif %}
-            >
-          {% endif %}
-
-          {% if f.hint %}
-            <div class="form-hint">{{ f.hint }}</div>
-          {% endif %}
+          {% endfor %}
         </div>
-      {% endfor %}
-    </div>
 
-    <div class="sticky-actions mt-4">
-      <a class="btn btn-outline-secondary" href="{{ back_url or url_for('registros', vista=entity) }}">
-        Cancelar
-      </a>
-      <button class="btn btn-primary-custom" type="submit">
-        <i class="fas fa-save me-1"></i> Guardar Cambios
-      </button>
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-primary-custom" type="submit">
+            <i class="fas fa-save me-1"></i> Guardar cambios
+          </button>
+          <a href="{{ back_url or url_for('registros', vista=entity) }}" class="btn btn-outline-secondary">
+            Cancelar
+          </a>
+        </div>
+      </form>
     </div>
-  </form>
+  </div>
 </div>
 {% endblock %}
+
