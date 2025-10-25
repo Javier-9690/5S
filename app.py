@@ -611,8 +611,8 @@ class CumplimientoEECCEntry(Base):
     correo_electronico = Column(String(200), nullable=True)
     id_interno = Column(String(100), nullable=True)
     turno = Column(String(100), nullable=True)
-    fecha = Column(Date, nullable=False)  # fecha de negocio para filtros/dashboard
-    # NUEVO: fecha
+    # fecha de negocio para filtros/dashboard
+    fecha = Column(Date, nullable=False, index=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
