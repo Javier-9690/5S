@@ -410,17 +410,37 @@
       const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         plugins: {
           legend: {
             position: 'top',
-          }
+            labels: {
+              boxWidth: 22,
+              padding: 12,
+              color: '#4b5563' // gris para texto de leyenda
+            }
+          },
+          tooltip: { enabled: true }
+        },
+        // 🔽 Estilo global para que TODAS las líneas se vean iguales
+        elements: {
+          line: { borderWidth: 3, tension: 0.4 },
+          point: { radius: 3, hoverRadius: 5, backgroundColor: '#fff', borderWidth: 2 }
         },
         scales: {
+          x: {
+            grid: { color: 'rgba(0,0,0,0.1)' },
+            ticks: { color: '#6c757d' }
+          },
           y: {
-            beginAtZero: true
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.1)' },
+            ticks: { color: '#6c757d' }
           }
         }
       };
+      …
+    </script>
 
       // Gráfico de Censo
       new Chart(document.getElementById('censoChart'), {
@@ -450,6 +470,8 @@
             backgroundColor: 'rgba(255, 193, 7, 0.8)',
             borderColor: 'rgba(255, 193, 7, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -466,6 +488,8 @@
             backgroundColor: 'rgba(23, 162, 184, 0.8)',
             borderColor: 'rgba(23, 162, 184, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -499,6 +523,8 @@
             backgroundColor: 'rgba(220, 53, 69, 0.8)',
             borderColor: 'rgba(220, 53, 69, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -532,6 +558,8 @@
             backgroundColor: 'rgba(253, 126, 20, 0.8)',
             borderColor: 'rgba(253, 126, 20, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -548,6 +576,8 @@
             backgroundColor: 'rgba(108, 117, 125, 0.8)',
             borderColor: 'rgba(108, 117, 125, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -564,6 +594,8 @@
             backgroundColor: 'rgba(40, 167, 69, 0.8)',
             borderColor: 'rgba(40, 167, 69, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -580,6 +612,8 @@
             backgroundColor: 'rgba(0, 123, 255, 0.8)',
             borderColor: 'rgba(0, 123, 255, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -596,6 +630,8 @@
             backgroundColor: 'rgba(220, 53, 69, 0.8)',
             borderColor: 'rgba(220, 53, 69, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -612,6 +648,8 @@
             backgroundColor: 'rgba(111, 66, 193, 0.8)',
             borderColor: 'rgba(111, 66, 193, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -628,6 +666,8 @@
             backgroundColor: 'rgba(255, 193, 7, 0.8)',
             borderColor: 'rgba(255, 193, 7, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -644,6 +684,8 @@
             backgroundColor: 'rgba(23, 162, 184, 0.8)',
             borderColor: 'rgba(23, 162, 184, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -660,6 +702,8 @@
             backgroundColor: 'rgba(111, 66, 193, 0.8)',
             borderColor: 'rgba(111, 66, 193, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
@@ -676,6 +720,8 @@
             backgroundColor: 'rgba(253, 126, 20, 0.8)',
             borderColor: 'rgba(253, 126, 20, 1)',
             borderWidth: 1
+            tension: 0.4,
+            fill: true
           }]
         },
         options: chartOptions
