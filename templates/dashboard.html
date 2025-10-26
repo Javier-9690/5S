@@ -403,11 +403,10 @@
     </div>
 
     <script>
-      // Datos desde el backend
+      // === Configuración y estilo unificado ===
       const labels = {{ labels|tojson }};
       const series = {{ series|tojson }};
 
-      // Estilo global para todas las líneas (como tu ejemplo)
       const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -415,7 +414,11 @@
         plugins: {
           legend: {
             position: 'top',
-            labels: { boxWidth: 22, padding: 12, color: '#4b5563' }
+            labels: {
+              boxWidth: 22,
+              padding: 12,
+              color: '#4b5563'
+            }
           },
           tooltip: { enabled: true }
         },
@@ -429,288 +432,142 @@
         }
       };
 
-      // Gráfico de Censo
+      // Helper para datasets con estilo consistente (relleno 0.1 + fill:true)
+      const makeDataset = (label, data, borderColor, bgRGBA) => ({
+        label,
+        data,
+        borderColor,
+        backgroundColor: bgRGBA,
+        tension: 0.4,
+        fill: true
+      });
+
+      // === Gráficos (todos line + mismo estilo) ===
       new Chart(document.getElementById('censoChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Censo Total',
-            data: series.censo,
-            borderColor: '#2c5aa0',
-            backgroundColor: 'rgba(44, 90, 160, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Censo Total', series.censo, '#2c5aa0', 'rgba(44, 90, 160, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Eventos
       new Chart(document.getElementById('eventosChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Eventos de Seguridad',
-            data: series.eventos,
-            backgroundColor: 'rgba(255, 193, 7, 0.8)',
-            borderColor: 'rgba(255, 193, 7, 1)',
-            borderWidth: 1,   // ← coma corregida
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Eventos de Seguridad', series.eventos, 'rgba(255, 193, 7, 1)', 'rgba(255, 193, 7, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Duplicidades
       new Chart(document.getElementById('duplicidadesChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Duplicidades',
-            data: series.duplicidades,
-            backgroundColor: 'rgba(23, 162, 184, 0.8)',
-            borderColor: 'rgba(23, 162, 184, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Duplicidades', series.duplicidades, 'rgba(23, 162, 184, 1)', 'rgba(23, 162, 184, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Encuestas
       new Chart(document.getElementById('encuestasChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Encuestas Realizadas',
-            data: series.encuestas,
-            borderColor: '#28a745',
-            backgroundColor: 'rgba(40, 167, 69, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Encuestas Realizadas', series.encuestas, '#28a745', 'rgba(40, 167, 69, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Atenciones
       new Chart(document.getElementById('atencionesChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Atenciones Realizadas',
-            data: series.atencion_cant,
-            backgroundColor: 'rgba(220, 53, 69, 0.8)',
-            borderColor: 'rgba(220, 53, 69, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Atenciones Realizadas', series.atencion_cant, 'rgba(220, 53, 69, 1)', 'rgba(220, 53, 69, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Tiempo de Atención
       new Chart(document.getElementById('tiempoAtencionChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Tiempo Promedio (min)',
-            data: series.atencion_min,
-            borderColor: '#6c757d',
-            backgroundColor: 'rgba(108, 117, 125, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Tiempo Promedio (min)', series.atencion_min, '#6c757d', 'rgba(108, 117, 125, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Robos y Hurtos
       new Chart(document.getElementById('robosChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Robos y Hurtos',
-            data: series.robos,
-            backgroundColor: 'rgba(253, 126, 20, 0.8)',
-            borderColor: 'rgba(253, 126, 20, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Robos y Hurtos', series.robos, 'rgba(253, 126, 20, 1)', 'rgba(253, 126, 20, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Misceláneo
       new Chart(document.getElementById('miscelaneoChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Registros Misceláneos',
-            data: series.miscelaneo,
-            backgroundColor: 'rgba(108, 117, 125, 0.8)',
-            borderColor: 'rgba(108, 117, 125, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Registros Misceláneos', series.miscelaneo, 'rgba(108, 117, 125, 1)', 'rgba(108, 117, 125, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Desviaciones
       new Chart(document.getElementById('desviacionesChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Desviaciones',
-            data: series.desviaciones,
-            backgroundColor: 'rgba(40, 167, 69, 0.8)',
-            borderColor: 'rgba(40, 167, 69, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Desviaciones', series.desviaciones, 'rgba(40, 167, 69, 1)', 'rgba(40, 167, 69, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Solicitudes OT
       new Chart(document.getElementById('solicitudesOtChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Solicitudes OT',
-            data: series.solicitudes_ot,
-            backgroundColor: 'rgba(0, 123, 255, 0.8)',
-            borderColor: 'rgba(0, 123, 255, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Solicitudes OT', series.solicitudes_ot, 'rgba(0, 123, 255, 1)', 'rgba(0, 123, 255, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Reclamos
       new Chart(document.getElementById('reclamosChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Reclamos de Usuarios',
-            data: series.reclamos,
-            backgroundColor: 'rgba(220, 53, 69, 0.8)',
-            borderColor: 'rgba(220, 53, 69, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Reclamos de Usuarios', series.reclamos, 'rgba(220, 53, 69, 1)', 'rgba(220, 53, 69, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Alarmas
       new Chart(document.getElementById('alarmasChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Activaciones de Alarma',
-            data: series.alarmas,
-            backgroundColor: 'rgba(111, 66, 193, 0.8)',
-            borderColor: 'rgba(111, 66, 193, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Activaciones de Alarma', series.alarmas, 'rgba(111, 66, 193, 1)', 'rgba(111, 66, 193, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Extensiones
       new Chart(document.getElementById('extensionesChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Extensiones y Excepciones',
-            data: series.extensiones,
-            backgroundColor: 'rgba(255, 193, 7, 0.8)',
-            borderColor: 'rgba(255, 193, 7, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Extensiones y Excepciones', series.extensiones, 'rgba(255, 193, 7, 1)', 'rgba(255, 193, 7, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Onboarding
       new Chart(document.getElementById('onboardingChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Registros Onboarding',
-            data: series.onboarding,
-            backgroundColor: 'rgba(23, 162, 184, 0.8)',
-            borderColor: 'rgba(23, 162, 184, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Registros Onboarding', series.onboarding, 'rgba(23, 162, 184, 1)', 'rgba(23, 162, 184, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Apertura
       new Chart(document.getElementById('aperturaChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Aperturas de Habitación',
-            data: series.apertura,
-            backgroundColor: 'rgba(111, 66, 193, 0.8)',
-            borderColor: 'rgba(111, 66, 193, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Aperturas de Habitación', series.apertura, 'rgba(111, 66, 193, 1)', 'rgba(111, 66, 193, 0.1)')
+        ]},
         options: chartOptions
       });
 
-      // Gráfico de Cumplimiento
       new Chart(document.getElementById('cumplimientoChart'), {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Cumplimiento EECC',
-            data: series.cumplimiento,
-            backgroundColor: 'rgba(253, 126, 20, 0.8)',
-            borderColor: 'rgba(253, 126, 20, 1)',
-            borderWidth: 1,
-            tension: 0.4,
-            fill: true
-          }]
-        },
+        data: { labels, datasets: [
+          makeDataset('Cumplimiento EECC', series.cumplimiento, 'rgba(253, 126, 20, 1)', 'rgba(253, 126, 20, 0.1)')
+        ]},
         options: chartOptions
       });
     </script>
