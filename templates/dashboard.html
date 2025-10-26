@@ -403,10 +403,11 @@
     </div>
 
     <script>
-      // Configuración de gráficos
+      // Datos desde el backend
       const labels = {{ labels|tojson }};
       const series = {{ series|tojson }};
 
+      // Estilo global para todas las líneas (como tu ejemplo)
       const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -414,33 +415,19 @@
         plugins: {
           legend: {
             position: 'top',
-            labels: {
-              boxWidth: 22,
-              padding: 12,
-              color: '#4b5563' // gris para texto de leyenda
-            }
+            labels: { boxWidth: 22, padding: 12, color: '#4b5563' }
           },
           tooltip: { enabled: true }
         },
-        // 🔽 Estilo global para que TODAS las líneas se vean iguales
         elements: {
-          line: { borderWidth: 3, tension: 0.4 },
+          line:  { borderWidth: 3, tension: 0.4 },
           point: { radius: 3, hoverRadius: 5, backgroundColor: '#fff', borderWidth: 2 }
         },
         scales: {
-          x: {
-            grid: { color: 'rgba(0,0,0,0.1)' },
-            ticks: { color: '#6c757d' }
-          },
-          y: {
-            beginAtZero: true,
-            grid: { color: 'rgba(0,0,0,0.1)' },
-            ticks: { color: '#6c757d' }
-          }
+          x: { grid: { color: 'rgba(0,0,0,0.1)' }, ticks: { color: '#6c757d' } },
+          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.1)' }, ticks: { color: '#6c757d' } }
         }
       };
-      …
-    </script>
 
       // Gráfico de Censo
       new Chart(document.getElementById('censoChart'), {
@@ -469,7 +456,7 @@
             data: series.eventos,
             backgroundColor: 'rgba(255, 193, 7, 0.8)',
             borderColor: 'rgba(255, 193, 7, 1)',
-            borderWidth: 1
+            borderWidth: 1,   // ← coma corregida
             tension: 0.4,
             fill: true
           }]
