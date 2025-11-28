@@ -2,7 +2,8 @@ import os
 import io
 import csv
 import re
-from sqlalchemy import text  # <-- pon este import junto a los demás de SQLAlchemy
+import pandas as pd
+from sqlalchemy import text, Boolean
 from statistics import mean
 from datetime import datetime, date, time, timedelta
 
@@ -615,6 +616,38 @@ class CumplimientoEECCEntry(Base):
     fecha = Column(Date, nullable=False, index=True)
     creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
+# ---------------- NUEVOS MODELOS PARA REPORTES ----------------
+class CurvaEntry(Base):
+    __tablename__ = "curva_data"
+    id = Column(Integer, primary_key=True)
+    fecha = Column(Date, nullable=False, index=True)
+    modulo = Column(String(100), nullable=True)
+    habitacion = Column(String(100), nullable=True)
+    empresa = Column(String(200), nullable=True)
+    id_interno = Column(String(100), nullable=True)
+    # Agrega aquí más columnas según la estructura real del archivo Curva
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+class OntrackingEntry(Base):
+    __tablename__ = "ontracking_data"
+    id = Column(Integer, primary_key=True)
+    modulo = Column(String(100), nullable=True)
+    lugar = Column(String(200), nullable=True)
+    habitacion = Column(String(100), nullable=True)
+    empresa = Column(String(200), nullable=True)
+    id_interno = Column(String(100), nullable=True)
+    cama = Column(String(100), nullable=True)
+    inicio = Column(Date, nullable=True)
+    termino = Column(Date, nullable=True)
+    dia = Column(Date, nullable=True)
+    camas_ocupadas = Column(Integer, nullable=True)
+    turno = Column(String(100), nullable=True)
+    gerencia = Column(String(200), nullable=True)
+    co_mel = Column(String(100), nullable=True)
+    centro_costo = Column(String(100), nullable=True)
+    sexo = Column(String(50), nullable=True)
+    tipo_turno = Column(String(100), nullable=True)
+    creado = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 # Crear tablas si no existen
 Base.metadata.create_all(ENGINE)
@@ -1366,6 +1399,9 @@ ENTITY_MODEL = {
     "onboarding": OnboardingEntry,
     "apertura": AperturaHabitacionEntry,
     "cumplimiento": CumplimientoEECCEntry,
+    # nuevos para reportes
+    "curva": CurvaEntry,
+    "ontracking": OntrackingEntry,
 }
 
 @app.post("/delete/<string:entity>/<int:rid>")
@@ -1451,6 +1487,14 @@ TEMPLATES = {
     "onboarding": ["FECHA_HORA","NOMBRE","RUT","EMPRESA","ID","ARCHIVO_PDF"],
     "apertura": ["FECHA","HABITACION","HORA","RESPONSABLE","ESTADO_CHAPA"],
     "cumplimiento": ["FECHA","EMPRESA","N_CONTRATO","CO","CORREO_ELECTRONICO","ID","TURNO"],
+    
+    # --------- NUEVOS PARA REPORTES ---------
+    "curva": ["FECHA", "MODULO", "HABITACION", "EMPRESA", "ID"],  # Ajusta según columnas reales
+    "ontracking": [
+        "MODULO", "LUGAR", "HABITACION", "EMPRESA", "ID", "CAMA", 
+        "INICIO", "TERMINO", "DIA", "CAMAS_OCUPDAS", "TURNO", 
+        "GERENCIA", "CO_MEL", "CENTRO_COSTO", "SEXO", "TIPO_TURNO"
+    ],
 }
 
 @app.get("/template/<string:entity>.xlsx")
@@ -1509,6 +1553,39 @@ def template_xlsx(entity):
             "ID987",
             "NOCHE",
         ])
+    
+    # Plantillas para los nuevos archivos de reportes
+    if entity == "curva":
+        example_row = [
+            "2025-01-15",        # FECHA
+            "Módulo A",          # MODULO
+            "101",               # HABITACION
+            "Empresa Ejemplo",   # EMPRESA
+            "ID12345",           # ID
+        ]
+        ws.append(example_row)
+    
+    if entity == "ontracking":
+        example_row = [
+            "Módulo A",          # MODULO
+            "Lugar específico",  # LUGAR
+            "101",               # HABITACION
+            "Empresa Ejemplo",   # EMPRESA
+            "ID12345",           # ID
+            "Cama 1",            # CAMA
+            "2025-01-15",        # INICIO
+            "2025-01-20",        # TERMINO
+            "2025-01-15",        # DIA
+            1,                   # CAMAS_OCUPDAS
+            "MAÑANA",            # TURNO
+            "Gerencia Ejemplo",  # GERENCIA
+            "CO123",             # CO_MEL
+            "CC-123",            # CENTRO_COSTO
+            "M",                 # SEXO
+            "Tipo A"             # TIPO_TURNO
+        ]
+        ws.append(example_row)
+        
     out = io.BytesIO()
     wb.save(out)
     out.seek(0)
@@ -1799,6 +1876,36 @@ def import_xlsx(entity):
                         turno=str(row[6] or "").strip(),
                     ))
 
+                # ---------------- NUEVOS PARA REPORTES ----------------
+                elif entity == "curva":
+                    db.add(CurvaEntry(
+                        fecha=safe_convert_date(row[0]),
+                        modulo=str(row[1] or "").strip(),
+                        habitacion=str(row[2] or "").strip(),
+                        empresa=str(row[3] or "").strip(),
+                        id_interno=str(row[4] or "").strip(),
+                    ))
+
+                elif entity == "ontracking":
+                    db.add(OntrackingEntry(
+                        modulo=str(row[0] or "").strip(),
+                        lugar=str(row[1] or "").strip(),
+                        habitacion=str(row[2] or "").strip(),
+                        empresa=str(row[3] or "").strip(),
+                        id_interno=str(row[4] or "").strip(),
+                        cama=str(row[5] or "").strip(),
+                        inicio=safe_convert_date(row[6]),
+                        termino=safe_convert_date(row[7]),
+                        dia=safe_convert_date(row[8]),
+                        camas_ocupadas=to_int(row[9], None),
+                        turno=str(row[10] or "").strip(),
+                        gerencia=str(row[11] or "").strip(),
+                        co_mel=str(row[12] or "").strip(),
+                        centro_costo=str(row[13] or "").strip(),
+                        sexo=str(row[14] or "").strip(),
+                        tipo_turno=str(row[15] or "").strip(),
+                    ))
+
                 inserted += 1
 
             db.commit()
@@ -1815,6 +1922,177 @@ def import_xlsx(entity):
     tab = "eventos" if entity == "eventos" else entity
     return redirect(url_for("panel", tab=tab))
 
+
+# -----------------------------------------------------------------------------
+# NUEVA PESTAÑA REPORTES
+# -----------------------------------------------------------------------------
+@app.route("/reportes", methods=["GET", "POST"])
+def reportes():
+    tab = request.args.get("tab", "importar")
+    db = SessionLocal()
+    
+    try:
+        if request.method == "POST":
+            # Manejar importación de archivos
+            archivo_curva = request.files.get("curva_file")
+            archivo_ontracking = request.files.get("ontracking_file")
+            
+            if archivo_curva and archivo_curva.filename:
+                try:
+                    # Leer archivo Curva
+                    if archivo_curva.filename.endswith('.xlsx'):
+                        df = pd.read_excel(archivo_curva)
+                    else:
+                        # Manejar otros formatos si es necesario
+                        flash("Formato de archivo Curva no soportado")
+                        return redirect(url_for("reportes"))
+                    
+                    # Procesar filas del archivo Curva
+                    inserted = 0
+                    for _, row in df.iterrows():
+                        try:
+                            # Mapear columnas según la estructura real del archivo
+                            # Ajusta estos mapeos según las columnas reales del archivo Curva
+                            record = CurvaEntry(
+                                fecha=safe_convert_date(row.get('FECHA') if 'FECHA' in row else row.iloc[0]),
+                                modulo=str(row.get('MODULO', '')).strip() if 'MODULO' in row else '',
+                                habitacion=str(row.get('HABITACION', '')).strip() if 'HABITACION' in row else '',
+                                empresa=str(row.get('EMPRESA', '')).strip() if 'EMPRESA' in row else '',
+                                id_interno=str(row.get('ID', '')).strip() if 'ID' in row else '',
+                            )
+                            db.add(record)
+                            inserted += 1
+                        except Exception as e:
+                            flash(f"Error procesando fila Curva: {e}")
+                            continue
+                    
+                    db.commit()
+                    flash(f"Archivo Curva importado correctamente: {inserted} registros")
+                    
+                except Exception as e:
+                    db.rollback()
+                    flash(f"Error importando archivo Curva: {e}")
+            
+            if archivo_ontracking and archivo_ontracking.filename:
+                try:
+                    # Leer archivo Ontracking
+                    if archivo_ontracking.filename.endswith('.xlsx'):
+                        df = pd.read_excel(archivo_ontracking)
+                    else:
+                        flash("Formato de archivo Ontracking no soportado")
+                        return redirect(url_for("reportes"))
+                    
+                    # Procesar filas del archivo Ontracking
+                    inserted = 0
+                    for _, row in df.iterrows():
+                        try:
+                            # Normalizar nombres de columnas
+                            row_dict = {}
+                            for col in row.index:
+                                normalized_col = normalize_header(col)
+                                row_dict[normalized_col] = row[col]
+                            
+                            record = OntrackingEntry(
+                                modulo=str(row_dict.get('MODULO', '')).strip(),
+                                lugar=str(row_dict.get('LUGAR', '')).strip(),
+                                habitacion=str(row_dict.get('HABITACION', '')).strip(),
+                                empresa=str(row_dict.get('EMPRESA', '')).strip(),
+                                id_interno=str(row_dict.get('ID', '')).strip(),
+                                cama=str(row_dict.get('CAMA', '')).strip(),
+                                inicio=safe_convert_date(row_dict.get('INICIO')),
+                                termino=safe_convert_date(row_dict.get('TERMINO')),
+                                dia=safe_convert_date(row_dict.get('DIA')),
+                                camas_ocupadas=int(row_dict.get('CAMAS_OCUPDAS', 0)) if row_dict.get('CAMAS_OCUPDAS') not in (None, "") else None,
+                                turno=str(row_dict.get('TURNO', '')).strip(),
+                                gerencia=str(row_dict.get('GERENCIA', '')).strip(),
+                                co_mel=str(row_dict.get('CO_MEL', '')).strip(),
+                                centro_costo=str(row_dict.get('CENTRO_COSTO', '')).strip(),
+                                sexo=str(row_dict.get('SEXO', '')).strip(),
+                                tipo_turno=str(row_dict.get('TIPO_TURNO', '')).strip(),
+                            )
+                            db.add(record)
+                            inserted += 1
+                        except Exception as e:
+                            flash(f"Error procesando fila Ontracking: {e}")
+                            continue
+                    
+                    db.commit()
+                    flash(f"Archivo Ontracking importado correctamente: {inserted} registros")
+                    
+                except Exception as e:
+                    db.rollback()
+                    flash(f"Error importando archivo Ontracking: {e}")
+            
+            return redirect(url_for("reportes"))
+        
+        # Para GET request, mostrar la página de reportes
+        return render_template("reportes.html", tab=tab, current_tab="reportes")
+    
+    finally:
+        db.close()
+
+@app.get("/template/curva.xlsx")
+def template_curva():
+    return template_xlsx_generic("curva")
+
+@app.get("/template/ontracking.xlsx")
+def template_ontracking():
+    return template_xlsx_generic("ontracking")
+
+def template_xlsx_generic(entity):
+    if entity not in TEMPLATES:
+        flash("Entidad no válida para plantilla.")
+        return redirect(url_for("reportes"))
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plantilla"
+    
+    headers = TEMPLATES[entity]
+    ws.append(headers)
+    
+    # Agregar fila de ejemplo
+    if entity == "ontracking":
+        example_row = [
+            "Módulo A",          # MODULO
+            "Lugar específico",  # LUGAR
+            "101",               # HABITACION
+            "Empresa Ejemplo",   # EMPRESA
+            "ID12345",           # ID
+            "Cama 1",            # CAMA
+            "2025-01-15",        # INICIO
+            "2025-01-20",        # TERMINO
+            "2025-01-15",        # DIA
+            1,                   # CAMAS_OCUPDAS
+            "MAÑANA",            # TURNO
+            "Gerencia Ejemplo",  # GERENCIA
+            "CO123",             # CO_MEL
+            "CC-123",            # CENTRO_COSTO
+            "M",                 # SEXO
+            "Tipo A"             # TIPO_TURNO
+        ]
+        ws.append(example_row)
+    elif entity == "curva":
+        # Ajusta según las columnas reales del archivo Curva
+        example_row = [
+            "2025-01-15",        # FECHA
+            "Módulo A",          # MODULO
+            "101",               # HABITACION
+            "Empresa Ejemplo",   # EMPRESA
+            "ID12345",           # ID
+        ]
+        ws.append(example_row)
+    
+    out = io.BytesIO()
+    wb.save(out)
+    out.seek(0)
+    
+    return send_file(
+        out, 
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True, 
+        download_name=f"plantilla_{entity}.xlsx"
+    )
 
 # -----------------------------------------------------------------------------
 # DASHBOARD (actualizado para mostrar estadísticas de todos los módulos)
