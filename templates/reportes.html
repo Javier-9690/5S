@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Sistema de Gestión 5400 - Reportes{% endblock %}
+
+{% block content %}
+<div class="content-container">
+  <h1 class="page-title">Importación de Archivos para Reportes</h1>
+
+  <!-- Pestañas de navegación -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link {% if tab == 'importar' %}active{% endif %}" 
+         href="{{ url_for('reportes', tab='importar') }}">
+        <i class="fas fa-upload me-1"></i> Importar Archivos
+      </a>
+    </li>
+  </ul>
+
+  {% if tab == 'importar' %}
+  <div class="row">
+    <div class="col-lg-6">
+      <!-- Formulario para Curva -->
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-chart-line me-2"></i> Importar Archivo Curva (Fcst_VMH+5400)
+          </h5>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label for="curva_file" class="form-label">Seleccionar archivo Excel Curva</label>
+              <input class="form-control" type="file" id="curva_file" name="curva_file" accept=".xlsx, .xls" required>
+              <div class="form-text">
+                Archivo Curva con datos de forecast VMH+5400
+              </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-primary-custom">
+                <i class="fas fa-file-import me-1"></i> Importar Curva
+              </button>
+              <a href="{{ url_for('template_curva') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-download me-1"></i> Descargar Plantilla
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <!-- Formulario para Ontracking -->
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="fas fa-database me-2"></i> Importar Base de Datos Ontracking
+          </h5>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label for="ontracking_file" class="form-label">Seleccionar archivo Excel Ontracking</label>
+              <input class="form-control" type="file" id="ontracking_file" name="ontracking_file" accept=".xlsx, .xls" required>
+              <div class="form-text">
+                Base de datos Ontracking con información de ocupación
+              </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-success">
+                <i class="fas fa-file-import me-1"></i> Importar Ontracking
+              </button>
+              <a href="{{ url_for('template_ontracking') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-download me-1"></i> Descargar Plantilla
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Información de columnas -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Estructura de Archivos</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Archivo Curva (Fcst_VMH+5400)</h6>
+              <ul class="small">
+                <li><strong>FECHA:</strong> Fecha del registro</li>
+                <li><strong>MODULO:</strong> Módulo correspondiente</li>
+                <li><strong>HABITACION:</strong> Número de habitación</li>
+                <li><strong>EMPRESA:</strong> Empresa contratista</li>
+                <li><strong>ID:</strong> Identificador interno</li>
+                <!-- Ajusta según las columnas reales del archivo Curva -->
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6>Base de Datos Ontracking</h6>
+              <ul class="small">
+                <li><strong>MODULO:</strong> Módulo</li>
+                <li><strong>LUGAR:</strong> Lugar específico</li>
+                <li><strong>HABITACION:</strong> Número de habitación</li>
+                <li><strong>EMPRESA:</strong> Empresa</li>
+                <li><strong>ID:</strong> Identificador interno</li>
+                <li><strong>CAMA:</strong> Número de cama</li>
+                <li><strong>INICIO/TERMINO/DIA:</strong> Fechas relevantes</li>
+                <li><strong>CAMAS_OCUPDAS:</strong> Camas ocupadas</li>
+                <li><strong>TURNO/GERENCIA/CO_MEL:</strong> Información organizacional</li>
+                <li><strong>CENTRO_COSTO/SEXO/TIPO_TURNO:</strong> Datos adicionales</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
